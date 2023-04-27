@@ -1,0 +1,28 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.19.4/owo-ui.xsd">
+
+    <components>
+        <flow-layout direction="vertical">
+            <children>
+                <text-box id="input">
+                    <sizing>
+                        <horizontal method="fill">75</horizontal>
+                    </sizing>
+                    <max-length>10000</max-length>
+                </text-box>
+
+                <label id="output"/>
+            </children>
+
+            <horizontal-alignment>center</horizontal-alignment>
+            <vertical-alignment>center</vertical-alignment>
+
+            <gap>15</gap>
+
+            <surface>
+                <vanilla-translucent/>
+            </surface>
+        </flow-layout>
+    </components>
+
+</owo-ui>

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "lavender",
+  "version": "${version}",
+  "name": "lavender",
+  "description": "",
+  "authors": [],
+  "contact": {
+    "repo": "https://github.com/wisp-forest/lavender"
+  },
+  "license": "MIT",
+  "icon": "assets/lavender/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "io.wispforest.lavender.client.LavenderClient"
+    ],
+    "main": [
+      "io.wispforest.lavender.Lavender"
+    ]
+  },
+  "mixins": [
+    "lavender.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "*",
+    "fabric": "*",
+    "minecraft": ">=1.19.4"
+  }
+}
