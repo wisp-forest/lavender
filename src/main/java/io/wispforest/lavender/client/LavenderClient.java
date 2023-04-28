@@ -1,7 +1,7 @@
 package io.wispforest.lavender.client;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
-import io.wispforest.lavender.parsing.Parser;
+import io.wispforest.lavender.parsing.Lexer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -17,7 +17,7 @@ public class LavenderClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(literal("parse-md").then(argument("md", StringArgumentType.greedyString()).executes(context -> {
-                context.getSource().sendFeedback(Parser.parse(StringArgumentType.getString(context, "md")));
+//                context.getSource().sendFeedback(Lexer.parse(StringArgumentType.getString(context, "md")));
                 return 0;
             })));
 

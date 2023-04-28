@@ -1,7 +1,9 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.parsing.Parser;
+import io.wispforest.lavender.parsing.AST;
+import io.wispforest.lavender.parsing.Lexer;
+import io.wispforest.lavender.parsing.TextBuilder;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.component.TextBoxComponent;
@@ -23,7 +25,11 @@ public class EditMdScreen extends BaseUIModelScreen<FlowLayout> implements Comma
         var output = rootComponent.childById(LabelComponent.class, "output");
         rootComponent.childById(TextBoxComponent.class, "input").onChanged().subscribe(value -> {
             try {
-                output.text(Parser.parse(value));
+                var nodes = AST.parse(Lexer.lex(value));
+                var result = new TextBuilder();
+                nodes.forEach(node -> node.apply(result));
+
+                output.text(result.build());
             } catch (Exception e) {
                 var trace = new StringWriter();
                 var traceWriter = new PrintWriter(trace);
