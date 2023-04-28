@@ -1,6 +1,5 @@
 package io.wispforest.lavender.parsing;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -34,9 +33,6 @@ public class TextBuilder {
     }
 
     public Text build() {
-        var result = this.text.getLast().copy();
-        result.setStyle(result.getStyle().withFont(MinecraftClient.UNICODE_FONT_ID));
-
-        return result;
+        return this.text.getLast().copy();
     }
 }

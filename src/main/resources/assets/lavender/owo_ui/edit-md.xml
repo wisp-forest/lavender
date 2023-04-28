@@ -4,13 +4,6 @@
     <components>
         <flow-layout direction="vertical">
             <children>
-                <text-box id="input">
-                    <sizing>
-                        <horizontal method="fill">75</horizontal>
-                    </sizing>
-                    <max-length>10000</max-length>
-                </text-box>
-
                 <label id="output"/>
             </children>
 

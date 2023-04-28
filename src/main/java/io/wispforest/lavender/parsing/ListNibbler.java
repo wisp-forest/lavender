@@ -31,13 +31,14 @@ public class ListNibbler<T> {
     }
 
     public T peek(int offset) {
-        return this.pointer + offset < this.delegate.size()
-                ? this.delegate.get(this.pointer + offset)
+        int index = this.pointer + offset;
+        return index >= 0 && index < this.delegate.size()
+                ? this.delegate.get(index)
                 : null;
     }
 
     public boolean hasElements() {
-        return this.pointer >= this.delegate.size();
+        return this.pointer < this.delegate.size();
     }
 
     public int pointer() {

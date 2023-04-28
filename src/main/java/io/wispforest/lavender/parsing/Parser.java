@@ -1,5 +1,6 @@
 package io.wispforest.lavender.parsing;
 
+import io.wispforest.lavender.parsing.Lexer.*;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 public class Parser {
@@ -20,25 +22,25 @@ public class Parser {
         return result.build();
     }
 
-    public static List<Node> parse(List<Lexer.Token> tokens) {
+    public static List<Node> parse(List<Token> tokens) {
         var nodes = new ArrayList<Node>();
         var tokenNibbler = new ListNibbler<>(tokens);
 
-        while (!tokenNibbler.hasElements()) {
+        while (tokenNibbler.hasElements()) {
             nodes.add(parseNode(tokenNibbler));
         }
 
         return nodes;
     }
 
-    private static @NotNull Node parseNode(ListNibbler<Lexer.Token> tokens) {
+    private static @NotNull Node parseNode(ListNibbler<Token> tokens) {
         var token = tokens.nibble();
-        if (token instanceof Lexer.TextToken text) return new TextNode(text.content());
-        if (token instanceof Lexer.StarToken left) {
+        if (token instanceof TextToken text) return new TextNode(text.content());
+        if (token instanceof StarToken left) {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, Lexer.StarToken.class);
+            var content = parseUntil(tokens, StarToken.class);
 
-            if (tokens.peek() instanceof Lexer.StarToken) {
+            if (tokens.peek() instanceof StarToken) {
                 tokens.nibble();
 
                 if (content instanceof StarNode star) {
@@ -56,13 +58,13 @@ public class Parser {
             }
         }
 
-        if (token instanceof Lexer.TildeToken left1 && tokens.peek() instanceof Lexer.TildeToken left2) {
+        if (token instanceof TildeToken left1 && tokens.peek() instanceof TildeToken left2) {
             tokens.nibble();
 
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, Lexer.TildeToken.class);
+            var content = parseUntil(tokens, TildeToken.class);
 
-            if (tokens.peek() instanceof Lexer.TildeToken && tokens.peek(1) instanceof Lexer.TildeToken) {
+            if (tokens.peek() instanceof TildeToken && tokens.peek(1) instanceof TildeToken) {
                 tokens.skip(2);
                 return new FormattingNode(style -> style.withStrikethrough(true)).addChild(content);
             } else {
@@ -71,13 +73,13 @@ public class Parser {
             }
         }
 
-        if (token instanceof Lexer.UnderscoreToken left1 && tokens.peek() instanceof Lexer.UnderscoreToken left2) {
+        if (token instanceof UnderscoreToken left1 && tokens.peek() instanceof UnderscoreToken left2) {
             tokens.nibble();
 
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, Lexer.UnderscoreToken.class);
+            var content = parseUntil(tokens, UnderscoreToken.class);
 
-            if (tokens.peek() instanceof Lexer.UnderscoreToken && tokens.peek(1) instanceof Lexer.UnderscoreToken) {
+            if (tokens.peek() instanceof UnderscoreToken && tokens.peek(1) instanceof UnderscoreToken) {
                 tokens.skip(2);
                 return new FormattingNode(style -> style.withUnderline(true)).addChild(content);
             } else {
@@ -86,11 +88,11 @@ public class Parser {
             }
         }
 
-        if (token instanceof Lexer.OpenLinkToken left) {
+        if (token instanceof OpenLinkToken left) {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, Lexer.CloseLinkToken.class);
+            var content = parseUntil(tokens, CloseLinkToken.class);
 
-            if (tokens.peek() instanceof Lexer.CloseLinkToken right) {
+            if (tokens.peek() instanceof CloseLinkToken right) {
                 tokens.nibble();
                 return new FormattingNode(style -> style.withClickEvent(
                         new ClickEvent(ClickEvent.Action.OPEN_URL, right.link)
@@ -103,17 +105,26 @@ public class Parser {
             }
         }
 
-        if (token instanceof Lexer.OpenColorToken left) {
+        if (token instanceof OpenColorToken left) {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, Lexer.CloseColorToken.class);
+            var content = parseUntil(tokens, CloseColorToken.class);
 
-            if (tokens.peek() instanceof Lexer.CloseColorToken) {
+            if (tokens.peek() instanceof CloseColorToken) {
                 tokens.nibble();
                 return new FormattingNode(left.style).addChild(content);
             } else {
                 tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
+        }
+
+        if (token instanceof QuotationToken && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
+            var content = parseUntil(tokens, $ -> $ instanceof NewlineToken newline && newline.isBoundary());
+
+            var node = new FormattingNode(style -> style.withFormatting(Formatting.OBFUSCATED)).addChild(content);
+            if (tokens.nibble() instanceof NewlineToken newline) node.addChild(new TextNode(newline.content()));
+
+            return node;
         }
 
         if (token != null) {
@@ -123,9 +134,18 @@ public class Parser {
         return Node.empty();
     }
 
-    private static Node parseUntil(ListNibbler<Lexer.Token> tokens, Class<? extends Lexer.Token> until) {
+    private static Node parseUntil(ListNibbler<Token> tokens, Class<? extends Token> until) {
+        return parseUntil(tokens, until::isInstance);
+    }
+
+    private static Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until) {
         var node = parseNode(tokens);
-        while (!tokens.hasElements() && !until.isInstance(tokens.peek())) node.addChild(parseNode(tokens));
+        while (tokens.hasElements()) {
+            var next = tokens.peek();
+            if (next.isBoundary() || until.test(next)) break;
+
+            node.addChild(parseNode(tokens));
+        }
 
         return node;
     }

@@ -29,17 +29,19 @@ public class Lexer {
 
     static {
         LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
+        LEX_FUNCTIONS.put('\n', NewlineToken::lex);
         LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
         LEX_FUNCTIONS.put('[', primitiveTokenLexer(OpenLinkToken::new));
         LEX_FUNCTIONS.put('*', StarToken::lex);
         LEX_FUNCTIONS.put('{', OpenColorToken::lex);
         LEX_FUNCTIONS.put('~', primitiveTokenLexer(TildeToken::new));
         LEX_FUNCTIONS.put('_', primitiveTokenLexer(UnderscoreToken::new));
+        LEX_FUNCTIONS.put('>', QuotationToken::lex);
     }
 
     public static List<Token> lex(String input) {
         var tokens = new ArrayList<Token>();
-        var reader = new StringReader(input);
+        var reader = new StringReader(input.strip());
 
         while (reader.canRead()) {
             char current = reader.peek();
@@ -76,6 +78,10 @@ public class Lexer {
 
         public String content() {
             return this.content;
+        }
+
+        public boolean isBoundary() {
+            return false;
         }
     }
 
@@ -122,6 +128,33 @@ public class Lexer {
         };
     }
 
+    public static final class NewlineToken extends Token {
+
+        private final boolean isBoundary;
+
+        public NewlineToken(boolean isBoundary) {
+            super(isBoundary ? "\n" : " ");
+            this.isBoundary = isBoundary;
+        }
+
+        public static boolean lex(StringReader reader, List<Token> tokens) {
+            reader.skip();
+            if (reader.canRead() && reader.peek() == '\n') {
+                reader.skip();
+                tokens.add(new NewlineToken(true));
+            } else {
+                tokens.add(new NewlineToken(false));
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean isBoundary() {
+            return this.isBoundary;
+        }
+    }
+
     public static final class TildeToken extends Token {
         public TildeToken() {
             super("~");
@@ -131,6 +164,25 @@ public class Lexer {
     public static final class UnderscoreToken extends Token {
         public UnderscoreToken() {
             super("_");
+        }
+    }
+
+    public static final class QuotationToken extends Token {
+        public QuotationToken() {
+            super("> ");
+        }
+
+        public static boolean lex(StringReader reader, List<Token> tokens) {
+            reader.skip();
+            if (!reader.canRead() || reader.read() != ' ') return false;
+
+            tokens.add(new QuotationToken());
+            return true;
+        }
+
+        @Override
+        public boolean isBoundary() {
+            return true;
         }
     }
 
