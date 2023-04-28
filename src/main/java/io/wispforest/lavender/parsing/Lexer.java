@@ -9,7 +9,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.function.CharPredicate;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -24,6 +27,7 @@ public class Lexer {
     private static final Char2ObjectMap<BiFunction<StringReader, List<Token>, Boolean>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
 
     static {
+        LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
         LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
         LEX_FUNCTIONS.put('[', OpenLinkToken::lex);
         LEX_FUNCTIONS.put('*', StarToken::lex);
@@ -76,6 +80,14 @@ public class Lexer {
         public TextToken(String content) {
             super(content);
         }
+
+        private static boolean lexEscape(StringReader reader, List<Token> tokens) {
+            reader.skip();
+            if (!reader.canRead() || !LEX_FUNCTIONS.keySet().contains(reader.peek())) return false;
+
+            tokens.add(new TextToken(String.valueOf(reader.read())));
+            return true;
+        }
     }
 
     public static final class StarToken extends Token {
@@ -85,13 +97,15 @@ public class Lexer {
         }
 
         private static boolean lex(StringReader reader, List<Token> tokens) {
-            reader.skip();
+            int starCount = readTextUntil(reader, c -> c != '*').length();
 
-            if (!((reader.canRead() && reader.peek() != ' ') || (reader.getCursor() - 2 >= 0 && reader.peek(-2) != ' '))) {
+            if (starCount > 3 || !((reader.canRead() && reader.peek() != ' ') || (reader.getCursor() - starCount - 1 >= 0 && reader.peek(-starCount - 1) != ' '))) {
                 return false;
             }
 
-            tokens.add(new StarToken("*"));
+            for (int i = 0; i < starCount; i++) {
+                tokens.add(new StarToken("*"));
+            }
             return true;
         }
     }
