@@ -37,6 +37,7 @@ public class Lexer {
         LEX_FUNCTIONS.put('~', primitiveTokenLexer(TildeToken::new));
         LEX_FUNCTIONS.put('_', primitiveTokenLexer(UnderscoreToken::new));
         LEX_FUNCTIONS.put('>', QuotationToken::lex);
+        LEX_FUNCTIONS.put('-', HorizontalRuleToken::lex);
     }
 
     public static List<Token> lex(String input) {
@@ -48,6 +49,7 @@ public class Lexer {
             if (LEX_FUNCTIONS.containsKey(current)) {
                 int cursorBefore = reader.getCursor();
                 if (!LEX_FUNCTIONS.get(current).apply(reader, tokens)) {
+                    if (reader.getCursor() == cursorBefore) reader.skip();
                     tokens.add(new TextToken(reader.getRead().substring(cursorBefore)));
                 }
             } else {
@@ -138,9 +140,8 @@ public class Lexer {
         }
 
         public static boolean lex(StringReader reader, List<Token> tokens) {
-            reader.skip();
-            if (reader.canRead() && reader.peek() == '\n') {
-                reader.skip();
+            var newlines = readTextUntil(reader, c -> c != '\n');
+            if (newlines.length() > 1) {
                 tokens.add(new NewlineToken(true));
             } else {
                 tokens.add(new NewlineToken(false));
@@ -189,6 +190,24 @@ public class Lexer {
     public static final class OpenLinkToken extends Token {
         public OpenLinkToken() {
             super("[");
+        }
+    }
+
+    public static final class HorizontalRuleToken extends Token {
+        public HorizontalRuleToken() {
+            super("---");
+        }
+
+        public static boolean lex(StringReader reader, List<Token> tokens) {
+            if (reader.getCursor() - 2 < 0 || reader.peek(-1) != '\n' || reader.peek(-2) != '\n') return false;
+
+            var dashes = readTextUntil(reader, c -> c != '-');
+            if (dashes.length() != 3 || !reader.canRead(2) || reader.peek() != '\n' || reader.peek(1) != '\n') {
+                return false;
+            }
+
+            tokens.add(new HorizontalRuleToken());
+            return true;
         }
     }
 

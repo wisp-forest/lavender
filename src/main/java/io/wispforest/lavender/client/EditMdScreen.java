@@ -1,7 +1,9 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.parsing.Lexer;
 import io.wispforest.lavender.parsing.Parser;
+import io.wispforest.lavender.parsing.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -23,17 +25,26 @@ public class EditMdScreen extends BaseUIModelScreen<FlowLayout> implements Comma
     protected void build(FlowLayout rootComponent) {
         var output = rootComponent.childById(LabelComponent.class, "output");
 
-        var box = new EditBoxWidget(this.client.textRenderer, 0, 0, 300, 100, Text.empty(), Text.empty()) {
+        var box = new EditBoxWidget(this.client.textRenderer, 0, 0, 500, 180, Text.empty(), Text.empty()) {
             @Override
             public void onFocusGained(FocusSource source) {
                 super.onFocusGained(source);
                 this.setFocused(true);
             }
         };
-        rootComponent.child(0, box.sizing(Sizing.fixed(300), Sizing.fixed(100)));
+        rootComponent.childById(FlowLayout.class, "input-anchor").child(0, box.sizing(Sizing.fixed(500), Sizing.fixed(180)));
 
+        var anchor = rootComponent.childById(FlowLayout.class, "output-anchor");
         box.setChangeListener(value -> {
             try {
+                anchor.<FlowLayout>configure(layout -> {
+                    var compiler = new OwoUICompiler();
+                    Parser.parse(Lexer.lex(value)).visit(compiler);
+
+                    layout.clearChildren();
+                    layout.child(compiler.compile());
+                });
+
                 output.text(Parser.markdownToText(value));
             } catch (Exception e) {
                 var trace = new StringWriter();

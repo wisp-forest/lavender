@@ -4,7 +4,77 @@
     <components>
         <flow-layout direction="vertical">
             <children>
-                <label id="output"/>
+                <flow-layout direction="vertical" id="input-anchor">
+                    <children>
+                        <label>
+                            <text>markdown input</text>
+                        </label>
+                    </children>
+
+                    <gap>5</gap>
+                </flow-layout>
+
+                <flow-layout direction="horizontal">
+                    <children>
+                        <flow-layout direction="vertical">
+                            <children>
+                                <flow-layout direction="vertical" id="output-anchor">
+                                    <children/>
+
+                                    <surface>
+                                        <vanilla-translucent/>
+                                        <outline>#FFFFFFFF</outline>
+                                    </surface>
+
+                                    <padding>
+                                        <all>15</all>
+                                    </padding>
+
+                                    <sizing>
+                                        <horizontal method="fill">40</horizontal>
+                                    </sizing>
+                                </flow-layout>
+
+                                <label>
+                                    <text>owo-ui renderer</text>
+                                </label>
+                            </children>
+
+                            <gap>5</gap>
+                        </flow-layout>
+
+                       <flow-layout direction="vertical">
+                           <children>
+                               <flow-layout direction="vertical">
+                                   <children>
+                                       <label id="output">
+                                           <sizing>
+                                               <horizontal method="fill">40</horizontal>
+                                           </sizing>
+                                       </label>
+                                   </children>
+
+                                   <surface>
+                                       <vanilla-translucent/>
+                                       <outline>#FFFFFFFF</outline>
+                                   </surface>
+
+                                   <padding>
+                                       <all>15</all>
+                                   </padding>
+                               </flow-layout>
+
+                               <label>
+                                   <text>plain text renderer</text>
+                               </label>
+                           </children>
+
+                           <gap>5</gap>
+                       </flow-layout>
+                    </children>
+
+                    <gap>50</gap>
+                </flow-layout>
             </children>
 
             <horizontal-alignment>center</horizontal-alignment>

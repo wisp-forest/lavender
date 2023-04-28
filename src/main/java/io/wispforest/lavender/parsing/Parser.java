@@ -1,6 +1,8 @@
 package io.wispforest.lavender.parsing;
 
 import io.wispforest.lavender.parsing.Lexer.*;
+import io.wispforest.lavender.parsing.compiler.MarkdownCompiler;
+import io.wispforest.lavender.parsing.compiler.TextCompiler;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
@@ -16,21 +18,21 @@ import java.util.function.UnaryOperator;
 public class Parser {
 
     public static Text markdownToText(String markdown) {
-        var result = new TextBuilder();
-        parse(Lexer.lex(markdown)).forEach(node -> node.apply(result));
+        var compiler = new TextCompiler();
+        parse(Lexer.lex(markdown)).visit(compiler);
 
-        return result.build();
+        return compiler.compile();
     }
 
-    public static List<Node> parse(List<Token> tokens) {
-        var nodes = new ArrayList<Node>();
+    public static Node parse(List<Token> tokens) {
         var tokenNibbler = new ListNibbler<>(tokens);
 
+        var node = Node.empty();
         while (tokenNibbler.hasElements()) {
-            nodes.add(parseNode(tokenNibbler));
+            node.addChild(parseNode(tokenNibbler));
         }
 
-        return nodes;
+        return node;
     }
 
     private static @NotNull Node parseNode(ListNibbler<Token> tokens) {
@@ -121,10 +123,13 @@ public class Parser {
         if (token instanceof QuotationToken && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
             var content = parseUntil(tokens, $ -> $ instanceof NewlineToken newline && newline.isBoundary());
 
-            var node = new FormattingNode(style -> style.withFormatting(Formatting.OBFUSCATED)).addChild(content);
-            if (tokens.nibble() instanceof NewlineToken newline) node.addChild(new TextNode(newline.content()));
-
+            var node = new QuotationNode().addChild(content);
+//            if (tokens.nibble() instanceof NewlineToken newline) node.addChild(new TextNode(newline.content()));
             return node;
+        }
+
+        if (token instanceof HorizontalRuleToken) {
+            return new HorizontalRuleNode();
         }
 
         if (token != null) {
@@ -152,32 +157,33 @@ public class Parser {
 
     public abstract static class Node {
 
-        private final List<Node> children = new ArrayList<>();
+        protected final List<Node> children = new ArrayList<>();
 
         public Node addChild(Node child) {
             this.children.add(child);
             return this;
         }
 
-        public void apply(TextBuilder builder) {
-            this.applyOpen(builder);
+        public void visit(MarkdownCompiler<?> compiler) {
+            this.visitStart(compiler);
             for (var child : this.children) {
-                child.apply(builder);
+                child.visit(compiler);
             }
-            this.applyClose(builder);
+            this.visitEnd(compiler);
         }
 
-        protected abstract void applyOpen(TextBuilder builder);
+        protected abstract void visitStart(MarkdownCompiler<?> compiler);
 
-        protected abstract void applyClose(TextBuilder builder);
+        protected abstract void visitEnd(MarkdownCompiler<?> compiler);
 
         public static Node empty() {
             return new Node() {
-                @Override
-                protected void applyOpen(TextBuilder builder) {}
 
                 @Override
-                protected void applyClose(TextBuilder builder) {}
+                protected void visitStart(MarkdownCompiler<?> compiler) {}
+
+                @Override
+                protected void visitEnd(MarkdownCompiler<?> compiler) {}
             };
         }
     }
@@ -190,12 +196,12 @@ public class Parser {
         }
 
         @Override
-        public void applyOpen(TextBuilder builder) {
-            builder.append(Text.literal(this.content));
+        public void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitText(this.content);
         }
 
         @Override
-        protected void applyClose(TextBuilder builder) {}
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
     public static class FormattingNode extends Node {
@@ -206,13 +212,13 @@ public class Parser {
         }
 
         @Override
-        public void applyOpen(TextBuilder builder) {
-            builder.pushStyle(this::applyStyle);
+        public void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitStyle(this::applyStyle);
         }
 
         @Override
-        protected void applyClose(TextBuilder builder) {
-            builder.popStyle();
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+            compiler.visitStyleEnd();
         }
 
         protected Style applyStyle(Style style) {
@@ -241,6 +247,28 @@ public class Parser {
         public boolean canIncrementStarCount() {
             return this.starCount < 3;
         }
+    }
+
+    public static class QuotationNode extends Node {
+        @Override
+        protected void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitQuotation();
+        }
+
+        @Override
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+            compiler.visitQuotationEnd();
+        }
+    }
+
+    public static class HorizontalRuleNode extends Node {
+        @Override
+        protected void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitHorizontalRule();
+        }
+
+        @Override
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
 }
