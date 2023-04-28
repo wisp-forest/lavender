@@ -11,7 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-public class AST {
+public class Parser {
+
+    public static Text markdownToText(String markdown) {
+        var result = new TextBuilder();
+        parse(Lexer.lex(markdown)).forEach(node -> node.apply(result));
+
+        return result.build();
+    }
 
     public static List<Node> parse(List<Lexer.Token> tokens) {
         var nodes = new ArrayList<Node>();
@@ -27,7 +34,7 @@ public class AST {
     private static @NotNull Node parseNode(ListNibbler<Lexer.Token> tokens) {
         var token = tokens.nibble();
         if (token instanceof Lexer.TextToken text) return new TextNode(text.content());
-        if (token instanceof Lexer.StarToken) {
+        if (token instanceof Lexer.StarToken left) {
             int pointer = tokens.pointer();
             var content = parseUntil(tokens, Lexer.StarToken.class);
 
@@ -45,7 +52,37 @@ public class AST {
                 }
             } else {
                 tokens.setPointer(pointer);
-                return new TextNode("*");
+                return new TextNode(left.content());
+            }
+        }
+
+        if (token instanceof Lexer.TildeToken left1 && tokens.peek() instanceof Lexer.TildeToken left2) {
+            tokens.nibble();
+
+            int pointer = tokens.pointer();
+            var content = parseUntil(tokens, Lexer.TildeToken.class);
+
+            if (tokens.peek() instanceof Lexer.TildeToken && tokens.peek(1) instanceof Lexer.TildeToken) {
+                tokens.skip(2);
+                return new FormattingNode(style -> style.withStrikethrough(true)).addChild(content);
+            } else {
+                tokens.setPointer(pointer);
+                return new TextNode(left1.content() + left2.content());
+            }
+        }
+
+        if (token instanceof Lexer.UnderscoreToken left1 && tokens.peek() instanceof Lexer.UnderscoreToken left2) {
+            tokens.nibble();
+
+            int pointer = tokens.pointer();
+            var content = parseUntil(tokens, Lexer.UnderscoreToken.class);
+
+            if (tokens.peek() instanceof Lexer.UnderscoreToken && tokens.peek(1) instanceof Lexer.UnderscoreToken) {
+                tokens.skip(2);
+                return new FormattingNode(style -> style.withUnderline(true)).addChild(content);
+            } else {
+                tokens.setPointer(pointer);
+                return new TextNode(left1.content() + left2.content());
             }
         }
 

@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -29,9 +30,11 @@ public class Lexer {
     static {
         LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
         LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
-        LEX_FUNCTIONS.put('[', OpenLinkToken::lex);
+        LEX_FUNCTIONS.put('[', primitiveTokenLexer(OpenLinkToken::new));
         LEX_FUNCTIONS.put('*', StarToken::lex);
         LEX_FUNCTIONS.put('{', OpenColorToken::lex);
+        LEX_FUNCTIONS.put('~', primitiveTokenLexer(TildeToken::new));
+        LEX_FUNCTIONS.put('_', primitiveTokenLexer(UnderscoreToken::new));
     }
 
     public static List<Token> lex(String input) {
@@ -110,17 +113,30 @@ public class Lexer {
         }
     }
 
-    public static final class OpenLinkToken extends Token {
-
-        public OpenLinkToken() {
-            super("[");
-        }
-
-        private static boolean lex(StringReader reader, List<Token> tokens) {
+    private static BiFunction<StringReader, List<Token>, Boolean> primitiveTokenLexer(Supplier<Token> factory) {
+        return (reader, tokens) -> {
             reader.skip();
-            tokens.add(new OpenLinkToken());
+            tokens.add(factory.get());
 
             return true;
+        };
+    }
+
+    public static final class TildeToken extends Token {
+        public TildeToken() {
+            super("~");
+        }
+    }
+
+    public static final class UnderscoreToken extends Token {
+        public UnderscoreToken() {
+            super("_");
+        }
+    }
+
+    public static final class OpenLinkToken extends Token {
+        public OpenLinkToken() {
+            super("[");
         }
     }
 
