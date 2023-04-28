@@ -7,33 +7,32 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.function.UnaryOperator;
 
 public class AST {
 
-    public static List<Node> parse(Queue<Lexer.Token> tokens) {
+    public static List<Node> parse(List<Lexer.Token> tokens) {
         var nodes = new ArrayList<Node>();
+        var tokenNibbler = new ListNibbler<>(tokens);
 
-        while (!tokens.isEmpty()) {
-            nodes.add(parseNode(tokens));
+        while (!tokenNibbler.hasElements()) {
+            nodes.add(parseNode(tokenNibbler));
         }
 
         return nodes;
     }
 
-    private static @NotNull Node parseNode(Queue<Lexer.Token> tokens) {
-        var token = tokens.poll();
+    private static @NotNull Node parseNode(ListNibbler<Lexer.Token> tokens) {
+        var token = tokens.nibble();
         if (token instanceof Lexer.TextToken text) return new TextNode(text.content());
         if (token instanceof Lexer.StarToken) {
-            var tokensBefore = new ArrayDeque<>(tokens);
+            int pointer = tokens.pointer();
             var content = parseUntil(tokens, Lexer.StarToken.class);
 
             if (tokens.peek() instanceof Lexer.StarToken) {
-                tokens.poll();
+                tokens.nibble();
 
                 if (content instanceof StarNode star) {
                     if (star.canIncrementStarCount()) {
@@ -45,40 +44,37 @@ public class AST {
                     return new StarNode().addChild(content);
                 }
             } else {
-                tokens.clear();
-                tokens.addAll(tokensBefore);
+                tokens.setPointer(pointer);
                 return new TextNode("*");
             }
         }
 
         if (token instanceof Lexer.OpenLinkToken left) {
-            var tokensBefore = new ArrayDeque<>(tokens);
+            int pointer = tokens.pointer();
             var content = parseUntil(tokens, Lexer.CloseLinkToken.class);
 
             if (tokens.peek() instanceof Lexer.CloseLinkToken right) {
-                tokens.poll();
+                tokens.nibble();
                 return new FormattingNode(style -> style.withClickEvent(
                         new ClickEvent(ClickEvent.Action.OPEN_URL, right.link)
                 ).withHoverEvent(
                         new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(right.link))
                 ).withColor(Formatting.BLUE)).addChild(content);
             } else {
-                tokens.clear();
-                tokens.addAll(tokensBefore);
+                tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
         }
 
         if (token instanceof Lexer.OpenColorToken left) {
-            var tokensBefore = new ArrayDeque<>(tokens);
+            int pointer = tokens.pointer();
             var content = parseUntil(tokens, Lexer.CloseColorToken.class);
 
             if (tokens.peek() instanceof Lexer.CloseColorToken) {
-                tokens.poll();
+                tokens.nibble();
                 return new FormattingNode(left.style).addChild(content);
             } else {
-                tokens.clear();
-                tokens.addAll(tokensBefore);
+                tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
         }
@@ -87,25 +83,17 @@ public class AST {
             return new TextNode(token.content());
         }
 
-        return Node.EMPTY;
+        return Node.empty();
     }
 
-    private static Node parseUntil(Queue<Lexer.Token> tokens, Class<? extends Lexer.Token> until) {
+    private static Node parseUntil(ListNibbler<Lexer.Token> tokens, Class<? extends Lexer.Token> until) {
         var node = parseNode(tokens);
-        while (!tokens.isEmpty() && !until.isInstance(tokens.peek())) node.addChild(parseNode(tokens));
+        while (!tokens.hasElements() && !until.isInstance(tokens.peek())) node.addChild(parseNode(tokens));
 
         return node;
     }
 
     public abstract static class Node {
-
-        public static final Node EMPTY = new Node() {
-            @Override
-            protected void applyOpen(TextBuilder builder) {}
-
-            @Override
-            protected void applyClose(TextBuilder builder) {}
-        };
 
         private final List<Node> children = new ArrayList<>();
 
@@ -125,6 +113,16 @@ public class AST {
         protected abstract void applyOpen(TextBuilder builder);
 
         protected abstract void applyClose(TextBuilder builder);
+
+        public static Node empty() {
+            return new Node() {
+                @Override
+                protected void applyOpen(TextBuilder builder) {}
+
+                @Override
+                protected void applyClose(TextBuilder builder) {}
+            };
+        }
     }
 
     public static final class TextNode extends Node {

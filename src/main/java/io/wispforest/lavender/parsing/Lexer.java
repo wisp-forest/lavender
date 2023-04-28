@@ -9,10 +9,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.function.CharPredicate;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayDeque;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -24,7 +21,7 @@ public class Lexer {
             .filter(Formatting::isColor)
             .collect(ImmutableMap.toImmutableMap(formatting -> formatting.getName().toLowerCase(Locale.ROOT), Function.identity()));
 
-    private static final Char2ObjectMap<BiFunction<StringReader, Queue<Token>, Boolean>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
+    private static final Char2ObjectMap<BiFunction<StringReader, List<Token>, Boolean>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
 
     static {
         LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
@@ -33,8 +30,8 @@ public class Lexer {
         LEX_FUNCTIONS.put('{', OpenColorToken::lex);
     }
 
-    public static Queue<Token> lex(String input) {
-        var tokens = new ArrayDeque<Token>();
+    public static List<Token> lex(String input) {
+        var tokens = new ArrayList<Token>();
         var reader = new StringReader(input);
 
         while (reader.canRead()) {
@@ -87,7 +84,7 @@ public class Lexer {
             super(content);
         }
 
-        private static boolean lex(StringReader reader, Queue<Token> tokens) {
+        private static boolean lex(StringReader reader, List<Token> tokens) {
             reader.skip();
 
             if (!((reader.canRead() && reader.peek() != ' ') || (reader.getCursor() - 2 >= 0 && reader.peek(-2) != ' '))) {
@@ -105,7 +102,7 @@ public class Lexer {
             super("[");
         }
 
-        private static boolean lex(StringReader reader, Queue<Token> tokens) {
+        private static boolean lex(StringReader reader, List<Token> tokens) {
             reader.skip();
             tokens.add(new OpenLinkToken());
 
@@ -122,7 +119,7 @@ public class Lexer {
             this.link = link;
         }
 
-        private static boolean lex(StringReader reader, Queue<Token> tokens) {
+        private static boolean lex(StringReader reader, List<Token> tokens) {
             reader.skip();
 
             if (!reader.canRead() || reader.peek() != '(') {
@@ -149,7 +146,7 @@ public class Lexer {
             this.style = style;
         }
 
-        private static boolean lex(StringReader reader, Queue<Token> tokens) {
+        private static boolean lex(StringReader reader, List<Token> tokens) {
             reader.skip();
             if (!reader.canRead()) return false;
 
