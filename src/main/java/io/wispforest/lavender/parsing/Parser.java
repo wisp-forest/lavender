@@ -38,11 +38,11 @@ public class Parser {
     private static @NotNull Node parseNode(ListNibbler<Token> tokens) {
         var token = tokens.nibble();
         if (token instanceof TextToken text) return new TextNode(text.content());
-        if (token instanceof StarToken left) {
+        if (token instanceof StarToken left && left.rightAdjacent) {
             int pointer = tokens.pointer();
             var content = parseUntil(tokens, StarToken.class);
 
-            if (tokens.peek() instanceof StarToken) {
+            if (tokens.peek() instanceof StarToken right && right.leftAdjacent) {
                 tokens.nibble();
 
                 if (content instanceof StarNode star) {
@@ -121,11 +121,7 @@ public class Parser {
         }
 
         if (token instanceof QuotationToken && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
-            var content = parseUntil(tokens, $ -> $ instanceof NewlineToken newline && newline.isBoundary());
-
-            var node = new QuotationNode().addChild(content);
-//            if (tokens.nibble() instanceof NewlineToken newline) node.addChild(new TextNode(newline.content()));
-            return node;
+            return new QuotationNode().addChild(parseUntil(tokens, $ -> false, $ -> $ instanceof QuotationToken));
         }
 
         if (token instanceof HorizontalRuleToken) {
@@ -140,13 +136,19 @@ public class Parser {
     }
 
     private static Node parseUntil(ListNibbler<Token> tokens, Class<? extends Token> until) {
-        return parseUntil(tokens, until::isInstance);
+        return parseUntil(tokens, until::isInstance, token -> false);
     }
 
-    private static Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until) {
+    private static Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until, Predicate<Token> skip) {
         var node = parseNode(tokens);
         while (tokens.hasElements()) {
             var next = tokens.peek();
+
+            if (skip.test(next)) {
+                tokens.nibble();
+                continue;
+            }
+
             if (next.isBoundary() || until.test(next)) break;
 
             node.addChild(parseNode(tokens));

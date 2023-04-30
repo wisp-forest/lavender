@@ -30,8 +30,8 @@ public class Lexer {
     static {
         LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
         LEX_FUNCTIONS.put('\n', NewlineToken::lex);
-        LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
         LEX_FUNCTIONS.put('[', primitiveTokenLexer(OpenLinkToken::new));
+        LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
         LEX_FUNCTIONS.put('*', StarToken::lex);
         LEX_FUNCTIONS.put('{', OpenColorToken::lex);
         LEX_FUNCTIONS.put('~', primitiveTokenLexer(TildeToken::new));
@@ -50,10 +50,10 @@ public class Lexer {
                 int cursorBefore = reader.getCursor();
                 if (!LEX_FUNCTIONS.get(current).apply(reader, tokens)) {
                     if (reader.getCursor() == cursorBefore) reader.skip();
-                    tokens.add(new TextToken(reader.getRead().substring(cursorBefore)));
+                    appendText(tokens, reader.getRead().substring(cursorBefore));
                 }
             } else {
-                tokens.add(new TextToken(readTextUntil(reader, LEX_FUNCTIONS.keySet()::contains)));
+                appendText(tokens, readTextUntil(reader, LEX_FUNCTIONS.keySet()::contains));
             }
         }
 
@@ -69,7 +69,32 @@ public class Lexer {
         return text.toString();
     }
 
-    // --- Tokens with lexing implementation ---
+    private static void appendText(List<Token> tokens, String text) {
+        if (!tokens.isEmpty() && tokens.get(tokens.size() - 1) instanceof TextToken textToken) {
+            textToken.append(text);
+        } else {
+            tokens.add(new TextToken(text));
+        }
+    }
+
+    private static void appendText(List<Token> tokens, char text) {
+        if (!tokens.isEmpty() && tokens.get(tokens.size() - 1) instanceof TextToken textToken) {
+            textToken.append(text);
+        } else {
+            tokens.add(new TextToken(String.valueOf(text)));
+        }
+    }
+
+    private static BiFunction<StringReader, List<Token>, Boolean> primitiveTokenLexer(Supplier<Token> factory) {
+        return (reader, tokens) -> {
+            reader.skip();
+            tokens.add(factory.get());
+
+            return true;
+        };
+    }
+
+    // --- Tokens with lexing implementations ---
 
     public abstract static class Token {
         protected final String content;
@@ -88,46 +113,71 @@ public class Lexer {
     }
 
     public static final class TextToken extends Token {
+
+        private final StringBuilder contentBuilder;
+
+        private String contentCache = "";
+        private boolean dirty = true;
+
         public TextToken(String content) {
-            super(content);
+            super("");
+            this.contentBuilder = new StringBuilder(content);
         }
 
         private static boolean lexEscape(StringReader reader, List<Token> tokens) {
             reader.skip();
             if (!reader.canRead() || !LEX_FUNCTIONS.keySet().contains(reader.peek())) return false;
 
-            tokens.add(new TextToken(String.valueOf(reader.read())));
+            appendText(tokens, reader.read());
             return true;
+        }
+
+        public void append(String content) {
+            this.contentBuilder.append(content);
+            this.dirty = true;
+        }
+
+        public void append(char content) {
+            this.contentBuilder.append(content);
+            this.dirty = true;
+        }
+
+        @Override
+        public String content() {
+            if (this.dirty) {
+                this.contentCache = this.contentBuilder.toString();
+                this.dirty = false;
+            }
+
+            return this.contentCache;
         }
     }
 
     public static final class StarToken extends Token {
 
-        public StarToken(String content) {
+        public final boolean leftAdjacent, rightAdjacent;
+
+        public StarToken(String content, boolean leftAdjacent, boolean rightAdjacent) {
             super(content);
+            this.leftAdjacent = leftAdjacent;
+            this.rightAdjacent = rightAdjacent;
         }
 
         private static boolean lex(StringReader reader, List<Token> tokens) {
             int starCount = readTextUntil(reader, c -> c != '*').length();
 
-            if (starCount > 3 || !((reader.canRead() && reader.peek() != ' ') || (reader.getCursor() - starCount - 1 >= 0 && reader.peek(-starCount - 1) != ' '))) {
+            boolean leftAdjacent = reader.getCursor() - starCount - 1 >= 0 && reader.peek(-starCount - 1) != ' ';
+            boolean rightAdjacent = (reader.canRead() && reader.peek() != ' ');
+
+            if (starCount > 3 || !(rightAdjacent || leftAdjacent)) {
                 return false;
             }
 
             for (int i = 0; i < starCount; i++) {
-                tokens.add(new StarToken("*"));
+                tokens.add(new StarToken("*", leftAdjacent, rightAdjacent));
             }
             return true;
         }
-    }
-
-    private static BiFunction<StringReader, List<Token>, Boolean> primitiveTokenLexer(Supplier<Token> factory) {
-        return (reader, tokens) -> {
-            reader.skip();
-            tokens.add(factory.get());
-
-            return true;
-        };
     }
 
     public static final class NewlineToken extends Token {
@@ -187,12 +237,6 @@ public class Lexer {
         }
     }
 
-    public static final class OpenLinkToken extends Token {
-        public OpenLinkToken() {
-            super("[");
-        }
-    }
-
     public static final class HorizontalRuleToken extends Token {
         public HorizontalRuleToken() {
             super("---");
@@ -208,6 +252,12 @@ public class Lexer {
 
             tokens.add(new HorizontalRuleToken());
             return true;
+        }
+    }
+
+    public static final class OpenLinkToken extends Token {
+        public OpenLinkToken() {
+            super("[");
         }
     }
 
@@ -279,7 +329,6 @@ public class Lexer {
     }
 
     public static final class CloseColorToken extends Token {
-
         private CloseColorToken() {
             super("{}");
         }
