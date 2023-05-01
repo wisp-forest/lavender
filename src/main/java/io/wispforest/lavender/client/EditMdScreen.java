@@ -4,10 +4,9 @@ import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.parsing.MarkdownProcessor;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.component.TextAreaComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
-import net.minecraft.client.gui.widget.EditBoxWidget;
 import net.minecraft.text.Text;
 
 import java.io.PrintWriter;
@@ -23,17 +22,8 @@ public class EditMdScreen extends BaseUIModelScreen<FlowLayout> implements Comma
     protected void build(FlowLayout rootComponent) {
         var output = rootComponent.childById(LabelComponent.class, "output");
 
-        var box = new EditBoxWidget(this.client.textRenderer, 0, 0, 500, 180, Text.empty(), Text.empty()) {
-            @Override
-            public void onFocusGained(FocusSource source) {
-                super.onFocusGained(source);
-                this.setFocused(true);
-            }
-        };
-        rootComponent.childById(FlowLayout.class, "input-anchor").child(0, box.sizing(Sizing.fixed(500), Sizing.fixed(180)));
-
         var anchor = rootComponent.childById(FlowLayout.class, "output-anchor");
-        box.setChangeListener(value -> {
+        rootComponent.childById(TextAreaComponent.class, "input").onChanged().subscribe(value -> {
             try {
                 anchor.<FlowLayout>configure(layout -> {
                     layout.clearChildren();

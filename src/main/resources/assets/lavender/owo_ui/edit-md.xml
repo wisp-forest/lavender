@@ -4,8 +4,15 @@
     <components>
         <flow-layout direction="vertical">
             <children>
-                <flow-layout direction="vertical" id="input-anchor">
+                <flow-layout direction="vertical">
                     <children>
+                        <text-area id="input">
+                            <max-lines>20</max-lines>
+                            <sizing>
+                                <horizontal method="fixed">500</horizontal>
+                            </sizing>
+                        </text-area>
+
                         <label>
                             <text>markdown input</text>
                         </label>
