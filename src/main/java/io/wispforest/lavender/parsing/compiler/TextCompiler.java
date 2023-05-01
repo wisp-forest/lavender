@@ -7,18 +7,33 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
+import java.util.OptionalInt;
 import java.util.function.UnaryOperator;
 
 public class TextCompiler implements MarkdownCompiler<Text> {
 
     private final TextBuilder builder = new TextBuilder();
     private int quoteDepth = 0;
+    private int listDepth = 0;
 
     @Override
     public void visitText(String text) {
         if (this.quoteDepth != 0 && text.contains("\n")) {
-            for (var line : text.split("\n")) {
-                this.builder.append(this.quoteMarker().append(Text.literal(line)));
+            if (text.equals("\n")) {
+                this.builder.append(this.quoteMarker());
+            } else {
+                for (var line : text.split("\n")) {
+                    this.builder.append(this.quoteMarker().append(Text.literal(line)));
+                }
+            }
+        } else if (this.listDepth != 0 && text.contains("\n")) {
+            if (text.equals("\n")) {
+                this.builder.append(Text.literal("\n   " + "  ".repeat(this.listDepth - 1)));
+            } else {
+                var lines = text.split("\n");
+                for (int i = 0; i < lines.length; i++) {
+                    this.builder.append(Text.literal((i > 0 ? "\n   " : "   ") + "  ".repeat(this.listDepth - 1)).append(Text.literal(lines[i])));
+                }
             }
         } else {
             this.builder.append(Text.literal(text));
@@ -41,7 +56,6 @@ public class TextCompiler implements MarkdownCompiler<Text> {
         this.builder.append(this.quoteMarker());
         this.builder.pushStyle(style -> style.withColor(Formatting.GRAY).withItalic(true));
     }
-
 
     @Override
     public void visitQuotationEnd() {
@@ -67,6 +81,30 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     @Override
     public void visitImage(Identifier image, String description) {
         this.builder.append(Text.literal("[" + description + "]").formatted(Formatting.YELLOW));
+    }
+
+    @Override
+    public void visitListItem(OptionalInt ordinal) {
+        var listPrefix = ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ";
+
+        if (this.listDepth > 0) {
+            this.builder.append(Text.literal("\n" + "   ".repeat(this.listDepth) + listPrefix));
+        } else {
+            this.builder.append(Text.literal(listPrefix));
+        }
+
+        this.listDepth++;
+    }
+
+    @Override
+    public void visitListItemEnd() {
+        this.listDepth--;
+
+        if (this.listDepth > 0) {
+            this.builder.append(Text.literal("   ".repeat(this.listDepth)));
+        } else {
+            this.builder.append(Text.literal("\n"));
+        }
     }
 
     @Override

@@ -15,6 +15,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.OptionalInt;
 import java.util.function.UnaryOperator;
 
 public class OwoUICompiler implements MarkdownCompiler<Component> {
@@ -55,6 +56,7 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
 
     @Override
     public void visitQuotationEnd() {
+        this.textBuilder.popStyle();
         this.pop();
     }
 
@@ -71,14 +73,34 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
         this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
     }
 
+    @Override
+    public void visitListItem(OptionalInt ordinal) {
+        var element = Containers.horizontalFlow(Sizing.content(), Sizing.content());
+        element.child(Components.label(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • "))).margins(Insets.vertical(1));
+
+        var container = Containers.verticalFlow(Sizing.content(), Sizing.content());
+        element.child(container);
+
+        this.push(element, container);
+    }
+
+    @Override
+    public void visitListItemEnd() {
+        this.pop();
+    }
+
     protected void append(Component component) {
         this.flushText();
         this.components.peek().child(component);
     }
 
     protected void push(FlowLayout component) {
-        this.append(component);
-        this.components.push(component);
+        this.push(component, component);
+    }
+
+    protected void push(Component element, FlowLayout contentPanel) {
+        this.append(element);
+        this.components.push(contentPanel);
     }
 
     protected void pop() {

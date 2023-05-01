@@ -3,6 +3,7 @@ package io.wispforest.lavender.parsing.compiler;
 import net.minecraft.text.Style;
 import net.minecraft.util.Identifier;
 
+import java.util.OptionalInt;
 import java.util.function.UnaryOperator;
 
 public interface MarkdownCompiler<R> {
@@ -20,6 +21,10 @@ public interface MarkdownCompiler<R> {
     void visitHorizontalRule();
 
     void visitImage(Identifier image, String description);
+
+    void visitListItem(OptionalInt ordinal);
+
+    void visitListItemEnd();
 
     R compile();
 }

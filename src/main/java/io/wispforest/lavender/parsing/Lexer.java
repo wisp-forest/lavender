@@ -10,10 +10,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.function.CharPredicate;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -26,20 +23,33 @@ public class Lexer {
             .filter(Formatting::isColor)
             .collect(ImmutableMap.toImmutableMap(formatting -> formatting.getName().toLowerCase(Locale.ROOT), Function.identity()));
 
-    private static final Char2ObjectMap<BiFunction<StringReader, List<Token>, Boolean>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
+    private static final Char2ObjectMap<List<BiFunction<StringReader, List<Token>, Boolean>>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
 
     static {
-        LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
-        LEX_FUNCTIONS.put('\n', NewlineToken::lex);
-        LEX_FUNCTIONS.put('[', primitiveTokenLexer(OpenLinkToken::new));
-        LEX_FUNCTIONS.put('!', ImageToken::lex);
-        LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
-        LEX_FUNCTIONS.put('*', StarToken::lex);
-        LEX_FUNCTIONS.put('{', OpenColorToken::lex);
-        LEX_FUNCTIONS.put('~', primitiveTokenLexer(TildeToken::new));
-        LEX_FUNCTIONS.put('_', primitiveTokenLexer(UnderscoreToken::new));
-        LEX_FUNCTIONS.put('>', QuotationToken::lex);
-        LEX_FUNCTIONS.put('-', HorizontalRuleToken::lex);
+        registerToken('\\', TextToken::lexEscape);
+        registerToken('\n', NewlineToken::lex);
+        registerToken('[', primitiveTokenLexer(OpenLinkToken::new));
+        registerToken('!', ImageToken::lex);
+        registerToken(']', CloseLinkToken::lex);
+        registerToken('*', StarToken::lex);
+        registerToken('{', OpenColorToken::lex);
+        registerToken('~', primitiveTokenLexer(TildeToken::new));
+        registerToken('_', primitiveTokenLexer(UnderscoreToken::new));
+        registerToken('>', QuotationToken::lex);
+        registerToken('-', HorizontalRuleToken::lex);
+        registerToken('-', ListToken::lexUnordered);
+
+        registerToken(ListToken::lexOrdered, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    }
+
+    public static void registerToken(char trigger, BiFunction<StringReader, List<Token>, Boolean> lexer) {
+        LEX_FUNCTIONS.computeIfAbsent(trigger, character -> new ArrayList<>()).add(lexer);
+    }
+
+    public static void registerToken(BiFunction<StringReader, List<Token>, Boolean> lexer, char... triggers) {
+        for (var trigger : triggers) {
+            registerToken(trigger, lexer);
+        }
     }
 
     public static List<Token> lex(String input) {
@@ -50,10 +60,22 @@ public class Lexer {
             char current = reader.peek();
             if (LEX_FUNCTIONS.containsKey(current)) {
                 int cursorBefore = reader.getCursor();
-                if (!LEX_FUNCTIONS.get(current).apply(reader, tokens)) {
+
+                boolean success = false;
+                for (var lexer : LEX_FUNCTIONS.get(current)) {
+                    if (lexer.apply(reader, tokens)) {
+                        success = true;
+                        break;
+                    } else {
+                        reader.setCursor(cursorBefore);
+                    }
+                }
+
+                if (!success) {
                     if (reader.getCursor() == cursorBefore) reader.skip();
                     appendText(tokens, reader.getRead().substring(cursorBefore));
                 }
+
             } else {
                 appendText(tokens, readTextUntil(reader, LEX_FUNCTIONS.keySet()::contains));
             }
@@ -69,6 +91,26 @@ public class Lexer {
         }
 
         return text.toString();
+    }
+
+    private static int whitespaceSinceLineBreak(StringReader reader) {
+        int offset = 1;
+        int whitespace = 0;
+
+        while (reader.getCursor() - offset >= 0) {
+            char current = reader.peek(-offset);
+            if (current == '\n') return whitespace;
+
+            if (Character.isWhitespace(current)) {
+                whitespace++;
+            } else {
+                return -1;
+            }
+
+            offset++;
+        }
+
+        return whitespace;
     }
 
     private static void appendText(List<Token> tokens, String text) {
@@ -130,7 +172,12 @@ public class Lexer {
             reader.skip();
             if (!reader.canRead() || !LEX_FUNCTIONS.keySet().contains(reader.peek())) return false;
 
-            appendText(tokens, reader.read());
+            var escaped = reader.read();
+            if (escaped == '\n') {
+                tokens.add(new NewlineToken("\n", false));
+            } else {
+                appendText(tokens, escaped);
+            }
             return true;
         }
 
@@ -186,17 +233,17 @@ public class Lexer {
 
         private final boolean isBoundary;
 
-        public NewlineToken(boolean isBoundary) {
-            super(isBoundary ? "\n" : " ");
+        public NewlineToken(String content, boolean isBoundary) {
+            super(content);
             this.isBoundary = isBoundary;
         }
 
         public static boolean lex(StringReader reader, List<Token> tokens) {
             var newlines = readTextUntil(reader, c -> c != '\n');
             if (newlines.length() > 1) {
-                tokens.add(new NewlineToken(true));
+                tokens.add(new NewlineToken("\n".repeat(newlines.length() - 1), true));
             } else {
-                tokens.add(new NewlineToken(false));
+                tokens.add(new NewlineToken(" ", false));
             }
 
             return true;
@@ -217,6 +264,45 @@ public class Lexer {
     public static final class UnderscoreToken extends Token {
         public UnderscoreToken() {
             super("_");
+        }
+    }
+
+    public static final class ListToken extends Token {
+
+        public final int depth;
+        public final OptionalInt ordinal;
+
+        public ListToken(int depth, OptionalInt ordinal) {
+            super("- ");
+            this.depth = depth;
+            this.ordinal = ordinal;
+        }
+
+        public static boolean lexUnordered(StringReader reader, List<Token> tokens) {
+            int whitespace = whitespaceSinceLineBreak(reader);
+            if (whitespace < 0) return false;
+
+            reader.skip();
+            if (!reader.canRead() || reader.read() != ' ') return false;
+
+            tokens.add(new ListToken(whitespace, OptionalInt.empty()));
+            return true;
+        }
+
+        public static boolean lexOrdered(StringReader reader, List<Token> tokens) {
+            int whitespace = whitespaceSinceLineBreak(reader);
+            if (whitespace < 0) return false;
+
+            var ordinal = readTextUntil(reader, c -> c < '0' || c > '9');
+            if (!ordinal.matches("[0-9]+") || !reader.canRead(2) || reader.read() != '.' || reader.read() != ' ') return false;
+
+            tokens.add(new ListToken(whitespace, OptionalInt.of(Integer.parseInt(ordinal))));
+            return true;
+        }
+
+        @Override
+        public boolean isBoundary() {
+            return true;
         }
     }
 
@@ -283,8 +369,7 @@ public class Lexer {
 
             var description = readTextUntil(reader, c -> c == ']');
             if (!reader.canRead(2) || reader.peek(1) != '(') return false;
-            reader.skip();
-            reader.skip();
+            reader.setCursor(reader.getCursor() + 2);
 
             var identifier = readTextUntil(reader, c -> c == ')');
             if (!reader.canRead() || Identifier.tryParse(identifier) == null) return false;

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -123,6 +124,10 @@ public class Parser {
                 tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
+        }
+
+        if (token instanceof ListToken current) {
+            return new ListNode(current.ordinal).addChild(parseUntil(tokens, $ -> $.isBoundary() && !($ instanceof ListToken list && list.depth > current.depth), $ -> false));
         }
 
         if (token instanceof ImageToken image) {
@@ -268,6 +273,25 @@ public class Parser {
         @Override
         protected void visitEnd(MarkdownCompiler<?> compiler) {
             compiler.visitQuotationEnd();
+        }
+    }
+
+    public static class ListNode extends Node {
+
+        private final OptionalInt ordinal;
+
+        public ListNode(OptionalInt ordinal) {
+            this.ordinal = ordinal;
+        }
+
+        @Override
+        protected void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitListItem(this.ordinal);
+        }
+
+        @Override
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+            compiler.visitListItemEnd();
         }
     }
 
