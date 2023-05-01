@@ -1,6 +1,7 @@
 package io.wispforest.lavender.client;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import io.wispforest.lavender.parsing.MarkdownProcessor;
 import io.wispforest.lavender.parsing.Parser;
 import io.wispforest.owo.ui.core.Size;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -25,7 +26,7 @@ public class LavenderClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(literal("parse-md").then(argument("md", StringArgumentType.greedyString()).executes(context -> {
-                context.getSource().sendFeedback(Parser.markdownToText(StringArgumentType.getString(context, "md")));
+                context.getSource().sendFeedback(MarkdownProcessor.TEXT.process(StringArgumentType.getString(context, "md")));
                 return 0;
             })));
 

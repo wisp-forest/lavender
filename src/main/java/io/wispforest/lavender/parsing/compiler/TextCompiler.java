@@ -1,6 +1,7 @@
 package io.wispforest.lavender.parsing.compiler;
 
 import io.wispforest.lavender.parsing.TextBuilder;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -17,7 +18,7 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     public void visitText(String text) {
         if (this.quoteDepth != 0 && text.contains("\n")) {
             for (var line : text.split("\n")) {
-                this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY).append(Text.literal(line)));
+                this.builder.append(this.quoteMarker().append(Text.literal(line)));
             }
         } else {
             this.builder.append(Text.literal(text));
@@ -37,9 +38,10 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     @Override
     public void visitQuotation() {
         this.quoteDepth++;
-        this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY));
+        this.builder.append(this.quoteMarker());
         this.builder.pushStyle(style -> style.withColor(Formatting.GRAY).withItalic(true));
     }
+
 
     @Override
     public void visitQuotationEnd() {
@@ -47,10 +49,14 @@ public class TextCompiler implements MarkdownCompiler<Text> {
         this.quoteDepth--;
 
         if (this.quoteDepth > 0) {
-            this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY));
+            this.builder.append(this.quoteMarker());
         } else {
             this.builder.append(Text.literal("\n"));
         }
+    }
+
+    private MutableText quoteMarker() {
+        return Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY);
     }
 
     @Override

@@ -2,7 +2,6 @@ package io.wispforest.lavender.parsing;
 
 import io.wispforest.lavender.parsing.Lexer.*;
 import io.wispforest.lavender.parsing.compiler.MarkdownCompiler;
-import io.wispforest.lavender.parsing.compiler.TextCompiler;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
@@ -17,13 +16,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 public class Parser {
-
-    public static Text markdownToText(String markdown) {
-        var compiler = new TextCompiler();
-        parse(Lexer.lex(markdown)).visit(compiler);
-
-        return compiler.compile();
-    }
 
     public static Node parse(List<Token> tokens) {
         var tokenNibbler = new ListNibbler<>(tokens);
@@ -126,7 +118,7 @@ public class Parser {
         }
 
         if (token instanceof QuotationToken current && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
-            return new QuotationNode().addChild(parseUntil(tokens, $ -> $.isBoundary() && (!($ instanceof QuotationToken) || $ instanceof QuotationToken quote && quote.depth < current.depth), $ -> $ instanceof QuotationToken quote && quote.depth == current.depth));
+            return new QuotationNode().addChild(parseUntil(tokens, $ -> $.isBoundary() && (!($ instanceof QuotationToken) || ((QuotationToken) $).depth < current.depth), $ -> $ instanceof QuotationToken quote && quote.depth == current.depth));
         }
 
         if (token instanceof HorizontalRuleToken) {
@@ -185,14 +177,11 @@ public class Parser {
 
         public static Node empty() {
             return new Node() {
+                @Override
+                protected void visitStart(MarkdownCompiler<?> compiler) {}
 
                 @Override
-                protected void visitStart(MarkdownCompiler<?> compiler) {
-                }
-
-                @Override
-                protected void visitEnd(MarkdownCompiler<?> compiler) {
-                }
+                protected void visitEnd(MarkdownCompiler<?> compiler) {}
             };
         }
     }
@@ -210,8 +199,7 @@ public class Parser {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {
-        }
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
     public static class FormattingNode extends Node {

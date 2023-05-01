@@ -71,16 +71,14 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
         this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
     }
 
-    protected void push(FlowLayout component) {
-        this.flushText();
-
-        this.components.peek().child(component);
-        this.components.push(component);
-    }
-
     protected void append(Component component) {
         this.flushText();
         this.components.peek().child(component);
+    }
+
+    protected void push(FlowLayout component) {
+        this.append(component);
+        this.components.push(component);
     }
 
     protected void pop() {

@@ -1,9 +1,7 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.parsing.Lexer;
-import io.wispforest.lavender.parsing.Parser;
-import io.wispforest.lavender.parsing.compiler.OwoUICompiler;
+import io.wispforest.lavender.parsing.MarkdownProcessor;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -38,14 +36,11 @@ public class EditMdScreen extends BaseUIModelScreen<FlowLayout> implements Comma
         box.setChangeListener(value -> {
             try {
                 anchor.<FlowLayout>configure(layout -> {
-                    var compiler = new OwoUICompiler();
-                    Parser.parse(Lexer.lex(value)).visit(compiler);
-
                     layout.clearChildren();
-                    layout.child(compiler.compile());
+                    layout.child(MarkdownProcessor.OWO_UI.process(value));
                 });
 
-                output.text(Parser.markdownToText(value));
+                output.text(MarkdownProcessor.TEXT.process(value));
             } catch (Exception e) {
                 var trace = new StringWriter();
                 var traceWriter = new PrintWriter(trace);
