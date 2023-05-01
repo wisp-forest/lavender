@@ -221,15 +221,19 @@ public class Lexer {
     }
 
     public static final class QuotationToken extends Token {
-        public QuotationToken() {
-            super("> ");
+
+        public final int depth;
+
+        public QuotationToken(int depth) {
+            super(">".repeat(depth) + " ");
+            this.depth = depth;
         }
 
         public static boolean lex(StringReader reader, List<Token> tokens) {
-            reader.skip();
+            var quotes = readTextUntil(reader, c -> c != '>');
             if (!reader.canRead() || reader.read() != ' ') return false;
 
-            tokens.add(new QuotationToken());
+            tokens.add(new QuotationToken(quotes.length()));
             return true;
         }
 

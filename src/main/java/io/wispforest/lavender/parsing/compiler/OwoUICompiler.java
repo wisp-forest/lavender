@@ -20,18 +20,15 @@ import java.util.function.UnaryOperator;
 public class OwoUICompiler implements MarkdownCompiler<Component> {
 
     private final Deque<FlowLayout> components = new ArrayDeque<>();
+    private final TextBuilder textBuilder = new TextBuilder();
 
     public OwoUICompiler() {
         this.components.push(Containers.verticalFlow(Sizing.content(), Sizing.content()));
     }
 
-    private TextBuilder textBuilder = new TextBuilder();
-    private boolean textEmpty = true;
-
     @Override
     public void visitText(String text) {
         this.textBuilder.append(Text.literal(text));
-        this.textEmpty = false;
     }
 
     @Override
@@ -46,57 +43,59 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
 
     @Override
     public void visitQuotation() {
-        this.pushText();
         this.textBuilder.pushStyle(style -> style.withFormatting(Formatting.GRAY));
 
         var quotation = Containers.verticalFlow(Sizing.content(), Sizing.content());
         quotation.padding(Insets.of(5, 5, 7, 5)).surface((matrices, component) -> {
-            Drawer.fill(matrices, component.x(), component.y(), component.x() + 3, component.y() + component.height(), 0xFF777777);
+            Drawer.fill(matrices, component.x(), component.y() + 3, component.x() + 2, component.y() + component.height() - 3, 0xFF777777);
         });
 
-        this.components.peek().child(quotation);
-        this.components.push(quotation);
+        this.push(quotation);
     }
 
     @Override
     public void visitQuotationEnd() {
-        this.pushText();
-        this.components.pop();
+        this.pop();
     }
 
     @Override
     public void visitHorizontalRule() {
-        this.pushText();
-        this.components.peek().child(new BoxComponent(Sizing.fill(100), Sizing.fixed(2)).color(Color.ofRgb(0x777777)).fill(true));
+        this.append(new BoxComponent(Sizing.fill(100), Sizing.fixed(2)).color(Color.ofRgb(0x777777)).fill(true));
     }
 
     @Override
     public void visitImage(Identifier image, String description) {
-        this.pushText();
-
         var textureSize = LavenderClient.getTextureSize(image);
         if (textureSize == null) textureSize = Size.of(64, 64);
 
-        this.currentComponent().child(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
+        this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
     }
 
-    protected FlowLayout currentComponent() {
-        return this.components.peek();
+    protected void push(FlowLayout component) {
+        this.flushText();
+
+        this.components.peek().child(component);
+        this.components.push(component);
     }
 
-    protected void pushText() {
-        if (this.textEmpty) return;
+    protected void append(Component component) {
+        this.flushText();
+        this.components.peek().child(component);
+    }
 
-        var label = Components.label(this.textBuilder.build());
-        this.components.peek().child(label.horizontalSizing(Sizing.fill(100)));
+    protected void pop() {
+        this.flushText();
+        this.components.pop();
+    }
 
-        this.textBuilder = new TextBuilder();
-        this.textEmpty = true;
+    protected void flushText() {
+        if (this.textBuilder.empty()) return;
+        this.components.peek().child(Components.label(this.textBuilder.build()).horizontalSizing(Sizing.fill(100)));
     }
 
     @Override
     public Component compile() {
-        this.pushText();
+        this.flushText();
         return this.components.getLast();
     }
 }

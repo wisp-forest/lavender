@@ -11,10 +11,17 @@ import java.util.function.UnaryOperator;
 public class TextCompiler implements MarkdownCompiler<Text> {
 
     private final TextBuilder builder = new TextBuilder();
+    private int quoteDepth = 0;
 
     @Override
     public void visitText(String text) {
-        this.builder.append(Text.literal(text));
+        if (this.quoteDepth != 0 && text.contains("\n")) {
+            for (var line : text.split("\n")) {
+                this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY).append(Text.literal(line)));
+            }
+        } else {
+            this.builder.append(Text.literal(text));
+        }
     }
 
     @Override
@@ -29,14 +36,21 @@ public class TextCompiler implements MarkdownCompiler<Text> {
 
     @Override
     public void visitQuotation() {
-        this.builder.append(Text.literal("\n >> ").formatted(Formatting.DARK_GRAY));
+        this.quoteDepth++;
+        this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY));
         this.builder.pushStyle(style -> style.withColor(Formatting.GRAY).withItalic(true));
     }
 
     @Override
     public void visitQuotationEnd() {
         this.builder.popStyle();
-        this.builder.append(Text.literal("\n"));
+        this.quoteDepth--;
+
+        if (this.quoteDepth > 0) {
+            this.builder.append(Text.literal("\n >" + ">".repeat(this.quoteDepth) + " ").formatted(Formatting.DARK_GRAY));
+        } else {
+            this.builder.append(Text.literal("\n"));
+        }
     }
 
     @Override

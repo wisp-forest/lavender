@@ -125,8 +125,8 @@ public class Parser {
             return new ImageNode(image.identifier, image.description);
         }
 
-        if (token instanceof QuotationToken && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
-            return new QuotationNode().addChild(parseUntil(tokens, $ -> false, $ -> $ instanceof QuotationToken));
+        if (token instanceof QuotationToken current && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
+            return new QuotationNode().addChild(parseUntil(tokens, $ -> $.isBoundary() && (!($ instanceof QuotationToken) || $ instanceof QuotationToken quote && quote.depth < current.depth), $ -> $ instanceof QuotationToken quote && quote.depth == current.depth));
         }
 
         if (token instanceof HorizontalRuleToken) {
@@ -141,7 +141,7 @@ public class Parser {
     }
 
     private static Node parseUntil(ListNibbler<Token> tokens, Class<? extends Token> until) {
-        return parseUntil(tokens, until::isInstance, token -> false);
+        return parseUntil(tokens, token -> token.isBoundary() || until.isInstance(token), token -> false);
     }
 
     private static Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until, Predicate<Token> skip) {
@@ -154,7 +154,7 @@ public class Parser {
                 continue;
             }
 
-            if (next.isBoundary() || until.test(next)) break;
+            if (until.test(next)) break;
 
             node.addChild(parseNode(tokens));
         }
