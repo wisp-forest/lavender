@@ -30,7 +30,19 @@ public class Parser {
 
     private static @NotNull Node parseNode(ListNibbler<Token> tokens) {
         var token = tokens.nibble();
-        if (token instanceof TextToken text) return new TextNode(text.content());
+        if (token instanceof TextToken text) {
+            var content = text.content();
+            if (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken) {
+                content = content.stripLeading();
+            }
+
+            if (tokens.peek() instanceof NewlineToken newline && !newline.isBoundary()) {
+                content = content.stripTrailing();
+            }
+
+            return new TextNode(content);
+        }
+
         if (token instanceof StarToken left && left.rightAdjacent) {
             int pointer = tokens.pointer();
             var content = parseUntil(tokens, StarToken.class);
