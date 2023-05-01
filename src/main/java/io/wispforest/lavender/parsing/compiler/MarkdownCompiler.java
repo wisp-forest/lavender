@@ -1,6 +1,7 @@
 package io.wispforest.lavender.parsing.compiler;
 
 import net.minecraft.text.Style;
+import net.minecraft.util.Identifier;
 
 import java.util.function.UnaryOperator;
 
@@ -17,6 +18,8 @@ public interface MarkdownCompiler<R> {
     void visitQuotationEnd();
 
     void visitHorizontalRule();
+
+    void visitImage(Identifier image, String description);
 
     R compile();
 }

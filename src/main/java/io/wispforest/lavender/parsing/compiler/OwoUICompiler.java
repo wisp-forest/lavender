@@ -1,18 +1,17 @@
 package io.wispforest.lavender.parsing.compiler;
 
+import io.wispforest.lavender.client.LavenderClient;
 import io.wispforest.lavender.parsing.TextBuilder;
 import io.wispforest.owo.ui.component.BoxComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.core.Color;
-import io.wispforest.owo.ui.core.Component;
-import io.wispforest.owo.ui.core.Insets;
-import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -69,6 +68,20 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
     public void visitHorizontalRule() {
         this.pushText();
         this.components.peek().child(new BoxComponent(Sizing.fill(100), Sizing.fixed(2)).color(Color.ofRgb(0x777777)).fill(true));
+    }
+
+    @Override
+    public void visitImage(Identifier image, String description) {
+        this.pushText();
+
+        var textureSize = LavenderClient.getTextureSize(image);
+        if (textureSize == null) textureSize = Size.of(64, 64);
+
+        this.currentComponent().child(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
+    }
+
+    protected FlowLayout currentComponent() {
+        return this.components.peek();
     }
 
     protected void pushText() {

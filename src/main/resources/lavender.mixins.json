@@ -6,6 +6,7 @@
   "mixins": [
   ],
   "client": [
+    "TextureUtilMixin"
   ],
   "injectors": {
     "defaultRequire": 1

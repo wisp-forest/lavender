@@ -4,6 +4,7 @@ import io.wispforest.lavender.parsing.TextBuilder;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 
 import java.util.function.UnaryOperator;
 
@@ -41,6 +42,11 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     @Override
     public void visitHorizontalRule() {
         this.builder.append(Text.literal("-".repeat(50)).formatted(Formatting.DARK_GRAY));
+    }
+
+    @Override
+    public void visitImage(Identifier image, String description) {
+        this.builder.append(Text.literal("[" + description + "]").formatted(Formatting.YELLOW));
     }
 
     @Override

@@ -8,6 +8,7 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -120,6 +121,10 @@ public class Parser {
             }
         }
 
+        if (token instanceof ImageToken image) {
+            return new ImageNode(image.identifier, image.description);
+        }
+
         if (token instanceof QuotationToken && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
             return new QuotationNode().addChild(parseUntil(tokens, $ -> false, $ -> $ instanceof QuotationToken));
         }
@@ -182,10 +187,12 @@ public class Parser {
             return new Node() {
 
                 @Override
-                protected void visitStart(MarkdownCompiler<?> compiler) {}
+                protected void visitStart(MarkdownCompiler<?> compiler) {
+                }
 
                 @Override
-                protected void visitEnd(MarkdownCompiler<?> compiler) {}
+                protected void visitEnd(MarkdownCompiler<?> compiler) {
+                }
             };
         }
     }
@@ -203,7 +210,8 @@ public class Parser {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {}
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+        }
     }
 
     public static class FormattingNode extends Node {
@@ -261,6 +269,24 @@ public class Parser {
         protected void visitEnd(MarkdownCompiler<?> compiler) {
             compiler.visitQuotationEnd();
         }
+    }
+
+    public static class ImageNode extends Node {
+
+        private final String identifier, description;
+
+        public ImageNode(String identifier, String description) {
+            this.identifier = identifier;
+            this.description = description;
+        }
+
+        @Override
+        protected void visitStart(MarkdownCompiler<?> compiler) {
+            compiler.visitImage(new Identifier(this.identifier), this.description);
+        }
+
+        @Override
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
     public static class HorizontalRuleNode extends Node {

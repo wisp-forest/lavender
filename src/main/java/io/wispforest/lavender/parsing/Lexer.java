@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.chars.Char2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.chars.Char2ObjectMap;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.function.CharPredicate;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,6 +32,7 @@ public class Lexer {
         LEX_FUNCTIONS.put('\\', TextToken::lexEscape);
         LEX_FUNCTIONS.put('\n', NewlineToken::lex);
         LEX_FUNCTIONS.put('[', primitiveTokenLexer(OpenLinkToken::new));
+        LEX_FUNCTIONS.put('!', ImageToken::lex);
         LEX_FUNCTIONS.put(']', CloseLinkToken::lex);
         LEX_FUNCTIONS.put('*', StarToken::lex);
         LEX_FUNCTIONS.put('{', OpenColorToken::lex);
@@ -258,6 +260,34 @@ public class Lexer {
     public static final class OpenLinkToken extends Token {
         public OpenLinkToken() {
             super("[");
+        }
+    }
+
+    public static final class ImageToken extends Token {
+
+        public final String description, identifier;
+
+        public ImageToken(String description, String identifier) {
+            super("![" + description + "](" + identifier + ")");
+            this.description = description;
+            this.identifier = identifier;
+        }
+
+        public static boolean lex(StringReader reader, List<Token> tokens) {
+            reader.skip();
+            if (!reader.canRead() || reader.read() != '[') return false;
+
+            var description = readTextUntil(reader, c -> c == ']');
+            if (!reader.canRead(2) || reader.peek(1) != '(') return false;
+            reader.skip();
+            reader.skip();
+
+            var identifier = readTextUntil(reader, c -> c == ')');
+            if (!reader.canRead() || Identifier.tryParse(identifier) == null) return false;
+            reader.skip();
+
+            tokens.add(new ImageToken(description, identifier));
+            return true;
         }
     }
 
