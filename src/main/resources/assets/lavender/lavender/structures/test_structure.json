@@ -1,0 +1,29 @@
+{
+  "keys": {
+    "s": "minecraft:stone",
+    "d": "minecraft:diamond_block",
+    "l": "#minecraft:logs"
+  },
+  "layers": [
+    [
+      "   ",
+      "sss",
+      "   "
+    ],
+    [
+      "   ",
+      " l ",
+      "   "
+    ],
+    [
+      "   ",
+      " l ",
+      "   "
+    ],
+    [
+      " d ",
+      "ddd",
+      " d "
+    ]
+  ]
+}
