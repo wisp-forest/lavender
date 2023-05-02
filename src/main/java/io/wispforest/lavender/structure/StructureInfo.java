@@ -7,34 +7,128 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import it.unimi.dsi.fastutil.chars.Char2ObjectOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.argument.BlockArgumentParser;
+import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.registry.Registries;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.World;
+import net.minecraft.world.biome.ColorResolver;
+import net.minecraft.world.chunk.light.LightingProvider;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 public class StructureInfo {
 
     private final BlockStatePredicate[][][] predicates;
+    public final int xSize, ySize, zSize;
+    public final int nonNullPredicates;
 
     public StructureInfo(BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
         this.predicates = predicates;
+        this.xSize = xSize;
+        this.ySize = ySize;
+        this.zSize = zSize;
+
+        var nonNullPredicates = new MutableInt();
+        this.forEachPredicate((blockPos, predicate) -> {
+            if (predicate == BlockStatePredicate.NULL_PREDICATE) return;
+            nonNullPredicates.increment();
+        });
+
+        this.nonNullPredicates = nonNullPredicates.intValue();
     }
 
-    public void forEachPreviewState(BiConsumer<BlockPos, BlockState> action) {
+    public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action) {
         var mutable = new BlockPos.Mutable();
 
         for (int x = 0; x < predicates.length; x++) {
             for (int y = 0; y < predicates[x].length; y++) {
                 for (int z = 0; z < predicates[x][y].length; z++) {
-                    mutable.set(x, y, z);
-                    action.accept(mutable, predicates[x][y][z].preview());
+                    action.accept(mutable.set(x, y, z), predicates[x][y][z]);
                 }
             }
         }
     }
 
+    public boolean validate(World world, BlockPos anchor) {
+        return this.countValidStates(world, anchor) == this.nonNullPredicates;
+    }
+
+    public int countValidStates(World world, BlockPos anchor) {
+        var validStates = new MutableInt();
+        var mutable = new BlockPos.Mutable();
+
+        this.forEachPredicate((pos, predicate) -> {
+            if (predicate == BlockStatePredicate.NULL_PREDICATE) return;
+
+            if (predicate.test(world.getBlockState(mutable.set(pos).move(anchor)))) {
+                validStates.increment();
+            }
+        });
+
+        return validStates.intValue();
+    }
+
+    public BlockRenderView asBlockRenderView() {
+        var world = MinecraftClient.getInstance().world;
+        return new BlockRenderView() {
+            @Override
+            public float getBrightness(Direction direction, boolean shaded) {
+                return 1f;
+            }
+
+            @Override
+            public LightingProvider getLightingProvider() {
+                return world.getLightingProvider();
+            }
+
+            @Override
+            public int getColor(BlockPos pos, ColorResolver colorResolver) {
+                return colorResolver.getColor(world.getBiome(pos).value(), pos.getX(), pos.getZ());
+            }
+
+            @Nullable
+            @Override
+            public BlockEntity getBlockEntity(BlockPos pos) {
+                return null;
+            }
+
+            @Override
+            public BlockState getBlockState(BlockPos pos) {
+                if (pos.getX() < 0 || pos.getX() >= StructureInfo.this.xSize || pos.getY() < 0 || pos.getY() >= StructureInfo.this.ySize || pos.getZ() < 0 || pos.getZ() >= StructureInfo.this.zSize)
+                    return Blocks.AIR.getDefaultState();
+                return StructureInfo.this.predicates[pos.getX()][pos.getY()][pos.getZ()].preview();
+            }
+
+            @Override
+            public FluidState getFluidState(BlockPos pos) {
+                return Fluids.EMPTY.getDefaultState();
+            }
+
+            @Override
+            public int getHeight() {
+                return world.getHeight();
+            }
+
+            @Override
+            public int getBottomY() {
+                return world.getBottomY();
+            }
+        };
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static StructureInfo parse(JsonObject json) {
         var keyObject = JsonHelper.getObject(json, "keys");
         var keys = new Char2ObjectOpenHashMap<BlockStatePredicate>();
@@ -54,7 +148,7 @@ public class StructureInfo {
 
                         @Override
                         public boolean test(BlockState state) {
-                            if (state.getBlock() == predicate.blockState().getBlock()) return false;
+                            if (state.getBlock() != predicate.blockState().getBlock()) return false;
 
                             for (var propAndValue : predicate.properties().entrySet()) {
                                 if (!state.get(propAndValue.getKey()).equals(propAndValue.getValue())) {
@@ -68,10 +162,29 @@ public class StructureInfo {
                 } else {
                     var predicate = result.right().get();
 
+                    var previewStates = new ArrayList<BlockState>();
+                    predicate.tag().forEach(registryEntry -> {
+                        var block = registryEntry.value();
+                        var state = block.getDefaultState();
+
+                        for (var propAndValue : predicate.vagueProperties().entrySet()) {
+                            Property prop = block.getStateManager().getProperty(propAndValue.getKey());
+                            if (prop == null) return;
+
+                            Optional<Comparable> value = prop.parse(propAndValue.getValue());
+                            if (value.isEmpty()) return;
+
+                            state = state.with(prop, value.get());
+                        }
+
+                        previewStates.add(state);
+                    });
+
                     keys.put(entry.getKey().charAt(0), new BlockStatePredicate() {
                         @Override
                         public BlockState preview() {
-                            return predicate.tag().get((int) (System.currentTimeMillis() / 1000 % predicate.tag().size())).value().getDefaultState();
+                            if (previewStates.isEmpty()) return Blocks.AIR.getDefaultState();
+                            return previewStates.get((int) (System.currentTimeMillis() / 1000 % previewStates.size()));
                         }
 
                         @Override
@@ -140,17 +253,7 @@ public class StructureInfo {
 
                     BlockStatePredicate predicate;
                     if (key == ' ') {
-                        predicate = new BlockStatePredicate() {
-                            @Override
-                            public BlockState preview() {
-                                return Blocks.AIR.getDefaultState();
-                            }
-
-                            @Override
-                            public boolean test(BlockState state) {
-                                return true;
-                            }
-                        };
+                        predicate = BlockStatePredicate.NULL_PREDICATE;
                     } else {
                         predicate = keys.get(key);
                         if (predicate == null) throw new JsonParseException("Unknown key '" + key + "'");

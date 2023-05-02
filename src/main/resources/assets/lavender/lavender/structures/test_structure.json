@@ -2,7 +2,7 @@
   "keys": {
     "s": "minecraft:stone",
     "d": "minecraft:diamond_block",
-    "l": "#minecraft:logs"
+    "l": "#minecraft:logs[axis=x]"
   },
   "layers": [
     [

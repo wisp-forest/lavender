@@ -21,6 +21,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    modImplementation "io.wispforest:worldmesher:${project.worldmesher_version}"
 }
 
 base {

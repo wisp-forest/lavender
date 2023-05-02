@@ -1,10 +1,13 @@
 package io.wispforest.lavender.structure;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import io.wispforest.lavender.Lavender;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -22,15 +25,16 @@ import java.util.Set;
 public class StructureInfoLoader {
 
     private static final Map<Identifier, JsonObject> PENDING_STRUCTURES = new HashMap<>();
-    private static final Map<Identifier, StructureInfo> LOADED_STRUCTURES = new HashMap<>();
+    private static final BiMap<Identifier, StructureInfo> LOADED_STRUCTURES = HashBiMap.create();
 
-    private static boolean tagsLoadedOnce = false;
+    private static boolean tagsAvailable = false;
 
     public static void initialize() {
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new ReloadListener());
 
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> tagsAvailable = false);
         CommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> {
-            tagsLoadedOnce = true;
+            tagsAvailable = true;
             tryParseStructures();
         });
     }
@@ -41,6 +45,10 @@ public class StructureInfoLoader {
 
     public static @Nullable StructureInfo get(Identifier structure) {
         return LOADED_STRUCTURES.get(structure);
+    }
+
+    public static @Nullable Identifier getId(StructureInfo structure) {
+        return LOADED_STRUCTURES.inverse().get(structure);
     }
 
     private static void tryParseStructures() {
@@ -73,7 +81,7 @@ public class StructureInfoLoader {
                 PENDING_STRUCTURES.put(resourceId, jsonElement.getAsJsonObject());
             });
 
-            if (tagsLoadedOnce) tryParseStructures();
+            if (tagsAvailable) tryParseStructures();
         }
     }
 
