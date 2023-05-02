@@ -53,10 +53,10 @@ public class LavenderClient implements ClientModInitializer {
                     }))
                     .then(literal("add")
                             .then(argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
-                                var structure = StructureInfoLoader.get(context.getArgument("structure", Identifier.class));
-                                if (structure == null) throw NO_SUCH_STRUCTURE.create();
+                                var structureId = context.getArgument("structure", Identifier.class);
+                                if (StructureInfoLoader.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
 
-                                StructureOverlayRenderer.addOverlay(BlockPos.ofFloored(context.getSource().getPosition()), structure);
+                                StructureOverlayRenderer.addOverlay(BlockPos.ofFloored(context.getSource().getPosition()), structureId);
                                 return 0;
                             }))));
         });

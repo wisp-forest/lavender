@@ -8,11 +8,10 @@ import io.wispforest.lavender.structure.StructureInfoLoader;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.core.Positioning;
-import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
 import io.wispforest.owo.ui.hud.Hud;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import io.wispforest.owo.ui.util.Delta;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
@@ -20,9 +19,14 @@ import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL30C;
 
 import java.util.HashMap;
@@ -39,11 +43,13 @@ public class StructureOverlayRenderer {
         return framebuffer;
     });
 
-    private static final Map<BlockPos, StructureInfo> ACTIVE_OVERLAYS = new HashMap<>();
-    private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
+    private static final Map<BlockPos, OverlayEntry> ACTIVE_OVERLAYS = new HashMap<>();
 
-    public static void addOverlay(BlockPos anchorPoint, StructureInfo structure) {
-        ACTIVE_OVERLAYS.put(anchorPoint, structure);
+    private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
+    private static final Identifier BARS_TEXTURE = new Identifier("textures/gui/bars.png");
+
+    public static void addOverlay(BlockPos anchorPoint, Identifier structure) {
+        ACTIVE_OVERLAYS.put(anchorPoint, new OverlayEntry(structure));
     }
 
     public static void clearOverlays() {
@@ -51,10 +57,13 @@ public class StructureOverlayRenderer {
     }
 
     public static void initialize() {
-
-        // --- overlay rendering setup ---
+        Hud.add(HUD_COMPONENT_ID, () -> Containers.verticalFlow(Sizing.content(), Sizing.content()).gap(15).positioning(Positioning.relative(5, 100)));
 
         WorldRenderEvents.LAST.register(context -> {
+            if (!(Hud.getComponent(HUD_COMPONENT_ID) instanceof FlowLayout hudComponent)) {
+                return;
+            }
+
             var matrices = context.matrixStack();
             matrices.push();
 
@@ -63,33 +72,80 @@ public class StructureOverlayRenderer {
             var client = MinecraftClient.getInstance();
             var testPos = new BlockPos.Mutable();
 
-            ACTIVE_OVERLAYS.forEach((anchor, structure) -> {
-                matrices.push();
-                matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
+            hudComponent.<FlowLayout>configure(layout -> {
+                layout.clearChildren().padding(Insets.bottom((client.getWindow().getScaledWidth() - 182) / 2 < 200 ? 50 : 5));
 
-                structure.forEachPredicate((pos, predicate) -> {
-                    if (predicate.test(context.world().getBlockState(testPos.set(anchor).move(pos)))) {
-                        return;
+                ACTIVE_OVERLAYS.keySet().removeIf(anchor -> {
+                    var entry = ACTIVE_OVERLAYS.get(anchor);
+                    var structure = entry.fetchStructure();
+                    if (structure == null) return true;
+
+                    // --- overlay rendering ---
+
+                    var hasInvalidBlock = new MutableBoolean();
+
+                    if (entry.decayTime < 0) {
+                        matrices.push();
+                        matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
+
+                        structure.forEachPredicate((pos, predicate) -> {
+                            var state = context.world().getBlockState(testPos.set(anchor).move(pos));
+                            if (predicate.test(state)) {
+                                return;
+                            } else if (!state.isAir()) {
+                                hasInvalidBlock.setTrue();
+                            }
+
+                            matrices.push();
+                            matrices.translate(pos.getX(), pos.getY(), pos.getZ());
+
+                            matrices.translate(.5, .5, .5);
+                            matrices.scale(1.0001f, 1.0001f, 1.0001f);
+                            matrices.translate(-.5, -.5, -.5);
+
+                            client.getBlockRenderManager().renderBlockAsEntity(
+                                    predicate.preview(),
+                                    matrices,
+                                    context.consumers(),
+                                    LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
+                                    OverlayTexture.DEFAULT_UV
+                            );
+                            matrices.pop();
+                        });
+
+                        matrices.pop();
                     }
 
-                    matrices.push();
-                    matrices.translate(pos.getX(), pos.getY(), pos.getZ());
+                    // --- hud setup ---
 
-                    matrices.translate(.5, .5, .5);
-                    matrices.scale(1.0001f, 1.0001f, 1.0001f);
-                    matrices.translate(-.5, -.5, -.5);
+                    var valid = structure.countValidStates(client.world, anchor);
+                    var total = structure.nonNullPredicates;
+                    if (entry.decayTime >= 0) valid = total;
 
-                    client.getBlockRenderManager().renderBlockAsEntity(
-                            predicate.preview(),
-                            matrices,
-                            context.consumers(),
-                            LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
-                            OverlayTexture.DEFAULT_UV
-                    );
-                    matrices.pop();
+                    int barTextureOffset = 0;
+                    if (hasInvalidBlock.booleanValue()) barTextureOffset = 10;
+                    if (valid == total) barTextureOffset = 20;
+
+                    entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, client.getLastFrameDuration());
+                    layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
+                            .child(Components.label(Text.translatable(Util.createTranslationKey("structure", entry.structureId)).append(Text.literal(": " + valid + " / " + total))).shadow(true))
+                            .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
+                                    .child(Components.texture(BARS_TEXTURE, 0, 10 + barTextureOffset, 182, 5))
+                                    .child(Components.texture(BARS_TEXTURE, 0, 15 + barTextureOffset, Math.round(182 * entry.visualCompleteness), 5).positioning(Positioning.absolute(0, 0)))
+                                    .child(Components.texture(BARS_TEXTURE, 0, 115, 182, 5).blend(true).positioning(Positioning.absolute(0, 0))))
+                            .gap(2)
+                            .horizontalAlignment(HorizontalAlignment.CENTER)
+                            .margins(Insets.bottom((int) (Easing.CUBIC.apply((Math.max(0, entry.decayTime - 30) + client.getTickDelta()) / 20f) * -32))));
+
+                    if (entry.decayTime < 0 && valid == total) {
+                        entry.decayTime = 0;
+                        client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, .75f);
+                    } else if (entry.decayTime >= 0) {
+                        entry.decayTime += client.getLastFrameDuration();
+                    }
+
+                    return entry.decayTime >= 50;
                 });
-
-                matrices.pop();
             });
 
             matrices.pop();
@@ -114,25 +170,22 @@ public class StructureOverlayRenderer {
         WindowResizeCallback.EVENT.register((client, window) -> {
             FRAMEBUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
         });
+    }
 
-        // --- hud setup ---
+    private static class OverlayEntry {
 
-        Hud.add(HUD_COMPONENT_ID, () -> Containers.verticalFlow(Sizing.content(), Sizing.content()).gap(5).positioning(Positioning.relative(10, 50)));
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.world == null || !(Hud.getComponent(HUD_COMPONENT_ID) instanceof FlowLayout hudComponent)) return;
+        public final Identifier structureId;
 
-            hudComponent.<FlowLayout>configure(layout -> {
-                layout.clearChildren();
+        public float decayTime = -1;
+        public float visualCompleteness = 0f;
 
-                ACTIVE_OVERLAYS.forEach((anchor, structure) -> {
-                    var valid = structure.countValidStates(client.world, anchor);
-                    var total = structure.nonNullPredicates;
+        public OverlayEntry(Identifier structureId) {
+            this.structureId = structureId;
+        }
 
-                    layout.child(Components.label(Text.literal(StructureInfoLoader.getId(structure) + ": " + valid + " / " + total)));
-                });
-            });
-
-        });
+        public @Nullable StructureInfo fetchStructure() {
+            return StructureInfoLoader.get(this.structureId);
+        }
     }
 
 }

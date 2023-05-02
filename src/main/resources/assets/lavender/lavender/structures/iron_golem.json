@@ -1,0 +1,17 @@
+{
+  "keys": {
+    "i": "minecraft:iron_block",
+    "p": "minecraft:carved_pumpkin"
+  },
+  "layers": [
+    [
+      " i "
+    ],
+    [
+      "iii"
+    ],
+    [
+      " p "
+    ]
+  ]
+}

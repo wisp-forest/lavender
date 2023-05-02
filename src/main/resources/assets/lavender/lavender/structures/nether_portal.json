@@ -1,0 +1,29 @@
+{
+  "keys": {
+    "o": "minecraft:obsidian",
+    "n": "minecraft:nether_portal"
+  },
+  "layers": [
+    [
+      "ooooooo"
+    ],
+    [
+      "onnnnno"
+    ],
+    [
+      "onnnnno"
+    ],
+    [
+      "onnnnno"
+    ],
+    [
+      "onnnnno"
+    ],
+    [
+      "onnnnno"
+    ],
+    [
+      "ooooooo"
+    ]
+  ]
+}
