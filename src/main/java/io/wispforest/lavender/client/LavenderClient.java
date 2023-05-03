@@ -56,7 +56,7 @@ public class LavenderClient implements ClientModInitializer {
                                 var structureId = context.getArgument("structure", Identifier.class);
                                 if (StructureInfoLoader.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
 
-                                StructureOverlayRenderer.addOverlay(BlockPos.ofFloored(context.getSource().getPosition()), structureId);
+                                StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
                             }))));
         });

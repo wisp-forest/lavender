@@ -3,6 +3,7 @@ package io.wispforest.lavender.client;
 import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.structure.BlockStatePredicate;
 import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.lavender.structure.StructureInfoLoader;
 import io.wispforest.owo.ui.component.Components;
@@ -13,17 +14,21 @@ import io.wispforest.owo.ui.event.WindowResizeCallback;
 import io.wispforest.owo.ui.hud.Hud;
 import io.wispforest.owo.ui.util.Delta;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jetbrains.annotations.Nullable;
@@ -44,9 +49,14 @@ public class StructureOverlayRenderer {
     });
 
     private static final Map<BlockPos, OverlayEntry> ACTIVE_OVERLAYS = new HashMap<>();
+    private static @Nullable Identifier PENDING_OVERLAY = null;
 
     private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
     private static final Identifier BARS_TEXTURE = new Identifier("textures/gui/bars.png");
+
+    public static void addPendingOverlay(Identifier structure) {
+        PENDING_OVERLAY = structure;
+    }
 
     public static void addOverlay(BlockPos anchorPoint, Identifier structure) {
         ACTIVE_OVERLAYS.put(anchorPoint, new OverlayEntry(structure));
@@ -96,21 +106,7 @@ public class StructureOverlayRenderer {
                                 hasInvalidBlock.setTrue();
                             }
 
-                            matrices.push();
-                            matrices.translate(pos.getX(), pos.getY(), pos.getZ());
-
-                            matrices.translate(.5, .5, .5);
-                            matrices.scale(1.0001f, 1.0001f, 1.0001f);
-                            matrices.translate(-.5, -.5, -.5);
-
-                            client.getBlockRenderManager().renderBlockAsEntity(
-                                    predicate.preview(),
-                                    matrices,
-                                    context.consumers(),
-                                    LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
-                                    OverlayTexture.DEFAULT_UV
-                            );
-                            matrices.pop();
+                            renderOverlayBlock(matrices, context.consumers(), pos, predicate);
                         });
 
                         matrices.pop();
@@ -148,6 +144,20 @@ public class StructureOverlayRenderer {
                 });
             });
 
+            if (PENDING_OVERLAY != null) {
+                var structure = StructureInfoLoader.get(PENDING_OVERLAY);
+                if (structure != null) {
+                    if (client.player.raycast(5, client.getTickDelta(), false) instanceof BlockHitResult target) {
+                        var targetPos = target.getBlockPos().offset(target.getSide()).add(-structure.xSize / 2, 0, -structure.zSize / 2);
+
+                        matrices.translate(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                        structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, context.consumers(), pos, predicate));
+                    }
+                } else {
+                    PENDING_OVERLAY = null;
+                }
+            }
+
             matrices.pop();
 
             var framebuffer = FRAMEBUFFER.get();
@@ -163,13 +173,45 @@ public class StructureOverlayRenderer {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
-            client.gameRenderer.blitScreenProgram.colorModulator.set(new float[]{1, 1, 1, .6f + (float) (Math.sin(System.currentTimeMillis() / 1000d) / 8d)});
+            client.gameRenderer.blitScreenProgram.colorModulator.set(new float[]{1, 1, 1, .5f});
             framebuffer.draw(framebuffer.textureWidth, framebuffer.textureHeight, false);
+            client.gameRenderer.blitScreenProgram.colorModulator.set(new float[]{1, 1, 1, 1});
         });
 
         WindowResizeCallback.EVENT.register((client, window) -> {
             FRAMEBUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
         });
+
+        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
+            if (PENDING_OVERLAY == null) return ActionResult.PASS;
+
+            var structure = StructureInfoLoader.get(PENDING_OVERLAY);
+            if (structure == null) return ActionResult.PASS;
+
+            addOverlay(hitResult.getBlockPos().offset(hitResult.getSide()).add(-structure.xSize / 2, 0, -structure.zSize / 2), PENDING_OVERLAY);
+            PENDING_OVERLAY = null;
+
+            player.swingHand(hand);
+            return ActionResult.FAIL;
+        });
+    }
+
+    private static void renderOverlayBlock(MatrixStack matrices, VertexConsumerProvider consumers, BlockPos offsetInStructure, BlockStatePredicate block) {
+        matrices.push();
+        matrices.translate(offsetInStructure.getX(), offsetInStructure.getY(), offsetInStructure.getZ());
+
+        matrices.translate(.5, .5, .5);
+        matrices.scale(1.0001f, 1.0001f, 1.0001f);
+        matrices.translate(-.5, -.5, -.5);
+
+        MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(
+                block.preview(),
+                matrices,
+                consumers,
+                LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
+                OverlayTexture.DEFAULT_UV
+        );
+        matrices.pop();
     }
 
     private static class OverlayEntry {
