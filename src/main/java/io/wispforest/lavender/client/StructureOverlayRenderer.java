@@ -26,10 +26,12 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3i;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL30C;
@@ -49,7 +51,9 @@ public class StructureOverlayRenderer {
     });
 
     private static final Map<BlockPos, OverlayEntry> ACTIVE_OVERLAYS = new HashMap<>();
+
     private static @Nullable Identifier PENDING_OVERLAY = null;
+    private static BlockRotation PENDING_ROTATION = BlockRotation.NONE;
 
     private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
     private static final Identifier BARS_TEXTURE = new Identifier("textures/gui/bars.png");
@@ -58,12 +62,20 @@ public class StructureOverlayRenderer {
         PENDING_OVERLAY = structure;
     }
 
-    public static void addOverlay(BlockPos anchorPoint, Identifier structure) {
-        ACTIVE_OVERLAYS.put(anchorPoint, new OverlayEntry(structure));
+    public static void addOverlay(BlockPos anchorPoint, Identifier structure, BlockRotation rotation) {
+        ACTIVE_OVERLAYS.put(anchorPoint, new OverlayEntry(structure, rotation));
     }
 
     public static void clearOverlays() {
         ACTIVE_OVERLAYS.clear();
+    }
+
+    public static void rotatePending(boolean clockwise) {
+        PENDING_ROTATION = PENDING_ROTATION.rotate(clockwise ? BlockRotation.CLOCKWISE_90 : BlockRotation.COUNTERCLOCKWISE_90);
+    }
+
+    public static boolean hasPending() {
+        return PENDING_OVERLAY != null;
     }
 
     public static void initialize() {
@@ -99,22 +111,22 @@ public class StructureOverlayRenderer {
                         matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
 
                         structure.forEachPredicate((pos, predicate) -> {
-                            var state = context.world().getBlockState(testPos.set(anchor).move(pos));
+                            var state = context.world().getBlockState(testPos.set(anchor).move(pos)).rotate(StructureInfo.inverse(entry.rotation));
                             if (predicate.test(state)) {
                                 return;
                             } else if (!state.isAir()) {
                                 hasInvalidBlock.setTrue();
                             }
 
-                            renderOverlayBlock(matrices, context.consumers(), pos, predicate);
-                        });
+                            renderOverlayBlock(matrices, context.consumers(), pos, predicate, entry.rotation);
+                        }, entry.rotation);
 
                         matrices.pop();
                     }
 
                     // --- hud setup ---
 
-                    var valid = structure.countValidStates(client.world, anchor);
+                    var valid = structure.countValidStates(client.world, anchor, entry.rotation);
                     var total = structure.nonNullPredicates;
                     if (entry.decayTime >= 0) valid = total;
 
@@ -135,7 +147,7 @@ public class StructureOverlayRenderer {
 
                     if (entry.decayTime < 0 && valid == total) {
                         entry.decayTime = 0;
-                        client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, .75f);
+                        client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, 1f);
                     } else if (entry.decayTime >= 0) {
                         entry.decayTime += client.getLastFrameDuration();
                     }
@@ -148,10 +160,10 @@ public class StructureOverlayRenderer {
                 var structure = StructureInfoLoader.get(PENDING_OVERLAY);
                 if (structure != null) {
                     if (client.player.raycast(5, client.getTickDelta(), false) instanceof BlockHitResult target) {
-                        var targetPos = target.getBlockPos().offset(target.getSide()).add(-structure.xSize / 2, 0, -structure.zSize / 2);
+                        var targetPos = target.getBlockPos().offset(target.getSide()).add(getPendingOffset(structure));
 
                         matrices.translate(targetPos.getX(), targetPos.getY(), targetPos.getZ());
-                        structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, context.consumers(), pos, predicate));
+                        structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, context.consumers(), pos, predicate, PENDING_ROTATION), PENDING_ROTATION);
                     }
                 } else {
                     PENDING_OVERLAY = null;
@@ -188,7 +200,7 @@ public class StructureOverlayRenderer {
             var structure = StructureInfoLoader.get(PENDING_OVERLAY);
             if (structure == null) return ActionResult.PASS;
 
-            addOverlay(hitResult.getBlockPos().offset(hitResult.getSide()).add(-structure.xSize / 2, 0, -structure.zSize / 2), PENDING_OVERLAY);
+            addOverlay(hitResult.getBlockPos().offset(hitResult.getSide()).add(getPendingOffset(structure)), PENDING_OVERLAY, PENDING_ROTATION);
             PENDING_OVERLAY = null;
 
             player.swingHand(hand);
@@ -196,7 +208,13 @@ public class StructureOverlayRenderer {
         });
     }
 
-    private static void renderOverlayBlock(MatrixStack matrices, VertexConsumerProvider consumers, BlockPos offsetInStructure, BlockStatePredicate block) {
+    private static Vec3i getPendingOffset(StructureInfo structure) {
+        return PENDING_ROTATION == BlockRotation.NONE || PENDING_ROTATION == BlockRotation.CLOCKWISE_180
+                ? new Vec3i(-structure.xSize / 2, 0, -structure.zSize / 2)
+                : new Vec3i(-structure.zSize / 2, 0, -structure.xSize / 2);
+    }
+
+    private static void renderOverlayBlock(MatrixStack matrices, VertexConsumerProvider consumers, BlockPos offsetInStructure, BlockStatePredicate block, BlockRotation rotation) {
         matrices.push();
         matrices.translate(offsetInStructure.getX(), offsetInStructure.getY(), offsetInStructure.getZ());
 
@@ -205,7 +223,7 @@ public class StructureOverlayRenderer {
         matrices.translate(-.5, -.5, -.5);
 
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(
-                block.preview(),
+                block.preview().rotate(rotation),
                 matrices,
                 consumers,
                 LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
@@ -217,12 +235,14 @@ public class StructureOverlayRenderer {
     private static class OverlayEntry {
 
         public final Identifier structureId;
+        public final BlockRotation rotation;
 
         public float decayTime = -1;
         public float visualCompleteness = 0f;
 
-        public OverlayEntry(Identifier structureId) {
+        public OverlayEntry(Identifier structureId, BlockRotation rotation) {
             this.structureId = structureId;
+            this.rotation = rotation;
         }
 
         public @Nullable StructureInfo fetchStructure() {

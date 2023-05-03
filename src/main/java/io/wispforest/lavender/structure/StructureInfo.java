@@ -14,6 +14,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.registry.Registries;
 import net.minecraft.state.property.Property;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -49,36 +50,62 @@ public class StructureInfo {
         this.nonNullPredicates = nonNullPredicates.intValue();
     }
 
-    public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action) {
+    // --- iteration ---
+
+    private void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action) {
+        this.forEachPredicate(action, BlockRotation.NONE);
+    }
+
+    public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action, BlockRotation rotation) {
         var mutable = new BlockPos.Mutable();
 
         for (int x = 0; x < predicates.length; x++) {
             for (int y = 0; y < predicates[x].length; y++) {
                 for (int z = 0; z < predicates[x][y].length; z++) {
-                    action.accept(mutable.set(x, y, z), predicates[x][y][z]);
+
+                    switch (rotation) {
+                        case CLOCKWISE_90 -> mutable.set(this.zSize - z - 1, y, x);
+                        case COUNTERCLOCKWISE_90 -> mutable.set(z, y, this.xSize - x - 1);
+                        case CLOCKWISE_180 -> mutable.set(this.xSize - x - 1, y, this.zSize - z - 1);
+                        default -> mutable.set(x, y, z);
+                    }
+
+                    action.accept(mutable, predicates[x][y][z]);
                 }
             }
         }
     }
 
+    // --- validation ---
+
     public boolean validate(World world, BlockPos anchor) {
-        return this.countValidStates(world, anchor) == this.nonNullPredicates;
+        return this.validate(world, anchor, BlockRotation.NONE);
+    }
+
+    public boolean validate(World world, BlockPos anchor, BlockRotation rotation) {
+        return this.countValidStates(world, anchor, rotation) == this.nonNullPredicates;
     }
 
     public int countValidStates(World world, BlockPos anchor) {
+        return countValidStates(world, anchor, BlockRotation.NONE);
+    }
+
+    public int countValidStates(World world, BlockPos anchor, BlockRotation rotation) {
         var validStates = new MutableInt();
         var mutable = new BlockPos.Mutable();
 
         this.forEachPredicate((pos, predicate) -> {
             if (predicate == BlockStatePredicate.NULL_PREDICATE) return;
 
-            if (predicate.test(world.getBlockState(mutable.set(pos).move(anchor)))) {
+            if (predicate.test(world.getBlockState(mutable.set(pos).move(anchor)).rotate(inverse(rotation)))) {
                 validStates.increment();
             }
-        });
+        }, rotation);
 
         return validStates.intValue();
     }
+
+    // --- utility ---
 
     public BlockRenderView asBlockRenderView() {
         var world = MinecraftClient.getInstance().world;
@@ -127,6 +154,17 @@ public class StructureInfo {
             }
         };
     }
+
+    public static BlockRotation inverse(BlockRotation rotation) {
+        return switch (rotation) {
+            case NONE -> BlockRotation.NONE;
+            case CLOCKWISE_90 -> BlockRotation.COUNTERCLOCKWISE_90;
+            case COUNTERCLOCKWISE_90 -> BlockRotation.CLOCKWISE_90;
+            case CLOCKWISE_180 -> BlockRotation.CLOCKWISE_180;
+        };
+    }
+
+    // --- parsing ---
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static StructureInfo parse(JsonObject json) {
