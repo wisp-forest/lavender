@@ -1,4 +1,4 @@
-package io.wispforest.lavender.parsing.compiler;
+package io.wispforest.lavender.md.compiler;
 
 import net.minecraft.text.Style;
 import net.minecraft.util.Identifier;

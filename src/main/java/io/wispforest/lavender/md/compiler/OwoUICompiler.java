@@ -1,13 +1,16 @@
-package io.wispforest.lavender.parsing.compiler;
+package io.wispforest.lavender.md.compiler;
 
 import io.wispforest.lavender.client.LavenderClient;
-import io.wispforest.lavender.parsing.TextBuilder;
+import io.wispforest.lavender.md.TextBuilder;
 import io.wispforest.owo.ui.component.BoxComponent;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.util.Drawer;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -76,7 +79,7 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
     @Override
     public void visitListItem(OptionalInt ordinal) {
         var element = Containers.horizontalFlow(Sizing.content(), Sizing.content());
-        element.child(Components.label(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • "))).margins(Insets.vertical(1));
+        element.child(Components.label(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ")).color(Color.ofFormatting(Formatting.GRAY))).margins(Insets.vertical(1));
 
         var container = Containers.verticalFlow(Sizing.content(), Sizing.content());
         element.child(container);
@@ -110,7 +113,11 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
 
     protected void flushText() {
         if (this.textBuilder.empty()) return;
-        this.components.peek().child(Components.label(this.textBuilder.build()).horizontalSizing(Sizing.fill(100)));
+
+        final var text = (MutableText) this.textBuilder.build();
+        text.setStyle(text.getStyle().withFont(MinecraftClient.UNICODE_FONT_ID));
+
+        this.components.peek().child(Components.label(text).color(Color.BLACK).lineHeight(7).horizontalSizing(Sizing.fill(100)));
     }
 
     @Override

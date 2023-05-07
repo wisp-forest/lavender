@@ -1,8 +1,8 @@
-package io.wispforest.lavender.parsing;
+package io.wispforest.lavender.md;
 
-import io.wispforest.lavender.parsing.compiler.MarkdownCompiler;
-import io.wispforest.lavender.parsing.compiler.OwoUICompiler;
-import io.wispforest.lavender.parsing.compiler.TextCompiler;
+import io.wispforest.lavender.md.compiler.MarkdownCompiler;
+import io.wispforest.lavender.md.compiler.OwoUICompiler;
+import io.wispforest.lavender.md.compiler.TextCompiler;
 import io.wispforest.owo.ui.core.Component;
 import net.minecraft.text.Text;
 

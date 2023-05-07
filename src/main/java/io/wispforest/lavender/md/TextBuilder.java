@@ -1,4 +1,4 @@
-package io.wispforest.lavender.parsing;
+package io.wispforest.lavender.md;
 
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;

@@ -1,7 +1,7 @@
-package io.wispforest.lavender.parsing;
+package io.wispforest.lavender.md;
 
-import io.wispforest.lavender.parsing.Lexer.*;
-import io.wispforest.lavender.parsing.compiler.MarkdownCompiler;
+import io.wispforest.lavender.md.Lexer.*;
+import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;

@@ -1,4 +1,4 @@
-package io.wispforest.lavender.parsing;
+package io.wispforest.lavender.md;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.brigadier.StringReader;

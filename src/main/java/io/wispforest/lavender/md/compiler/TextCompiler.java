@@ -1,6 +1,6 @@
-package io.wispforest.lavender.parsing.compiler;
+package io.wispforest.lavender.md.compiler;
 
-import io.wispforest.lavender.parsing.TextBuilder;
+import io.wispforest.lavender.md.TextBuilder;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;

@@ -3,7 +3,8 @@ package io.wispforest.lavender.client;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-import io.wispforest.lavender.parsing.MarkdownProcessor;
+import io.wispforest.lavender.book.EntryLoader;
+import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.StructureInfoLoader;
 import io.wispforest.owo.ui.core.Size;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -18,7 +19,6 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
@@ -59,10 +59,16 @@ public class LavenderClient implements ClientModInitializer {
                                 StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
                             }))));
+
+            dispatcher.register(literal("book").executes(context -> {
+                MinecraftClient.getInstance().setScreen(new BookScreen());
+                return 0;
+            }));
         });
 
         StructureOverlayRenderer.initialize();
         StructureInfoLoader.initialize();
+        EntryLoader.initialize();
     }
 
     public static void registerTextureSize(int textureId, int width, int height) {

@@ -1,7 +1,7 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.parsing.MarkdownProcessor;
+import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.component.TextAreaComponent;

@@ -1,4 +1,4 @@
-package io.wispforest.lavender.parsing;
+package io.wispforest.lavender.md;
 
 import java.util.List;
 import java.util.NoSuchElementException;
