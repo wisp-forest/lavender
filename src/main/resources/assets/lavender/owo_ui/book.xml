@@ -9,21 +9,37 @@
                         <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
                                  region-width="276" region-height="180"/>
 
-                        <flow-layout direction="vertical" id="page-1-content">
-                            <children/>
-                            <positioning type="absolute">17,18</positioning>
+                        <label id="title-label">
+                            <text>page title here</text>
+                            <color>dark-gray</color>
+
+                            <positioning type="absolute">17,19</positioning>
+                            <horizontal-text-alignment>center</horizontal-text-alignment>
                             <sizing>
                                 <horizontal method="fixed">108</horizontal>
-                                <vertical method="fixed">147</vertical>
+                            </sizing>
+                        </label>
+
+                        <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41" v="180" region-width="109" region-height="3">
+                            <positioning type="absolute">16,31</positioning>
+                            <blend>true</blend>
+                        </texture>
+
+                        <flow-layout direction="vertical" id="page-1-content">
+                            <children/>
+                            <positioning type="absolute">17,42</positioning>
+                            <sizing>
+                                <horizontal method="fixed">108</horizontal>
+                                <vertical method="fixed">123</vertical>
                             </sizing>
                         </flow-layout>
 
                         <flow-layout direction="vertical" id="page-2-content">
                             <children/>
-                            <positioning type="absolute">141,18</positioning>
+                            <positioning type="absolute">141,15</positioning>
                             <sizing>
                                 <horizontal method="fixed">108</horizontal>
-                                <vertical method="fixed">147</vertical>
+                                <vertical method="fixed">153</vertical>
                             </sizing>
                         </flow-layout>
                     </children>
@@ -38,5 +54,13 @@
             </surface>
         </flow-layout>
     </components>
+
+    <templates>
+        <template name="horizontal-rule">
+            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41" v="183" region-width="109" region-height="3">
+                <blend>true</blend>
+            </texture>
+        </template>
+    </templates>
 
 </owo-ui>

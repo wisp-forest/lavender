@@ -111,4 +111,9 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     public Text compile() {
         return this.builder.build();
     }
+
+    @Override
+    public String name() {
+        return "lavender_builtin_text";
+    }
 }

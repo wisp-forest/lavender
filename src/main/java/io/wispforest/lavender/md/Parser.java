@@ -9,29 +9,28 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-public class Parser {
+public class Parser implements MarkdownExtension.NodeRegistrar {
 
-    public static Node parse(List<Token> tokens) {
-        var tokenNibbler = new ListNibbler<>(tokens);
+    private final Map<BiFunction<Token, ListNibbler<Token>, ?>, ParseFunction<?>> parseFunctions = new HashMap<>();
 
-        var node = Node.empty();
-        while (tokenNibbler.hasElements()) {
-            node.addChild(parseNode(tokenNibbler));
-        }
-
-        return node;
+    public Parser() {
+        this.registerDefaultNodes();
     }
 
-    private static @NotNull Node parseNode(ListNibbler<Token> tokens) {
-        var token = tokens.nibble();
-        if (token instanceof TextToken text) {
+    @Override
+    public <T extends Token> void registerNode(ParseFunction<T> parser, BiFunction<Token, ListNibbler<Token>, @Nullable T> trigger) {
+        this.parseFunctions.put(trigger, parser);
+    }
+
+    private void registerDefaultNodes() {
+        this.registerNode((parser, text, tokens) -> {
             var content = text.content();
             if (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken) {
                 content = content.stripLeading();
@@ -42,11 +41,11 @@ public class Parser {
             }
 
             return new TextNode(content);
-        }
+        }, (token, tokens) -> token instanceof TextToken text ? text : null);
 
-        if (token instanceof StarToken left && left.rightAdjacent) {
+        this.registerNode((parser, left, tokens) -> {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, StarToken.class);
+            var content = parser.parseUntil(tokens, StarToken.class);
 
             if (tokens.peek() instanceof StarToken right && right.leftAdjacent) {
                 tokens.nibble();
@@ -64,41 +63,11 @@ public class Parser {
                 tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
-        }
+        }, (token, tokens) -> token instanceof StarToken star && star.rightAdjacent ? star : null);
 
-        if (token instanceof TildeToken left1 && tokens.peek() instanceof TildeToken left2) {
-            tokens.nibble();
-
+        this.registerNode((parser, left, tokens) -> {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, TildeToken.class);
-
-            if (tokens.peek() instanceof TildeToken && tokens.peek(1) instanceof TildeToken) {
-                tokens.skip(2);
-                return new FormattingNode(style -> style.withStrikethrough(true)).addChild(content);
-            } else {
-                tokens.setPointer(pointer);
-                return new TextNode(left1.content() + left2.content());
-            }
-        }
-
-        if (token instanceof UnderscoreToken left1 && tokens.peek() instanceof UnderscoreToken left2) {
-            tokens.nibble();
-
-            int pointer = tokens.pointer();
-            var content = parseUntil(tokens, UnderscoreToken.class);
-
-            if (tokens.peek() instanceof UnderscoreToken && tokens.peek(1) instanceof UnderscoreToken) {
-                tokens.skip(2);
-                return new FormattingNode(style -> style.withUnderline(true)).addChild(content);
-            } else {
-                tokens.setPointer(pointer);
-                return new TextNode(left1.content() + left2.content());
-            }
-        }
-
-        if (token instanceof OpenLinkToken left) {
-            int pointer = tokens.pointer();
-            var content = parseUntil(tokens, CloseLinkToken.class);
+            var content = parser.parseUntil(tokens, CloseLinkToken.class);
 
             if (tokens.peek() instanceof CloseLinkToken right) {
                 tokens.nibble();
@@ -111,11 +80,11 @@ public class Parser {
                 tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
-        }
+        }, (token, tokens) -> token instanceof OpenLinkToken link ? link : null);
 
-        if (token instanceof OpenColorToken left) {
+        this.registerNode((parser, left, tokens) -> {
             int pointer = tokens.pointer();
-            var content = parseUntil(tokens, CloseColorToken.class);
+            var content = parser.parseUntil(tokens, CloseColorToken.class);
 
             if (tokens.peek() instanceof CloseColorToken) {
                 tokens.nibble();
@@ -124,22 +93,74 @@ public class Parser {
                 tokens.setPointer(pointer);
                 return new TextNode(left.content());
             }
+        }, (token, tokens) -> token instanceof OpenColorToken color ? color : null);
+
+        this.registerNode(
+                (parser, current, tokens) -> new ListNode(current.ordinal).addChild(parser.parseUntil(tokens, $ -> $.isBoundary() && !($ instanceof ListToken list && list.depth > current.depth), $ -> false)),
+                (token, tokens) -> token instanceof ListToken list ? list : null
+        );
+
+        this.registerNode(
+                (parser, image, tokens) -> new ImageNode(image.identifier, image.description),
+                (token, tokens) -> token instanceof ImageToken image ? image : null
+        );
+
+        this.registerNode(
+                (parser, current, tokens) -> new QuotationNode().addChild(parser.parseUntil(tokens, $ -> $.isBoundary() && (!($ instanceof QuotationToken) || ((QuotationToken) $).depth < current.depth), $ -> $ instanceof QuotationToken quote && quote.depth == current.depth)),
+                (token, tokens) -> token instanceof QuotationToken current && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken) ? current : null
+        );
+
+        this.registerNode(
+                (parser, rule, tokens) -> new HorizontalRuleNode(),
+                (token, tokens) -> token instanceof HorizontalRuleToken rule ? rule : null
+        );
+
+        this.registerDoubleFormattingToken(TildeToken.class, style -> style.withStrikethrough(true));
+        this.registerDoubleFormattingToken(UnderscoreToken.class, style -> style.withUnderline(true));
+    }
+
+    private void registerDoubleFormattingToken(Class<? extends Token> tokenClass, UnaryOperator<Style> formatting) {
+        this.registerNode((parser, left1, tokens) -> {
+            var left2 = tokens.nibble();
+
+            int pointer = tokens.pointer();
+            var content = parseUntil(tokens, tokenClass);
+
+            if (tokenClass.isInstance(tokens.peek()) && tokenClass.isInstance(tokens.peek(1))) {
+                tokens.skip(2);
+                return new FormattingNode(formatting).addChild(content);
+            } else {
+                tokens.setPointer(pointer);
+                return new TextNode(left1.content() + left2.content());
+            }
+        }, (token, tokens) -> tokenClass.isInstance(token) && tokenClass.isInstance(tokens.peek()) ? tokenClass.cast(token) : null);
+    }
+
+    @FunctionalInterface
+    public interface ParseFunction<T extends Token> {
+        Node parse(Parser parser, T trigger, ListNibbler<Token> tokens);
+    }
+
+    public Node parse(List<Token> tokens) {
+        var tokenNibbler = new ListNibbler<>(tokens);
+
+        var node = Node.empty();
+        while (tokenNibbler.hasElements()) {
+            node.addChild(parseNode(tokenNibbler));
         }
 
-        if (token instanceof ListToken current) {
-            return new ListNode(current.ordinal).addChild(parseUntil(tokens, $ -> $.isBoundary() && !($ instanceof ListToken list && list.depth > current.depth), $ -> false));
-        }
+        return node;
+    }
 
-        if (token instanceof ImageToken image) {
-            return new ImageNode(image.identifier, image.description);
-        }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private @NotNull Node parseNode(ListNibbler<Token> tokens) {
+        var token = tokens.nibble();
 
-        if (token instanceof QuotationToken current && (tokens.peek(-2) == null || tokens.peek(-2) instanceof NewlineToken)) {
-            return new QuotationNode().addChild(parseUntil(tokens, $ -> $.isBoundary() && (!($ instanceof QuotationToken) || ((QuotationToken) $).depth < current.depth), $ -> $ instanceof QuotationToken quote && quote.depth == current.depth));
-        }
+        for (var function : this.parseFunctions.entrySet()) {
+            var first = function.getKey().apply(token, tokens);
+            if (first == null) continue;
 
-        if (token instanceof HorizontalRuleToken) {
-            return new HorizontalRuleNode();
+            return ((ParseFunction) function.getValue()).parse(this, token, tokens);
         }
 
         if (token != null) {
@@ -149,12 +170,12 @@ public class Parser {
         return Node.empty();
     }
 
-    private static Node parseUntil(ListNibbler<Token> tokens, Class<? extends Token> until) {
-        return parseUntil(tokens, token -> token.isBoundary() || until.isInstance(token), token -> false);
+    private Node parseUntil(ListNibbler<Token> tokens, Class<? extends Token> until) {
+        return this.parseUntil(tokens, token -> token.isBoundary() || until.isInstance(token), token -> false);
     }
 
-    private static Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until, Predicate<Token> skip) {
-        var node = parseNode(tokens);
+    private Node parseUntil(ListNibbler<Token> tokens, Predicate<Token> until, Predicate<Token> skip) {
+        var node = this.parseNode(tokens);
         while (tokens.hasElements()) {
             var next = tokens.peek();
 
@@ -165,7 +186,7 @@ public class Parser {
 
             if (until.test(next)) break;
 
-            node.addChild(parseNode(tokens));
+            node.addChild(this.parseNode(tokens));
         }
 
         return node;

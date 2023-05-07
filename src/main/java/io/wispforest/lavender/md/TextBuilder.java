@@ -33,7 +33,7 @@ public class TextBuilder {
         this.styles.pop();
     }
 
-    public Text build() {
+    public MutableText build() {
         var result = this.text;
 
         this.text = Text.empty();

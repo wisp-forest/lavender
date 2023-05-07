@@ -27,4 +27,6 @@ public interface MarkdownCompiler<R> {
     void visitListItemEnd();
 
     R compile();
+
+    String name();
 }

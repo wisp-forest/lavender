@@ -4,6 +4,7 @@ import io.wispforest.lavender.client.LavenderClient;
 import io.wispforest.lavender.md.TextBuilder;
 import io.wispforest.owo.ui.component.BoxComponent;
 import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
@@ -21,10 +22,10 @@ import java.util.Deque;
 import java.util.OptionalInt;
 import java.util.function.UnaryOperator;
 
-public class OwoUICompiler implements MarkdownCompiler<Component> {
+public class OwoUICompiler implements MarkdownCompiler<ParentComponent> {
 
-    private final Deque<FlowLayout> components = new ArrayDeque<>();
-    private final TextBuilder textBuilder = new TextBuilder();
+    protected final Deque<FlowLayout> components = new ArrayDeque<>();
+    protected final TextBuilder textBuilder = new TextBuilder();
 
     public OwoUICompiler() {
         this.components.push(Containers.verticalFlow(Sizing.content(), Sizing.content()));
@@ -79,7 +80,7 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
     @Override
     public void visitListItem(OptionalInt ordinal) {
         var element = Containers.horizontalFlow(Sizing.content(), Sizing.content());
-        element.child(Components.label(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ")).color(Color.ofFormatting(Formatting.GRAY))).margins(Insets.vertical(1));
+        element.child(this.makeLabel(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ").formatted(Formatting.GRAY))).margins(Insets.vertical(1));
 
         var container = Containers.verticalFlow(Sizing.content(), Sizing.content());
         element.child(container);
@@ -90,6 +91,10 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
     @Override
     public void visitListItemEnd() {
         this.pop();
+    }
+
+    public void visitComponent(Component component) {
+        this.append(component);
     }
 
     protected void append(Component component) {
@@ -111,18 +116,23 @@ public class OwoUICompiler implements MarkdownCompiler<Component> {
         this.components.pop();
     }
 
+    protected LabelComponent makeLabel(MutableText text) {
+        return Components.label(text);
+    }
+
     protected void flushText() {
         if (this.textBuilder.empty()) return;
-
-        final var text = (MutableText) this.textBuilder.build();
-        text.setStyle(text.getStyle().withFont(MinecraftClient.UNICODE_FONT_ID));
-
-        this.components.peek().child(Components.label(text).color(Color.BLACK).lineHeight(7).horizontalSizing(Sizing.fill(100)));
+        this.components.peek().child(this.makeLabel(this.textBuilder.build()).horizontalSizing(Sizing.fill(100)));
     }
 
     @Override
-    public Component compile() {
+    public ParentComponent compile() {
         this.flushText();
         return this.components.getLast();
+    }
+
+    @Override
+    public String name() {
+        return "lavender_builtin_owo_ui";
     }
 }

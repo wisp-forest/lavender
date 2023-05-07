@@ -11,59 +11,66 @@ import net.minecraft.util.function.CharPredicate;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public class Lexer {
+public class Lexer implements MarkdownExtension.TokenRegistrar {
 
     private static final Map<String, Formatting> FORMATTING_COLORS = Stream.of(Formatting.values())
             .filter(Formatting::isColor)
             .collect(ImmutableMap.toImmutableMap(formatting -> formatting.getName().toLowerCase(Locale.ROOT), Function.identity()));
 
-    private static final Char2ObjectMap<List<BiFunction<StringReader, List<Token>, Boolean>>> LEX_FUNCTIONS = new Char2ObjectLinkedOpenHashMap<>();
+    private final Char2ObjectMap<List<LexFunction>> lexFunctions = new Char2ObjectLinkedOpenHashMap<>();
 
-    static {
-        registerToken('\\', TextToken::lexEscape);
-        registerToken('\n', NewlineToken::lex);
-        registerToken('[', primitiveTokenLexer(OpenLinkToken::new));
-        registerToken('!', ImageToken::lex);
-        registerToken(']', CloseLinkToken::lex);
-        registerToken('*', StarToken::lex);
-        registerToken('{', OpenColorToken::lex);
-        registerToken('~', primitiveTokenLexer(TildeToken::new));
-        registerToken('_', primitiveTokenLexer(UnderscoreToken::new));
-        registerToken('>', QuotationToken::lex);
-        registerToken('-', HorizontalRuleToken::lex);
-        registerToken('-', ListToken::lexUnordered);
-
-        registerToken(ListToken::lexOrdered, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    public Lexer() {
+        this.registerDefaultTokens();
     }
 
-    public static void registerToken(char trigger, BiFunction<StringReader, List<Token>, Boolean> lexer) {
-        LEX_FUNCTIONS.computeIfAbsent(trigger, character -> new ArrayList<>()).add(lexer);
+    @Override
+    public void registerToken(LexFunction lexer, char trigger) {
+        this.lexFunctions.computeIfAbsent(trigger, character -> new ArrayList<>()).add(0, lexer);
     }
 
-    public static void registerToken(BiFunction<StringReader, List<Token>, Boolean> lexer, char... triggers) {
-        for (var trigger : triggers) {
-            registerToken(trigger, lexer);
-        }
+    private void registerDefaultTokens() {
+        this.registerToken(TextToken::lexEscape, '\\');
+        this.registerToken(NewlineToken::lex, '\n');
+        this.registerToken(primitiveTokenLexer(OpenLinkToken::new), '[');
+        this.registerToken(ImageToken::lex, '!');
+        this.registerToken(CloseLinkToken::lex, ']');
+        this.registerToken(StarToken::lex, '*');
+        this.registerToken(OpenColorToken::lex, '{');
+        this.registerToken(primitiveTokenLexer(TildeToken::new), '~');
+        this.registerToken(primitiveTokenLexer(UnderscoreToken::new), '_');
+        this.registerToken(QuotationToken::lex, '>');
+        this.registerToken(HorizontalRuleToken::lex, '-');
+        this.registerToken(ListToken::lexUnordered, '-');
+
+        this.registerToken(ListToken::lexOrdered, '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
     }
 
-    public static List<Token> lex(String input) {
+    public boolean isTokenTrigger(char c) {
+        return this.lexFunctions.containsKey(c);
+    }
+
+    @FunctionalInterface
+    public interface LexFunction {
+        boolean lex(Lexer lexer, StringReader reader, List<Token> tokens);
+    }
+
+    public List<Token> lex(String input) {
         var tokens = new ArrayList<Token>();
         var reader = new StringReader(input.strip());
 
         while (reader.canRead()) {
             char current = reader.peek();
-            if (LEX_FUNCTIONS.containsKey(current)) {
+            if (this.lexFunctions.containsKey(current)) {
                 int cursorBefore = reader.getCursor();
 
                 boolean success = false;
-                for (var lexer : LEX_FUNCTIONS.get(current)) {
-                    if (lexer.apply(reader, tokens)) {
+                for (var function : this.lexFunctions.get(current)) {
+                    if (function.lex(this, reader, tokens)) {
                         success = true;
                         break;
                     } else {
@@ -77,20 +84,30 @@ public class Lexer {
                 }
 
             } else {
-                appendText(tokens, readTextUntil(reader, LEX_FUNCTIONS.keySet()::contains));
+                appendText(tokens, readTextUntil(reader, this.lexFunctions.keySet()::contains));
             }
         }
 
         return tokens;
     }
 
-    private static String readTextUntil(StringReader reader, CharPredicate until) {
+    public String readTextUntil(StringReader reader, CharPredicate until) {
         var text = new StringBuilder();
         while (reader.canRead() && !until.test(reader.peek())) {
             text.append(reader.read());
         }
 
         return text.toString();
+    }
+
+    public boolean expectString(StringReader reader, String expected) {
+        if (!reader.canRead(expected.length())) return false;
+
+        for (int i = 0; i < expected.length(); i++) {
+            if (reader.read() != expected.charAt(i)) return false;
+        }
+
+        return true;
     }
 
     private static int whitespaceSinceLineBreak(StringReader reader) {
@@ -129,8 +146,8 @@ public class Lexer {
         }
     }
 
-    private static BiFunction<StringReader, List<Token>, Boolean> primitiveTokenLexer(Supplier<Token> factory) {
-        return (reader, tokens) -> {
+    private static LexFunction primitiveTokenLexer(Supplier<Token> factory) {
+        return (lexer, reader, tokens) -> {
             reader.skip();
             tokens.add(factory.get());
 
@@ -168,9 +185,9 @@ public class Lexer {
             this.contentBuilder = new StringBuilder(content);
         }
 
-        private static boolean lexEscape(StringReader reader, List<Token> tokens) {
+        private static boolean lexEscape(Lexer lexer, StringReader reader, List<Token> tokens) {
             reader.skip();
-            if (!reader.canRead() || !LEX_FUNCTIONS.keySet().contains(reader.peek())) return false;
+            if (!reader.canRead() || !lexer.isTokenTrigger(reader.peek())) return false;
 
             var escaped = reader.read();
             if (escaped == '\n') {
@@ -212,8 +229,8 @@ public class Lexer {
             this.rightAdjacent = rightAdjacent;
         }
 
-        private static boolean lex(StringReader reader, List<Token> tokens) {
-            int starCount = readTextUntil(reader, c -> c != '*').length();
+        private static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
+            int starCount = lexer.readTextUntil(reader, c -> c != '*').length();
 
             boolean leftAdjacent = reader.getCursor() - starCount - 1 >= 0 && reader.peek(-starCount - 1) != ' ';
             boolean rightAdjacent = (reader.canRead() && reader.peek() != ' ');
@@ -238,8 +255,8 @@ public class Lexer {
             this.isBoundary = isBoundary;
         }
 
-        public static boolean lex(StringReader reader, List<Token> tokens) {
-            var newlines = readTextUntil(reader, c -> c != '\n');
+        public static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
+            var newlines = lexer.readTextUntil(reader, c -> c != '\n');
             if (newlines.length() > 1) {
                 tokens.add(new NewlineToken("\n".repeat(newlines.length() - 1), true));
             } else {
@@ -278,7 +295,7 @@ public class Lexer {
             this.ordinal = ordinal;
         }
 
-        public static boolean lexUnordered(StringReader reader, List<Token> tokens) {
+        public static boolean lexUnordered(Lexer lexer, StringReader reader, List<Token> tokens) {
             int whitespace = whitespaceSinceLineBreak(reader);
             if (whitespace < 0) return false;
 
@@ -289,12 +306,14 @@ public class Lexer {
             return true;
         }
 
-        public static boolean lexOrdered(StringReader reader, List<Token> tokens) {
+        public static boolean lexOrdered(Lexer lexer, StringReader reader, List<Token> tokens) {
             int whitespace = whitespaceSinceLineBreak(reader);
             if (whitespace < 0) return false;
 
-            var ordinal = readTextUntil(reader, c -> c < '0' || c > '9');
-            if (!ordinal.matches("[0-9]+") || !reader.canRead(2) || reader.read() != '.' || reader.read() != ' ') return false;
+            var ordinal = lexer.readTextUntil(reader, c -> c < '0' || c > '9');
+            if (!ordinal.matches("[0-9]+") || !reader.canRead(2) || reader.read() != '.' || reader.read() != ' ') {
+                return false;
+            }
 
             tokens.add(new ListToken(whitespace, OptionalInt.of(Integer.parseInt(ordinal))));
             return true;
@@ -315,8 +334,8 @@ public class Lexer {
             this.depth = depth;
         }
 
-        public static boolean lex(StringReader reader, List<Token> tokens) {
-            var quotes = readTextUntil(reader, c -> c != '>');
+        public static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
+            var quotes = lexer.readTextUntil(reader, c -> c != '>');
             if (!reader.canRead() || reader.read() != ' ') return false;
 
             tokens.add(new QuotationToken(quotes.length()));
@@ -334,10 +353,10 @@ public class Lexer {
             super("---");
         }
 
-        public static boolean lex(StringReader reader, List<Token> tokens) {
+        public static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
             if (reader.getCursor() - 2 < 0 || reader.peek(-1) != '\n' || reader.peek(-2) != '\n') return false;
 
-            var dashes = readTextUntil(reader, c -> c != '-');
+            var dashes = lexer.readTextUntil(reader, c -> c != '-');
             if (dashes.length() != 3 || !reader.canRead(2) || reader.peek() != '\n' || reader.peek(1) != '\n') {
                 return false;
             }
@@ -363,15 +382,15 @@ public class Lexer {
             this.identifier = identifier;
         }
 
-        public static boolean lex(StringReader reader, List<Token> tokens) {
+        public static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
             reader.skip();
             if (!reader.canRead() || reader.read() != '[') return false;
 
-            var description = readTextUntil(reader, c -> c == ']');
+            var description = lexer.readTextUntil(reader, c -> c == ']');
             if (!reader.canRead(2) || reader.peek(1) != '(') return false;
             reader.setCursor(reader.getCursor() + 2);
 
-            var identifier = readTextUntil(reader, c -> c == ')');
+            var identifier = lexer.readTextUntil(reader, c -> c == ')');
             if (!reader.canRead() || Identifier.tryParse(identifier) == null) return false;
             reader.skip();
 
@@ -389,7 +408,7 @@ public class Lexer {
             this.link = link;
         }
 
-        private static boolean lex(StringReader reader, List<Token> tokens) {
+        private static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
             reader.skip();
 
             if (!reader.canRead() || reader.peek() != '(') {
@@ -397,7 +416,7 @@ public class Lexer {
             }
 
             reader.skip();
-            var link = readTextUntil(reader, c -> c == ')');
+            var link = lexer.readTextUntil(reader, c -> c == ')');
 
             if (!reader.canRead()) return false;
             reader.skip();
@@ -416,7 +435,7 @@ public class Lexer {
             this.style = style;
         }
 
-        private static boolean lex(StringReader reader, List<Token> tokens) {
+        private static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
             reader.skip();
             if (!reader.canRead()) return false;
 
@@ -427,14 +446,14 @@ public class Lexer {
                 if (reader.peek() == '#') {
                     reader.skip();
 
-                    var color = readTextUntil(reader, c -> c == '}');
+                    var color = lexer.readTextUntil(reader, c -> c == '}');
                     if (!reader.canRead()) return false;
                     reader.skip();
 
                     if (!color.matches("[0-9a-fA-F]{6}")) return false;
                     tokens.add(new OpenColorToken("{#" + color + "}", style -> style.withColor(Integer.parseInt(color, 16))));
                 } else {
-                    var color = readTextUntil(reader, c -> c == '}');
+                    var color = lexer.readTextUntil(reader, c -> c == '}');
                     if (!reader.canRead()) return false;
                     reader.skip();
 
