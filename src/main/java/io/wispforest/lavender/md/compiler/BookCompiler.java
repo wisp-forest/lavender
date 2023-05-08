@@ -27,12 +27,12 @@ public class BookCompiler extends OwoUICompiler {
 
     @Override
     protected LabelComponent makeLabel(MutableText text) {
-        return super.makeLabel(text.styled(style -> style.withParent(UNICODE_FONT_STYLE))).color(Color.BLACK).lineHeight(8);
+        return super.makeLabel(text.styled(style -> style.withParent(UNICODE_FONT_STYLE))).color(Color.BLACK).lineHeight(7);
     }
 
     @Override
     public void visitHorizontalRule() {
-        this.append(UIModelLoader.get(Lavender.id("book")).expandTemplate(Component.class, "horizontal-rule", Map.of()));
+        this.append(UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()));
     }
 
     public void visitPageBreak() {

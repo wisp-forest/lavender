@@ -9,9 +9,28 @@
                         <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
                                  region-width="276" region-height="180"/>
 
+                        <flow-layout direction="vertical" id="left-page-anchor">
+                            <children/>
+                            <positioning type="absolute">15,15</positioning>
+                            <sizing>
+                                <horizontal method="fixed">112</horizontal>
+                                <vertical method="fixed">153</vertical>
+                            </sizing>
+                        </flow-layout>
+
+                        <flow-layout direction="vertical" id="right-page-anchor">
+                            <children/>
+                            <positioning type="absolute">139,15</positioning>
+                            <sizing>
+                                <horizontal method="fixed">112</horizontal>
+                                <vertical method="fixed">153</vertical>
+                            </sizing>
+                        </flow-layout>
+
                         <button id="previous-button">
                             <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512" texture-height="256"/>
+                                <texture texture="lavender:textures/gui/book.png" u="0" v="180" texture-width="512"
+                                         texture-height="256"/>
                             </renderer>
 
                             <sizing>
@@ -24,7 +43,8 @@
 
                         <button id="next-button">
                             <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="0" v="180" texture-width="512" texture-height="256"/>
+                                <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512"
+                                         texture-height="256"/>
                             </renderer>
 
                             <sizing>
@@ -62,12 +82,17 @@
                         <color>dark-gray</color>
 
                         <horizontal-text-alignment>center</horizontal-text-alignment>
+
+                        <margins>
+                            <top>2</top>
+                        </margins>
                         <sizing>
                             <horizontal method="fill">100</horizontal>
                         </sizing>
                     </label>
 
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41" v="180" region-width="109" region-height="3">
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41"
+                             v="180" region-width="109" region-height="3">
                         <blend>true</blend>
                         <margins>
                             <top>5</top>
@@ -75,7 +100,7 @@
                         </margins>
                     </texture>
 
-                    <flow-layout direction="vertical" id="page-content">
+                    <flow-layout direction="vertical" id="content-anchor">
                         <children/>
                         <sizing>
                             <horizontal method="fill">100</horizontal>
@@ -83,20 +108,13 @@
                         </sizing>
                     </flow-layout>
                 </children>
-
-                <positioning type="absolute">17,15</positioning>
-
-                <sizing>
-                    <horizontal method="fixed">108</horizontal>
-                    <vertical method="fixed">153</vertical>
-                </sizing>
             </flow-layout>
         </template>
 
         <template name="simple-page">
             <flow-layout direction="vertical">
                 <children>
-                    <flow-layout direction="vertical" id="page-content">
+                    <flow-layout direction="vertical" id="content-anchor">
                         <children/>
 
                         <sizing>
@@ -105,19 +123,26 @@
                         </sizing>
                     </flow-layout>
                 </children>
-
-                <positioning type="absolute">141,15</positioning>
-                <sizing>
-                    <horizontal method="fixed">108</horizontal>
-                    <vertical method="fixed">153</vertical>
-                </sizing>
             </flow-layout>
         </template>
 
-        <template name="horizontal-rule">
-            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41" v="183" region-width="109" region-height="3">
-                <blend>true</blend>
-            </texture>
+        <template name="empty-page">
+            <flow-layout direction="vertical">
+                <children>
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="151" v="180"
+                             region-width="9" region-height="11">
+                        <blend>true</blend>
+                    </texture>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fill">100</vertical>
+                </sizing>
+            </flow-layout>
         </template>
     </templates>
 
