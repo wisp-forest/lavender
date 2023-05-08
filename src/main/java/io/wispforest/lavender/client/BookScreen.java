@@ -8,12 +8,15 @@ import io.wispforest.lavender.md.extensions.BlockStateExtension;
 import io.wispforest.lavender.md.extensions.ItemStackExtension;
 import io.wispforest.lavender.md.extensions.PageBreakExtension;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
+import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
+
+import java.util.Map;
 
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
@@ -37,12 +40,17 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             int pageCount = 0;
             while (pages.children().size() > 0 && pageCount < 2) {
-                var page = pages.children().get(0);
-                pages.removeChild(page);
+                var pageContent = pages.children().get(0);
+                pages.removeChild(pageContent);
 
-                rootComponent.childById(FlowLayout.class, "page-" + (pageCount + 1) + "-content").child(page);
+                var page = this.model.expandTemplate(ParentComponent.class, pageCount == 0 ? "page-with-title" : "simple-page", Map.of("page-title", "page moment"));
+                page.childById(FlowLayout.class, "page-content").child(pageContent);
+
+                rootComponent.childById(FlowLayout.class, "primary-panel").child(page);
                 pageCount++;
             }
+
+            rootComponent.childById(ButtonComponent.class, "previous-button").active(false);
 
             if (entry.meta() != null && entry.meta().has("title")) {
                 rootComponent.childById(LabelComponent.class, "title-label").text(Text.literal(entry.meta().get("title").getAsString()));

@@ -24,7 +24,7 @@ now, after we're {gold}done{} there let's have a list
 
 ayo, were on page 2!
 
-<block;furnace[lit=true,facing=east]> <item;conjuring:soul_alloy>
+<block;furnace[lit=true,facing=east]> <item;minecraft:diamond>
 
 
 and we finish with easy multiple newlines
