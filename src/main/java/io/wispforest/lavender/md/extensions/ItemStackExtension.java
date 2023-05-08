@@ -8,7 +8,6 @@ import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.Components;
-import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.command.argument.ItemStringReader;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -75,7 +74,7 @@ public class ItemStackExtension implements MarkdownExtension {
 
         @Override
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            ((OwoUICompiler) compiler).visitComponent(Components.item(this.stack).sizing(Sizing.fixed(16)));
+            ((OwoUICompiler) compiler).visitComponent(Components.item(this.stack).setTooltipFromStack(true));
         }
 
         @Override

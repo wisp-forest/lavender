@@ -39,7 +39,12 @@ public class PageBreakExtension implements MarkdownExtension {
 
     private static class PageBreakToken extends Lexer.Token {
         public PageBreakToken() {
-            super(";;;\n\n");
+            super(";;;;;\n\n");
+        }
+
+        @Override
+        public boolean isBoundary() {
+            return true;
         }
     }
 

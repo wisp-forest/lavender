@@ -32,7 +32,7 @@ public class MarkdownProcessor<R> {
         var testCompiler = this.compilerFactory.get();
         for (var extension : this.extensions) {
             if (!extension.supportsCompiler(testCompiler)) {
-                throw new IllegalStateException("Extension " + extension.name() + " is incompatible with compiler " + testCompiler.name());
+                throw new IllegalStateException("Extension '" + extension.name() + "' is incompatible with compiler '" + testCompiler.name() + "'");
             }
         }
 
