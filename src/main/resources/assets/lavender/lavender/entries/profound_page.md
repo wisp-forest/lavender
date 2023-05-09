@@ -1,6 +1,7 @@
 ```json
 {
-  "title": "A Profound Page With a Long Name"
+  "title": "A Profound Page With a Long Name",
+  "icon": "minecraft:melon_slice"
 }
 ```
 

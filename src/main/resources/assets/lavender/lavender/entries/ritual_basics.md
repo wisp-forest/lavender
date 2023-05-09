@@ -1,6 +1,7 @@
 ```json
 {
-  "title": "Ritual Basics"
+  "title": "Ritual Basics",
+  "icon": "conjuring:blackstone_pedestal"
 }
 ```
 

@@ -1,18 +1,22 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.book.EntryLoader;
+import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.core.Easing;
 import io.wispforest.owo.ui.core.ParentComponent;
+import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.Drawer;
 import io.wispforest.owo.ui.util.UISounds;
@@ -25,6 +29,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
@@ -62,7 +67,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.rightPageAnchor = rootComponent.childById(FlowLayout.class, "right-page-anchor");
 
         (this.previousButton = rootComponent.childById(ButtonComponent.class, "previous-button")).onPress(buttonComponent -> {
-            this.basePageIndex.set(Math.max(0, this.basePageIndex.get() - 2));
+            this.turnPage(true);
         });
 
         (this.returnButton = rootComponent.childById(ButtonComponent.class, "back-button")).onPress(buttonComponent -> {
@@ -70,11 +75,15 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         });
 
         (this.nextButton = rootComponent.childById(ButtonComponent.class, "next-button")).onPress(buttonComponent -> {
-            this.basePageIndex.set(Math.min(this.pageSupplier().pageCount() - 1, this.basePageIndex.get() + 2));
+            this.turnPage(false);
         });
 
         this.basePageIndex.observe(this::updateForPageChange);
         this.navPush(new IndexPageSupplier());
+    }
+
+    private void turnPage(boolean left) {
+        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)));
     }
 
     private void updateForPageChange(int basePageIndex) {
@@ -126,6 +135,23 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
+
+        if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+            this.navPop();
+        } else if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_PAGE_DOWN) {
+            this.turnPage(true);
+        } else if (keyCode == GLFW.GLFW_KEY_RIGHT || keyCode == GLFW.GLFW_KEY_PAGE_UP) {
+            this.turnPage(false);
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public void close() {
         super.close();
 
@@ -147,6 +173,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             component.childById(FlowLayout.class, "index").<FlowLayout>configure(index -> {
                 EntryLoader.loadedEntries().forEach(entryId -> {
                     var indexItem = BookScreen.this.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+                    indexItem.childById(ItemComponent.class, "icon").stack(EntryLoader.getEntry(entryId).icon().getDefaultStack());
 
                     var label = indexItem.childById(LabelComponent.class, "index-label");
 
@@ -176,10 +203,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     public class EntryPageSupplier implements PageSupplier {
 
-        private final EntryLoader.Entry entry;
+        private final Entry entry;
         private final List<Component> pages = new ArrayList<>();
 
-        public EntryPageSupplier(EntryLoader.Entry entry) {
+        public EntryPageSupplier(Entry entry) {
             this.entry = entry;
 
             var pages = PROCESSOR.process(entry.content());
@@ -193,20 +220,20 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                     parent.forEachDescendant(descendant -> {
                         if (!(descendant instanceof LabelComponent label)) return;
                         label.textClickHandler(style -> {
-                           var clickEvent = style.getClickEvent();
-                           if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
-                               BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(new Identifier(clickEvent.getValue().substring(1)))));
-                               return true;
-                           } else {
-                               return Drawer.utilityScreen().handleTextClick(style);
-                           }
+                            var clickEvent = style.getClickEvent();
+                            if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
+                                BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(new Identifier(clickEvent.getValue().substring(1)))));
+                                return true;
+                            } else {
+                                return Drawer.utilityScreen().handleTextClick(style);
+                            }
                         });
                     });
                 }
 
-                if (firstPage && entry.meta() != null && entry.meta().has("title")) {
+                if (firstPage) {
                     firstPage = false;
-                    this.pages.add(BookScreen.this.makePageContainer(entry.meta().get("title").getAsString(), component));
+                    this.pages.add(BookScreen.this.makePageContainer(entry.title().getString(), component));
                 } else {
                     this.pages.add(BookScreen.this.makePageContainer(null, component));
                 }

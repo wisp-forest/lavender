@@ -7,7 +7,7 @@
                 <flow-layout direction="vertical" id="primary-panel">
                     <children>
                         <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
-                                 region-width="276" region-height="180"/>
+                                 region-width="267" region-height="180"/>
 
                         <flow-layout direction="vertical" id="left-page-anchor">
                             <children/>
@@ -177,9 +177,7 @@
         <template name="index-item">
             <flow-layout direction="horizontal">
                 <children>
-                    <item>
-                        <stack>minecraft:netherite_ingot</stack>
-
+                    <item id="icon">
                         <margins>
                             <vertical>1</vertical>
                             <left>2</left>

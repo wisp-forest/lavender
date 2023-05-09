@@ -6,11 +6,14 @@ import com.google.gson.JsonObject;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.item.Items;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.SynchronousResourceReloader;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.JsonHelper;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,25 +52,31 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
         ENTRY_FINDER.findResources(manager).forEach((resourceId, resource) -> {
             try {
                 var rawEntry = IOUtils.toString(resource.getInputStream()).strip();
-                JsonObject meta = null;
+                JsonObject meta;
 
                 if (rawEntry.startsWith("```json")) {
                     rawEntry = rawEntry.substring("```json".length());
                     int frontmatterEnd = rawEntry.indexOf("```");
                     if (frontmatterEnd == -1) {
-                        throw new RuntimeException("Unterminated front matter");
+                        throw new RuntimeException("Unterminated entry meta");
                     }
 
                     meta = GSON.fromJson(rawEntry.substring(0, frontmatterEnd), JsonObject.class);
                     rawEntry = rawEntry.substring(frontmatterEnd + 3).stripLeading();
+                } else {
+                    throw new RuntimeException("Missing entry meta");
                 }
 
-                LOADED_ENTRIES.put(new Identifier(resourceId.getNamespace(), resourceId.getPath().substring("lavender/entries/".length(), resourceId.getPath().length() - 3)), new Entry(meta, rawEntry));
+                var title = JsonHelper.getString(meta, "title");
+                var icon = JsonHelper.getItem(meta, "icon", Items.AIR);
+
+                LOADED_ENTRIES.put(
+                        new Identifier(resourceId.getNamespace(), resourceId.getPath().substring("lavender/entries/".length(), resourceId.getPath().length() - 3)),
+                        new Entry(Text.literal(title), icon, rawEntry)
+                );
             } catch (Exception e) {
                 Lavender.LOGGER.warn("Could not load entry {}", resourceId, e);
             }
         });
     }
-
-    public record Entry(@Nullable JsonObject meta, String content) {}
 }
