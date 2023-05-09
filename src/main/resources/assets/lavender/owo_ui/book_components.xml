@@ -81,15 +81,13 @@
                             <item>
                                 <stack>minecraft:crafting_table</stack>
                                 <set-tooltip-from-stack>true</set-tooltip-from-stack>
-                                <positioning type="absolute">83,40</positioning>
+                                <positioning type="absolute">85,41</positioning>
+                                <sizing>
+                                    <horizontal method="fixed">12</horizontal>
+                                    <vertical method="fixed">12</vertical>
+                                </sizing>
                             </item>
                         </children>
-
-                        <allow-overflow>true</allow-overflow>
-
-                        <padding>
-                            <vertical>2</vertical>
-                        </padding>
                     </flow-layout>
                 </children>
 
