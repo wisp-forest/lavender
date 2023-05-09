@@ -3,5 +3,7 @@
   "structure.lavender.nether_portal": "Nether Portal",
 
   "entry.lavender.profound_page": "A Profound Page",
-  "entry.lavender.ritual_basics": "Ritual Basics"
+  "entry.lavender.ritual_basics": "Ritual Basics",
+
+  "item.lavender.book": "Book"
 }

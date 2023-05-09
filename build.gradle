@@ -9,6 +9,9 @@ group = project.maven_group
 
 repositories {
     maven { url "https://maven.wispforest.io/" }
+
+    // rei
+    maven { url "https://maven.shedaniel.me/" }
 }
 
 dependencies {
@@ -21,7 +24,9 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     modImplementation "io.wispforest:owo-lib:${project.owo_version}"
-    modImplementation "io.wispforest:worldmesher:${project.worldmesher_version}"
+
+    modLocalRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_version}"
+    modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${project.rei_version}"
 }
 
 base {

@@ -72,7 +72,7 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
 
                 LOADED_ENTRIES.put(
                         new Identifier(resourceId.getNamespace(), resourceId.getPath().substring("lavender/entries/".length(), resourceId.getPath().length() - 3)),
-                        new Entry(Text.literal(title), icon, rawEntry)
+                        new Entry(title, icon, rawEntry)
                 );
             } catch (Exception e) {
                 Lavender.LOGGER.warn("Could not load entry {}", resourceId, e);

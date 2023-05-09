@@ -28,7 +28,7 @@
                 <children>
                     <flow-layout direction="vertical">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="36"
+                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
                                      v="186" region-width="104" region-height="54">
                                 <blend>true</blend>
                             </texture>

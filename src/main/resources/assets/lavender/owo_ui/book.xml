@@ -43,7 +43,7 @@
 
                         <button id="back-button">
                             <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="0" v="210" texture-width="512"
+                                <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512"
                                          texture-height="256"/>
                             </renderer>
 
@@ -57,7 +57,7 @@
 
                         <button id="next-button">
                             <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512"
+                                <texture texture="lavender:textures/gui/book.png" u="36" v="180" texture-width="512"
                                          texture-height="256"/>
                             </renderer>
 
@@ -88,7 +88,15 @@
     </components>
 
     <templates>
-        <template name="page-with-title">
+        <template name="empty-page-content">
+            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="163" v="180"
+                     region-width="9" region-height="11">
+                <blend>true</blend>
+                <positioning type="relative">50,50</positioning>
+            </texture>
+        </template>
+
+        <template name="page-title-header">
             <flow-layout direction="vertical">
                 <children>
                     <label id="title-label">
@@ -105,7 +113,7 @@
                         </sizing>
                     </label>
 
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41"
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
                              v="180" region-width="109" region-height="3">
                         <blend>true</blend>
                         <margins>
@@ -113,64 +121,35 @@
                             <bottom>7</bottom>
                         </margins>
                     </texture>
-
-                    <flow-layout direction="vertical" id="content-anchor">
-                        <children/>
-                        <sizing>
-                            <horizontal method="fill">100</horizontal>
-                            <vertical method="fixed">123</vertical>
-                        </sizing>
-                    </flow-layout>
                 </children>
             </flow-layout>
         </template>
 
-        <template name="simple-page">
+        <template name="landing-page-header">
             <flow-layout direction="vertical">
                 <children>
-                    <flow-layout direction="vertical" id="content-anchor">
-                        <children/>
-                    </flow-layout>
-                </children>
-
-                <sizing>
-                    <horizontal method="fill">100</horizontal>
-                    <vertical method="fill">100</vertical>
-                </sizing>
-            </flow-layout>
-        </template>
-
-        <template name="index-page">
-            <flow-layout direction="vertical">
-                <children>
-                    <flow-layout direction="vertical" id="index">
-                        <children/>
-                    </flow-layout>
-                </children>
-
-                <sizing>
-                    <horizontal method="fill">100</horizontal>
-                    <vertical method="fill">100</vertical>
-                </sizing>
-            </flow-layout>
-        </template>
-
-        <template name="empty-page">
-            <flow-layout direction="vertical">
-                <children>
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="151" v="180"
-                             region-width="9" region-height="11">
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="267"
+                             v="100" region-width="100" region-height="29">
                         <blend>true</blend>
                     </texture>
+
+                    <label id="title-label">
+                        <text>{{page-title}}</text>
+                        <color>dark-gray</color>
+
+                        <positioning type="relative">50,50</positioning>
+                    </label>
                 </children>
 
                 <horizontal-alignment>center</horizontal-alignment>
-                <vertical-alignment>center</vertical-alignment>
 
                 <sizing>
                     <horizontal method="fill">100</horizontal>
-                    <vertical method="fill">100</vertical>
                 </sizing>
+
+                <margins>
+                    <bottom>7</bottom>
+                </margins>
             </flow-layout>
         </template>
 
