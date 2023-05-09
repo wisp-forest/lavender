@@ -7,16 +7,26 @@ import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.Component;
+import io.wispforest.owo.ui.core.Easing;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
+import io.wispforest.owo.ui.util.Drawer;
+import io.wispforest.owo.ui.util.UISounds;
 import io.wispforest.owo.util.Observable;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
@@ -27,16 +37,16 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     );
 
     private int previousUiScale;
-    private String entryTitle;
 
     private ButtonComponent previousButton;
+    private ButtonComponent returnButton;
     private ButtonComponent nextButton;
 
     private FlowLayout leftPageAnchor;
     private FlowLayout rightPageAnchor;
 
-    private final Observable<Integer> basePageIndex = Observable.of(-1);
-    private final List<Component> pages = new ArrayList<>();
+    private final OpenObservable<Integer> basePageIndex = new OpenObservable<>(-1);
+    private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
     public BookScreen() {
         super(FlowLayout.class, Lavender.id("book"));
@@ -48,21 +58,6 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.client.options.getGuiScale().setValue(MathHelper.ceilDiv(this.client.options.getGuiScale().getValue(), 2) * 2);
         this.client.onResolutionChanged();
 
-        var entry = EntryLoader.getEntry(Lavender.id("page"));
-        if (entry != null) {
-            var pages = PROCESSOR.process(entry.content());
-            while (!pages.children().isEmpty()) {
-                var component = pages.children().get(0);
-
-                pages.removeChild(component);
-                this.pages.add(component);
-            }
-
-            if (entry.meta() != null && entry.meta().has("title")) {
-                this.entryTitle = entry.meta().get("title").getAsString();
-            }
-        }
-
         this.leftPageAnchor = rootComponent.childById(FlowLayout.class, "left-page-anchor");
         this.rightPageAnchor = rootComponent.childById(FlowLayout.class, "right-page-anchor");
 
@@ -70,31 +65,32 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.basePageIndex.set(Math.max(0, this.basePageIndex.get() - 2));
         });
 
+        (this.returnButton = rootComponent.childById(ButtonComponent.class, "back-button")).onPress(buttonComponent -> {
+            this.navPop();
+        });
+
         (this.nextButton = rootComponent.childById(ButtonComponent.class, "next-button")).onPress(buttonComponent -> {
-            this.basePageIndex.set(Math.min(this.pages.size() - 1, this.basePageIndex.get() + 2));
+            this.basePageIndex.set(Math.min(this.pageSupplier().pageCount() - 1, this.basePageIndex.get() + 2));
         });
 
         this.basePageIndex.observe(this::updateForPageChange);
-        this.basePageIndex.set(0);
+        this.navPush(new IndexPageSupplier());
     }
 
     private void updateForPageChange(int basePageIndex) {
-        this.previousButton.active(basePageIndex > 0);
-        this.nextButton.active(basePageIndex + 2 < this.pages.size());
+        var pageSupplier = this.pageSupplier();
 
+        this.returnButton.active(this.navStack.size() > 1);
+        this.previousButton.active(basePageIndex > 0);
+        this.nextButton.active(basePageIndex + 2 < pageSupplier.pageCount());
 
         int index = 0;
         while (index < 2) {
             var anchor = index == 0 ? this.leftPageAnchor : this.rightPageAnchor;
             anchor.clearChildren();
 
-            if (basePageIndex + index < this.pages.size()) {
-                var pageContent = this.pages.get(basePageIndex + index);
-
-                var page = this.model.expandTemplate(ParentComponent.class, basePageIndex + index == 0 ? "page-with-title" : "simple-page", Map.of("page-title", this.entryTitle));
-                page.childById(FlowLayout.class, "content-anchor").child(pageContent);
-
-                anchor.child(page);
+            if (basePageIndex + index < pageSupplier.pageCount()) {
+                anchor.child(pageSupplier.getPage(basePageIndex + index));
             } else {
                 anchor.child(this.model.expandTemplate(Component.class, "empty-page", Map.of()));
             }
@@ -103,11 +99,148 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
+    protected PageSupplier pageSupplier() {
+        return this.navStack.peek().pageSupplier;
+    }
+
+    protected void navPush(PageSupplier supplier) {
+        if (this.navStack.peek() != null) {
+            this.navStack.peek().selectedPage = this.basePageIndex.get();
+        }
+
+        this.navStack.push(new NavFrame(supplier));
+        this.basePageIndex.update(0);
+    }
+
+    protected void navPop() {
+        if (this.navStack.size() <= 1) return;
+
+        this.navStack.pop();
+        this.basePageIndex.update(this.navStack.peek().selectedPage);
+    }
+
+    protected ParentComponent makePageContainer(@Nullable String title, Component content) {
+        var page = this.model.expandTemplate(ParentComponent.class, title != null ? "page-with-title" : "simple-page", title == null ? Map.of() : Map.of("page-title", title));
+        page.childById(FlowLayout.class, "content-anchor").child(content);
+        return page;
+    }
+
     @Override
     public void close() {
         super.close();
 
         this.client.options.getGuiScale().setValue(this.previousUiScale);
         this.client.onResolutionChanged();
+    }
+
+    public interface PageSupplier {
+        Component getPage(int pageIndex);
+
+        int pageCount();
+    }
+
+    public class IndexPageSupplier implements PageSupplier {
+
+        @Override
+        public Component getPage(int pageIndex) {
+            var component = BookScreen.this.model.expandTemplate(ParentComponent.class, "index-page", Map.of());
+            component.childById(FlowLayout.class, "index").<FlowLayout>configure(index -> {
+                EntryLoader.loadedEntries().forEach(entryId -> {
+                    var indexItem = BookScreen.this.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+
+                    var label = indexItem.childById(LabelComponent.class, "index-label");
+
+                    label.text(Text.translatable(Util.createTranslationKey("entry", entryId)).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                    label.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                        BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(entryId)));
+                        UISounds.playInteractionSound();
+                        return true;
+                    });
+
+                    var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
+                    label.mouseEnter().subscribe(animation::forwards);
+                    label.mouseLeave().subscribe(animation::backwards);
+
+                    index.child(indexItem);
+                });
+            });
+
+            return BookScreen.this.makePageContainer("Index", component);
+        }
+
+        @Override
+        public int pageCount() {
+            return 1;
+        }
+    }
+
+    public class EntryPageSupplier implements PageSupplier {
+
+        private final EntryLoader.Entry entry;
+        private final List<Component> pages = new ArrayList<>();
+
+        public EntryPageSupplier(EntryLoader.Entry entry) {
+            this.entry = entry;
+
+            var pages = PROCESSOR.process(entry.content());
+            boolean firstPage = true;
+
+            while (!pages.children().isEmpty()) {
+                var component = pages.children().get(0);
+                pages.removeChild(component);
+
+                if (component instanceof ParentComponent parent) {
+                    parent.forEachDescendant(descendant -> {
+                        if (!(descendant instanceof LabelComponent label)) return;
+                        label.textClickHandler(style -> {
+                           var clickEvent = style.getClickEvent();
+                           if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
+                               BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(new Identifier(clickEvent.getValue().substring(1)))));
+                               return true;
+                           } else {
+                               return Drawer.utilityScreen().handleTextClick(style);
+                           }
+                        });
+                    });
+                }
+
+                if (firstPage && entry.meta() != null && entry.meta().has("title")) {
+                    firstPage = false;
+                    this.pages.add(BookScreen.this.makePageContainer(entry.meta().get("title").getAsString(), component));
+                } else {
+                    this.pages.add(BookScreen.this.makePageContainer(null, component));
+                }
+            }
+        }
+
+        @Override
+        public Component getPage(int pageIndex) {
+            return this.pages.get(pageIndex);
+        }
+
+        @Override
+        public int pageCount() {
+            return this.pages.size();
+        }
+    }
+
+    private static class OpenObservable<T> extends Observable<T> {
+        public OpenObservable(T initial) {
+            super(initial);
+        }
+
+        public void update(T value) {
+            this.value = value;
+            this.notifyObservers(this.value);
+        }
+    }
+
+    private static class NavFrame {
+        public final PageSupplier pageSupplier;
+        public int selectedPage = 0;
+
+        private NavFrame(PageSupplier pageSupplier) {
+            this.pageSupplier = pageSupplier;
+        }
     }
 }

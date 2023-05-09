@@ -41,6 +41,20 @@
                             <positioning type="absolute">-3,174</positioning>
                         </button>
 
+                        <button id="back-button">
+                            <renderer>
+                                <texture texture="lavender:textures/gui/book.png" u="0" v="210" texture-width="512"
+                                         texture-height="256"/>
+                            </renderer>
+
+                            <sizing>
+                                <horizontal method="fixed">18</horizontal>
+                                <vertical method="fixed">10</vertical>
+                            </sizing>
+
+                            <positioning type="absolute">122,176</positioning>
+                        </button>
+
                         <button id="next-button">
                             <renderer>
                                 <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512"
@@ -116,13 +130,28 @@
                 <children>
                     <flow-layout direction="vertical" id="content-anchor">
                         <children/>
-
-                        <sizing>
-                            <horizontal method="fill">100</horizontal>
-                            <vertical method="fill">100</vertical>
-                        </sizing>
                     </flow-layout>
                 </children>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fill">100</vertical>
+                </sizing>
+            </flow-layout>
+        </template>
+
+        <template name="index-page">
+            <flow-layout direction="vertical">
+                <children>
+                    <flow-layout direction="vertical" id="index">
+                        <children/>
+                    </flow-layout>
+                </children>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                    <vertical method="fill">100</vertical>
+                </sizing>
             </flow-layout>
         </template>
 
@@ -142,6 +171,35 @@
                     <horizontal method="fill">100</horizontal>
                     <vertical method="fill">100</vertical>
                 </sizing>
+            </flow-layout>
+        </template>
+
+        <template name="index-item">
+            <flow-layout direction="horizontal">
+                <children>
+                    <item>
+                        <stack>minecraft:netherite_ingot</stack>
+
+                        <margins>
+                            <vertical>1</vertical>
+                            <left>2</left>
+                            <right>4</right>
+                        </margins>
+
+                        <sizing>
+                            <horizontal method="fixed">8</horizontal>
+                            <vertical method="fixed">8</vertical>
+                        </sizing>
+                    </item>
+
+                    <label id="index-label">
+                        <color>black</color>
+                        <cursor-style>hand</cursor-style>
+                        <line-height>7</line-height>
+                    </label>
+                </children>
+
+                <vertical-alignment>center</vertical-alignment>
             </flow-layout>
         </template>
     </templates>

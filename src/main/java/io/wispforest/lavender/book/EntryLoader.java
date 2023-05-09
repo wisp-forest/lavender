@@ -14,8 +14,10 @@ import net.minecraft.util.Identifier;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class EntryLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
 
@@ -30,6 +32,10 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
 
     public static @Nullable Entry getEntry(Identifier entryId) {
         return LOADED_ENTRIES.get(entryId);
+    }
+
+    public static Set<Identifier> loadedEntries() {
+        return Collections.unmodifiableSet(LOADED_ENTRIES.keySet());
     }
 
     @Override
