@@ -52,7 +52,7 @@ public class StructureInfo {
 
     // --- iteration ---
 
-    private void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action) {
+    public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action) {
         this.forEachPredicate(action, BlockRotation.NONE);
     }
 

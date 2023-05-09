@@ -270,4 +270,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.pageSupplier = pageSupplier;
         }
     }
+
+    static {
+        UIParsing.registerFactory("lavender.structure", StructureComponent::parse);
+    }
 }

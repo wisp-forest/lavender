@@ -16,3 +16,7 @@ ritual's core.
 
 This is accomplished by {gold}shift-right-clicking{} first a pedestal and then the corresponding ritual core, all while
 wielding a [Conjuring Scepter](^lavender:profound_page) of any kind
+
+;;;;;
+
+<|structure-preview@lavender:book_components|structure=lavender:ritual_of_extraction|>

@@ -99,6 +99,35 @@
                 </sizing>
             </flow-layout>
         </template>
+
+        <template name="structure-preview">
+            <flow-layout direction="vertical">
+                <children>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="267"
+                                     v="0" region-width="100" region-height="100">
+                                <blend>true</blend>
+                                <positioning type="absolute">0,0</positioning>
+                            </texture>
+
+                            <lavender.structure structure-id="{{structure}}">
+                                <sizing>
+                                    <horizontal method="fixed">100</horizontal>
+                                    <vertical method="fixed">100</vertical>
+                                </sizing>
+                            </lavender.structure>
+                        </children>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
     </templates>
 
 </owo-ui>

@@ -5,8 +5,15 @@ import io.wispforest.lavender.md.MarkdownExtension;
 import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
+import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.core.Component;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
+import io.wispforest.owo.ui.parsing.UIModelParsingException;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.HashMap;
@@ -91,13 +98,22 @@ public class OwoUITemplateExtension implements MarkdownExtension {
 
         @Override
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var builtParams = new HashMap<String, String>();
-            for (var parameter : this.params.split(",")) {
-                if (parameter.split("=").length != 2) continue;
-                builtParams.put(parameter.split("=")[0], parameter.split("=")[1]);
-            }
+            try {
+                var builtParams = new HashMap<String, String>();
+                for (var parameter : this.params.split(",")) {
+                    if (parameter.split("=").length != 2) continue;
+                    builtParams.put(parameter.split("=")[0], parameter.split("=")[1]);
+                }
 
-            ((OwoUICompiler) compiler).visitComponent(UIModelLoader.get(modelId).expandTemplate(Component.class, this.templateName, builtParams));
+                ((OwoUICompiler) compiler).visitComponent(UIModelLoader.get(modelId).expandTemplate(Component.class, this.templateName, builtParams));
+            } catch (UIModelParsingException e) {
+                ((OwoUICompiler) compiler).visitComponent(
+                        Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                                .child(Components.label(Text.literal(e.getMessage())).horizontalSizing(Sizing.fill(100)))
+                                .padding(Insets.of(10))
+                                .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
+                );
+            }
         }
 
         @Override
