@@ -122,6 +122,11 @@
                         </margins>
                     </texture>
                 </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
             </flow-layout>
         </template>
 

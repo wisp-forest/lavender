@@ -3,10 +3,20 @@
 
     <templates>
         <template name="horizontal-rule">
-            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="41" v="183"
-                     region-width="109" region-height="3">
-                <blend>true</blend>
-            </texture>
+            <flow-layout direction="vertical">
+                <children>
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
+                             v="183"
+                             region-width="109" region-height="3">
+                        <blend>true</blend>
+                    </texture>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
         </template>
 
         <template name="centered-button">
@@ -28,39 +38,66 @@
                 <children>
                     <flow-layout direction="vertical">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
-                                     v="186" region-width="104" region-height="54">
+                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                     u="54" v="186" region-width="104" region-height="54">
                                 <blend>true</blend>
                             </texture>
 
                             <grid-layout rows="3" columns="3" id="input-grid">
                                 <children>
                                     <lavender.ingredient row="0" column="0">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="0" column="1">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="0" column="2">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="1" column="0">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="1" column="1">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="1" column="2">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="2" column="0">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="2" column="1">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                     <lavender.ingredient row="2" column="2">
-                                        <margins><top>1</top><left>1</left></margins>
+                                        <margins>
+                                            <top>1</top>
+                                            <left>1</left>
+                                        </margins>
                                     </lavender.ingredient>
                                 </children>
 
@@ -105,7 +142,8 @@
                 <children>
                     <flow-layout direction="vertical">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="267"
+                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                     u="267"
                                      v="0" region-width="100" region-height="100">
                                 <blend>true</blend>
                                 <positioning type="absolute">0,0</positioning>

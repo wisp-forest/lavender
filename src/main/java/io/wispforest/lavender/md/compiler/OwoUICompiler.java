@@ -80,7 +80,8 @@ public class OwoUICompiler implements MarkdownCompiler<ParentComponent> {
     @Override
     public void visitListItem(OptionalInt ordinal) {
         var element = Containers.horizontalFlow(Sizing.content(), Sizing.content());
-        element.child(this.makeLabel(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ").formatted(Formatting.GRAY))).margins(Insets.vertical(1));
+        element.child(this.makeLabel(Text.literal(ordinal.isPresent() ? " " + ordinal.getAsInt() + ". " : " • ").formatted(Formatting.GRAY)).margins(Insets.left(-11))).margins(Insets.vertical(1));
+        element.padding(Insets.left(11)).allowOverflow(true);
 
         var container = Containers.verticalFlow(Sizing.content(), Sizing.content());
         element.child(container);
