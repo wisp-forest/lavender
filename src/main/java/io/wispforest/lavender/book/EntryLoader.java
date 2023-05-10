@@ -11,34 +11,21 @@ import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.SynchronousResourceReloader;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.List;
 
 public class EntryLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
 
     private static final ResourceFinder ENTRY_FINDER = new ResourceFinder("lavender/entries", ".md");
     private static final Gson GSON = new GsonBuilder().setLenient().disableHtmlEscaping().create();
 
-    private static final Map<Identifier, Entry> LOADED_ENTRIES = new HashMap<>();
-
     public static void initialize() {
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new EntryLoader());
-    }
-
-    public static @Nullable Entry getEntry(Identifier entryId) {
-        return LOADED_ENTRIES.get(entryId);
-    }
-
-    public static Set<Identifier> loadedEntries() {
-        return Collections.unmodifiableSet(LOADED_ENTRIES.keySet());
     }
 
     @Override
@@ -47,11 +34,28 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
     }
 
     @Override
+    public Collection<Identifier> getFabricDependencies() {
+        return List.of(Lavender.id("book_loader"));
+    }
+
+    @Override
     public void reload(ResourceManager manager) {
-        LOADED_ENTRIES.clear();
         ENTRY_FINDER.findResources(manager).forEach((resourceId, resource) -> {
+            var entryId = ENTRY_FINDER.toResourceId(resourceId);
+
+            Book book = null;
+            for (var candidate : BookLoader.loadedBooks()) {
+                if (!entryId.getNamespace().equals(candidate.id().getNamespace())) continue;
+                if (!entryId.getPath().startsWith(candidate.id().getPath() + "/")) continue;
+
+                book = candidate;
+                break;
+            }
+
+            if (book == null) return;
+
             try {
-                var rawEntry = IOUtils.toString(resource.getInputStream()).strip();
+                var rawEntry = IOUtils.toString(resource.getInputStream(), StandardCharsets.UTF_8).strip();
                 JsonObject meta;
 
                 if (rawEntry.startsWith("```json")) {
@@ -70,10 +74,17 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
                 var title = JsonHelper.getString(meta, "title");
                 var icon = JsonHelper.getItem(meta, "icon", Items.AIR);
 
-                LOADED_ENTRIES.put(
-                        ENTRY_FINDER.toResourceId(resourceId),
-                        new Entry(title, icon, rawEntry)
+                var entry = new Entry(new Identifier(entryId.getNamespace(), entryId.getPath().substring(book.id().getPath().length() + 1)),
+                        title,
+                        icon,
+                        rawEntry
                 );
+
+                if (entry.id().getPath().equals("landing_page")) {
+                    book.setLandingPage(entry);
+                } else {
+                    book.addEntry(entry);
+                }
             } catch (Exception e) {
                 Lavender.LOGGER.warn("Could not load entry {}", resourceId, e);
             }

@@ -1,6 +1,7 @@
 package io.wispforest.lavender;
 
 import com.mojang.logging.LogUtils;
+import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.client.BookScreen;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.client.MinecraftClient;
@@ -23,15 +24,7 @@ public class Lavender implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        Registry.register(Registries.ITEM, id("book"), new Item(new Item.Settings().maxCount(1)) {
-            @Override
-            public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-                if (!world.isClient) return TypedActionResult.success(user.getStackInHand(hand));
-
-                MinecraftClient.getInstance().setScreen(new BookScreen());
-                return TypedActionResult.success(user.getStackInHand(hand));
-            }
-        });
+        Registry.register(Registries.ITEM, id("book"), new BookItem());
     }
 
     public static Identifier id(String path) {

@@ -3,6 +3,7 @@ package io.wispforest.lavender.client;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.book.EntryLoader;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.LavenderStructures;
@@ -59,15 +60,11 @@ public class LavenderClient implements ClientModInitializer {
                                 StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
                             }))));
-
-            dispatcher.register(literal("book").executes(context -> {
-                MinecraftClient.getInstance().setScreen(new BookScreen());
-                return 0;
-            }));
         });
 
         StructureOverlayRenderer.initialize();
         LavenderStructures.initialize();
+        BookLoader.initialize();
         EntryLoader.initialize();
     }
 

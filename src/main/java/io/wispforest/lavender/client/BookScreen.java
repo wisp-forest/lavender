@@ -1,8 +1,8 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.Entry;
-import io.wispforest.lavender.book.EntryLoader;
 import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
@@ -20,6 +20,7 @@ import io.wispforest.owo.ui.util.Drawer;
 import io.wispforest.owo.ui.util.UISounds;
 import io.wispforest.owo.util.Observable;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -30,8 +31,11 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
+
+    private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
     private static final MarkdownProcessor<ParentComponent> PROCESSOR = new MarkdownProcessor<>(
             BookCompiler::new,
@@ -39,6 +43,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension()
     );
 
+    private final Book book;
     private int previousUiScale;
 
     private ButtonComponent previousButton;
@@ -51,8 +56,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     private final OpenObservable<Integer> basePageIndex = new OpenObservable<>(-1);
     private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
-    public BookScreen() {
+    public BookScreen(Book book) {
         super(FlowLayout.class, Lavender.id("book"));
+        this.book = book;
     }
 
     @Override
@@ -77,14 +83,22 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         });
 
         this.basePageIndex.observe(this::updateForPageChange);
-        this.navPush(new IndexPageSupplier());
-    }
 
-    private void turnPage(boolean left) {
-        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)));
+        var navTrail = NAV_TRAILS.get(this.book.id());
+        if (navTrail != null) {
+            for (int i = navTrail.size() - 1; i > 0; i--) {
+                this.navStack.push(navTrail.get(i).createFrame(this));
+            }
+
+            this.navStack.push(navTrail.get(0).createFrame(this));
+            this.basePageIndex.update(navTrail.get(0).selectedPage);
+        } else {
+            this.navPush(new IndexPageSupplier());
+        }
     }
 
     private void updateForPageChange(int basePageIndex) {
+        this.navStack.peek().selectedPage = basePageIndex;
         var pageSupplier = this.pageSupplier();
 
         this.returnButton.active(this.navStack.size() > 1);
@@ -106,6 +120,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
+    private void turnPage(boolean left) {
+        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)));
+        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
+    }
+
     protected void navPush(PageSupplier supplier) {
         this.navPush(new NavFrame(supplier));
     }
@@ -117,6 +136,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.navStack.push(frame);
         this.basePageIndex.update(frame.selectedPage);
+
+        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
     protected void navPop() {
@@ -124,6 +145,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.navStack.pop();
         this.basePageIndex.update(this.navStack.peek().selectedPage);
+
+        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
     protected FlowLayout makePageContentWithHeader(@NotNull String title) {
@@ -155,16 +178,41 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) return true;
+
+        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            this.navPop();
+        } else if (button == GLFW.GLFW_MOUSE_BUTTON_4) {
+            this.turnPage(true);
+        } else if (button == GLFW.GLFW_MOUSE_BUTTON_5) {
+            this.turnPage(false);
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public void removed() {
         super.removed();
+
         this.client.options.getGuiScale().setValue(this.previousUiScale);
         this.client.onResolutionChanged();
+
+        var trail = new ArrayList<NavFrame.Replicator>();
+        while (!this.navStack.isEmpty()) trail.add(this.navStack.pop().replicator());
+
+        NAV_TRAILS.put(this.book.id(), trail);
     }
 
     public interface PageSupplier {
         Component getPageContent(int pageIndex);
 
         int pageCount();
+
+        Function<BookScreen, PageSupplier> replicator();
     }
 
     public class IndexPageSupplier implements PageSupplier {
@@ -172,26 +220,30 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         private final List<Component> pages = new ArrayList<>();
 
         public IndexPageSupplier() {
-            var landingPageEntry = EntryLoader.getEntry(Lavender.id("landing_page"));
+            var landingPageEntry = book.landingPage();
 
-            var landingPage = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
-            landingPage.child(model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
-            landingPage.child(PROCESSOR.process(landingPageEntry.content()));
+            if (landingPageEntry != null) {
+                var landingPage = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
+                landingPage.child(model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
+                landingPage.child(PROCESSOR.process(landingPageEntry.content()));
 
-            this.pages.add(landingPage);
+                this.pages.add(landingPage);
+            } else {
+                this.pages.add(model.expandTemplate(Component.class, "empty-page-content", Map.of()));
+            }
 
             var index = makePageContentWithHeader("Index");
-            EntryLoader.loadedEntries().forEach(entryId -> {
-                if (entryId.equals(Lavender.id("landing_page"))) return;
+            book.entries().forEach(entry -> {
+                if (entry == landingPageEntry) return;
 
                 var indexItem = model.expandTemplate(ParentComponent.class, "index-item", Map.of());
-                indexItem.childById(ItemComponent.class, "icon").stack(EntryLoader.getEntry(entryId).icon().getDefaultStack());
+                indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
 
                 var label = indexItem.childById(LabelComponent.class, "index-label");
 
-                label.text(Text.translatable(Util.createTranslationKey("entry", entryId)).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                label.text(Text.translatable(Util.createTranslationKey("entry", entry.id())).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
                 label.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                    navPush(new EntryPageSupplier(EntryLoader.getEntry(entryId)));
+                    navPush(new EntryPageSupplier(entry));
                     UISounds.playInteractionSound();
                     return true;
                 });
@@ -214,6 +266,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         @Override
         public int pageCount() {
             return 2;
+        }
+
+        @Override
+        public Function<BookScreen, PageSupplier> replicator() {
+            return bookScreen -> bookScreen.new IndexPageSupplier();
         }
     }
 
@@ -240,7 +297,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                             var clickEvent = style.getClickEvent();
                             if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
-                                BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(new Identifier(clickEvent.getValue().substring(1)))));
+                                BookScreen.this.navPush(new EntryPageSupplier(book.entryById(new Identifier(clickEvent.getValue().substring(1)))));
                                 return true;
                             } else {
                                 return Drawer.utilityScreen().handleTextClick(style);
@@ -267,6 +324,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         public int pageCount() {
             return this.pages.size();
         }
+
+        @Override
+        public Function<BookScreen, PageSupplier> replicator() {
+            return bookScreen -> bookScreen.new EntryPageSupplier(this.entry);
+        }
     }
 
     private static class OpenObservable<T> extends Observable<T> {
@@ -286,6 +348,18 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         private NavFrame(PageSupplier pageSupplier) {
             this.pageSupplier = pageSupplier;
+        }
+
+        public Replicator replicator() {
+            return new Replicator(this.pageSupplier.replicator(), this.selectedPage);
+        }
+
+        public record Replicator(Function<BookScreen, PageSupplier> pageSupplier, int selectedPage) {
+            public NavFrame createFrame(BookScreen screen) {
+                var frame = new NavFrame(this.pageSupplier.apply(screen));
+                frame.selectedPage = this.selectedPage;
+                return frame;
+            }
         }
     }
 
