@@ -5,7 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.structure.BlockStatePredicate;
 import io.wispforest.lavender.structure.StructureInfo;
-import io.wispforest.lavender.structure.StructureInfoLoader;
+import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -157,7 +157,7 @@ public class StructureOverlayRenderer {
             });
 
             if (PENDING_OVERLAY != null) {
-                var structure = StructureInfoLoader.get(PENDING_OVERLAY);
+                var structure = LavenderStructures.get(PENDING_OVERLAY);
                 if (structure != null) {
                     if (client.player.raycast(5, client.getTickDelta(), false) instanceof BlockHitResult target) {
                         var targetPos = target.getBlockPos().offset(target.getSide()).add(getPendingOffset(structure));
@@ -197,7 +197,7 @@ public class StructureOverlayRenderer {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             if (PENDING_OVERLAY == null) return ActionResult.PASS;
 
-            var structure = StructureInfoLoader.get(PENDING_OVERLAY);
+            var structure = LavenderStructures.get(PENDING_OVERLAY);
             if (structure == null) return ActionResult.PASS;
 
             addOverlay(hitResult.getBlockPos().offset(hitResult.getSide()).add(getPendingOffset(structure)), PENDING_OVERLAY, PENDING_ROTATION);
@@ -246,7 +246,7 @@ public class StructureOverlayRenderer {
         }
 
         public @Nullable StructureInfo fetchStructure() {
-            return StructureInfoLoader.get(this.structureId);
+            return LavenderStructures.get(this.structureId);
         }
     }
 

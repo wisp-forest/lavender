@@ -1,7 +1,5 @@
 package io.wispforest.lavender.structure;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,19 +14,22 @@ import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class StructureInfoLoader {
+public class LavenderStructures {
 
     private static final Map<Identifier, JsonObject> PENDING_STRUCTURES = new HashMap<>();
-    private static final BiMap<Identifier, StructureInfo> LOADED_STRUCTURES = HashBiMap.create();
+    private static final Map<Identifier, StructureInfo> LOADED_STRUCTURES = new HashMap<>();
 
     private static boolean tagsAvailable = false;
 
+    @ApiStatus.Internal
     public static void initialize() {
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new ReloadListener());
 
@@ -39,23 +40,26 @@ public class StructureInfoLoader {
         });
     }
 
+    /**
+     * @return A view over the identifiers of all currently loaded structures
+     */
     public static Set<Identifier> loadedStructures() {
-        return LOADED_STRUCTURES.keySet();
+        return Collections.unmodifiableSet(LOADED_STRUCTURES.keySet());
     }
 
-    public static @Nullable StructureInfo get(Identifier structure) {
-        return LOADED_STRUCTURES.get(structure);
-    }
-
-    public static @Nullable Identifier getId(StructureInfo structure) {
-        return LOADED_STRUCTURES.inverse().get(structure);
+    /**
+     * @return The structure currently associated with the given id,
+     * or {@code null} if no such structure is loaded
+     */
+    public static @Nullable StructureInfo get(Identifier structureId) {
+        return LOADED_STRUCTURES.get(structureId);
     }
 
     private static void tryParseStructures() {
         LOADED_STRUCTURES.clear();
         PENDING_STRUCTURES.forEach((identifier, pending) -> {
             try {
-                LOADED_STRUCTURES.put(identifier, StructureInfo.parse(pending));
+                LOADED_STRUCTURES.put(identifier, StructureInfo.parse(identifier, pending));
             } catch (JsonParseException e) {
                 Lavender.LOGGER.warn("Failed to load structure info {}", identifier, e);
             }

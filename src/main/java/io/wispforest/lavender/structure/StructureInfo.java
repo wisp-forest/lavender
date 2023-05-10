@@ -15,6 +15,7 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.registry.Registries;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.BlockRotation;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -34,8 +35,10 @@ public class StructureInfo {
     private final BlockStatePredicate[][][] predicates;
     public final int xSize, ySize, zSize;
     public final int nonNullPredicates;
+    public final Identifier id;
 
-    public StructureInfo(BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
+    public StructureInfo(Identifier id, BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
+        this.id = id;
         this.predicates = predicates;
         this.xSize = xSize;
         this.ySize = ySize;
@@ -167,7 +170,7 @@ public class StructureInfo {
     // --- parsing ---
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static StructureInfo parse(JsonObject json) {
+    public static StructureInfo parse(Identifier resourceId, JsonObject json) {
         var keyObject = JsonHelper.getObject(json, "keys");
         var keys = new Char2ObjectOpenHashMap<BlockStatePredicate>();
 
@@ -302,6 +305,6 @@ public class StructureInfo {
             }
         }
 
-        return new StructureInfo(result, xSize, ySize, zSize);
+        return new StructureInfo(resourceId, result, xSize, ySize, zSize);
     }
 }

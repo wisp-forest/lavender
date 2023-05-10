@@ -19,7 +19,8 @@ now, after we're {gold}done{} there let's have a list
 
 - list item 1
 - and another one
-    - nesting moment
+    - nesting moment, with some really long
+      prose because that should wrap correctly now
 - less nesting
 
 ayo, were on page 2!

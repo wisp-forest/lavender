@@ -2,7 +2,7 @@ package io.wispforest.lavender.book;
 
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.StructureInfo;
-import io.wispforest.lavender.structure.StructureInfoLoader;
+import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
@@ -70,7 +70,7 @@ public class StructureComponent extends BaseComponent {
     public boolean onMouseDown(double mouseX, double mouseY, int button) {
         super.onMouseDown(mouseX, mouseY, button);
 
-        StructureOverlayRenderer.addPendingOverlay(StructureInfoLoader.getId(this.structure));
+        StructureOverlayRenderer.addPendingOverlay(this.structure.id);
         MinecraftClient.getInstance().setScreen(null);
 
         return true;
@@ -82,7 +82,7 @@ public class StructureComponent extends BaseComponent {
         var structureId = Identifier.tryParse(element.getAttribute("structure-id"));
         if (structureId == null) throw new UIModelParsingException("Invalid structure id '" + element.getAttribute("structure-id") + "'");
 
-        var structure = StructureInfoLoader.get(structureId);
+        var structure = LavenderStructures.get(structureId);
         if (structure == null) throw new UIModelParsingException("Unknown structure '" + structureId + "'");
 
         return new StructureComponent(structure);

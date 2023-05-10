@@ -5,7 +5,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.EntryLoader;
 import io.wispforest.lavender.md.MarkdownProcessor;
-import io.wispforest.lavender.structure.StructureInfoLoader;
+import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.core.Size;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -31,7 +31,7 @@ public class LavenderClient implements ClientModInitializer {
 
     private static final SimpleCommandExceptionType NO_SUCH_STRUCTURE = new SimpleCommandExceptionType(Text.literal("No such structure is loaded"));
     private static final SuggestionProvider<FabricClientCommandSource> STRUCTURE_INFO = (context, builder) ->
-            CommandSource.suggestMatching(StructureInfoLoader.loadedStructures().stream().map(Identifier::toString), builder);
+            CommandSource.suggestMatching(LavenderStructures.loadedStructures().stream().map(Identifier::toString), builder);
 
     @Override
     public void onInitializeClient() {
@@ -54,7 +54,7 @@ public class LavenderClient implements ClientModInitializer {
                     .then(literal("add")
                             .then(argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
                                 var structureId = context.getArgument("structure", Identifier.class);
-                                if (StructureInfoLoader.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
+                                if (LavenderStructures.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
 
                                 StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
@@ -67,7 +67,7 @@ public class LavenderClient implements ClientModInitializer {
         });
 
         StructureOverlayRenderer.initialize();
-        StructureInfoLoader.initialize();
+        LavenderStructures.initialize();
         EntryLoader.initialize();
     }
 

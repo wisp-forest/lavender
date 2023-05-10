@@ -71,7 +71,7 @@ public class EntryLoader implements SynchronousResourceReloader, IdentifiableRes
                 var icon = JsonHelper.getItem(meta, "icon", Items.AIR);
 
                 LOADED_ENTRIES.put(
-                        new Identifier(resourceId.getNamespace(), resourceId.getPath().substring("lavender/entries/".length(), resourceId.getPath().length() - 3)),
+                        ENTRY_FINDER.toResourceId(resourceId),
                         new Entry(title, icon, rawEntry)
                 );
             } catch (Exception e) {

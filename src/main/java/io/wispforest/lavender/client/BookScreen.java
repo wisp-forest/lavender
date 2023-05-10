@@ -106,10 +106,6 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
-    protected PageSupplier pageSupplier() {
-        return this.navStack.peek().pageSupplier;
-    }
-
     protected void navPush(PageSupplier supplier) {
         this.navPush(new NavFrame(supplier));
     }
@@ -123,6 +119,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.basePageIndex.update(frame.selectedPage);
     }
 
+    protected void navPop() {
+        if (this.navStack.size() <= 1) return;
+
+        this.navStack.pop();
+        this.basePageIndex.update(this.navStack.peek().selectedPage);
+    }
+
     protected FlowLayout makePageContentWithHeader(@NotNull String title) {
         var container = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
         container.child(this.model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", title)));
@@ -130,11 +133,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         return container;
     }
 
-    protected void navPop() {
-        if (this.navStack.size() <= 1) return;
-
-        this.navStack.pop();
-        this.basePageIndex.update(this.navStack.peek().selectedPage);
+    protected PageSupplier pageSupplier() {
+        return this.navStack.peek().pageSupplier;
     }
 
     @Override
@@ -155,9 +155,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
-    public void close() {
-        super.close();
-
+    public void removed() {
+        super.removed();
         this.client.options.getGuiScale().setValue(this.previousUiScale);
         this.client.onResolutionChanged();
     }
@@ -237,6 +236,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                     parent.forEachDescendant(descendant -> {
                         if (!(descendant instanceof LabelComponent label)) return;
                         label.textClickHandler(style -> {
+                            if (style == null) return false;
+
                             var clickEvent = style.getClickEvent();
                             if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                                 BookScreen.this.navPush(new EntryPageSupplier(EntryLoader.getEntry(new Identifier(clickEvent.getValue().substring(1)))));
