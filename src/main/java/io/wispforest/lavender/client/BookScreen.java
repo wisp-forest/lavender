@@ -2,6 +2,7 @@ package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Book;
+import io.wispforest.lavender.book.Category;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.md.MarkdownProcessor;
@@ -9,28 +10,30 @@ import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
+import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
-import io.wispforest.owo.ui.util.Drawer;
 import io.wispforest.owo.ui.util.UISounds;
 import io.wispforest.owo.util.Observable;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Language;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
@@ -98,7 +101,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     private void updateForPageChange(int basePageIndex) {
+        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
         this.navStack.peek().selectedPage = basePageIndex;
+
         var pageSupplier = this.pageSupplier();
 
         this.returnButton.active(this.navStack.size() > 1);
@@ -121,8 +126,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     private void turnPage(boolean left) {
-        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)));
-        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
+        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)) / 2 * 2);
     }
 
     public void navPush(PageSupplier supplier) {
@@ -136,8 +140,6 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.navStack.push(frame);
         this.basePageIndex.update(frame.selectedPage);
-
-        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
     public void navPop() {
@@ -145,8 +147,6 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.navStack.pop();
         this.basePageIndex.update(this.navStack.peek().selectedPage);
-
-        this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
     protected FlowLayout makePageContentWithHeader(@NotNull String title) {
@@ -154,6 +154,30 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         container.child(this.model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", title)));
 
         return container;
+    }
+
+    protected void buildEntryIndex(Collection<Entry> entries, Consumer<Component> onto) {
+        for (var entry : entries) {
+            if (entry == this.book.landingPage()) continue;
+
+            var indexItem = this.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+            indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+
+            var label = indexItem.childById(LabelComponent.class, "index-label");
+
+            label.text(Text.translatable(Util.createTranslationKey("entry", entry.id())).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+            label.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                this.navPush(new EntryPageSupplier(entry));
+                UISounds.playInteractionSound();
+                return true;
+            });
+
+            var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
+            label.mouseEnter().subscribe(animation::forwards);
+            label.mouseLeave().subscribe(animation::backwards);
+
+            onto.accept(indexItem);
+        }
     }
 
     protected PageSupplier pageSupplier() {
@@ -232,30 +256,44 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 this.pages.add(model.expandTemplate(Component.class, "empty-page-content", Map.of()));
             }
 
-            var index = makePageContentWithHeader("Index");
-            book.entries().forEach(entry -> {
-                if (entry == landingPageEntry) return;
+            var indexPage = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+            this.pages.add(indexPage);
 
-                var indexItem = model.expandTemplate(ParentComponent.class, "index-item", Map.of());
-                indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+            if (!book.categories().isEmpty()) {
+                var categories = makePageContentWithHeader("Categories");
+                categories.verticalSizing(Sizing.content());
 
-                var label = indexItem.childById(LabelComponent.class, "index-label");
+                var categoryContainer = Containers.rtlTextFlow(Sizing.fill(100), Sizing.content());
+                categories.child(categoryContainer);
 
-                label.text(Text.translatable(Util.createTranslationKey("entry", entry.id())).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
-                label.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                    navPush(new EntryPageSupplier(entry));
-                    UISounds.playInteractionSound();
-                    return true;
-                });
+                for (var category : book.categories()) {
+                    categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
+                        categoryButton
+                                .tooltip(Text.translatable(Util.createTranslationKey("category", category.id())))
+                                .margins(Insets.of(4))
+                                .cursorStyle(CursorStyle.HAND);
 
-                var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
-                label.mouseEnter().subscribe(animation::forwards);
-                label.mouseLeave().subscribe(animation::backwards);
+                        categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                            navPush(new CategoryPageSupplier(category));
+                            UISounds.playInteractionSound();
+                            return true;
+                        });
+                    }));
+                }
 
-                index.child(indexItem);
-            });
+                indexPage.child(categories);
+            }
 
-            this.pages.add(index);
+            if (!book.orphanedEntries().isEmpty()) {
+                indexPage.child(book.categories().isEmpty()
+                        ? model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", "Index"))
+                        : UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.vertical(6))
+                );
+
+                var entries = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+                buildEntryIndex(book.orphanedEntries(), entries::child);
+                indexPage.child(entries);
+            }
         }
 
         @Override
@@ -271,6 +309,51 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         @Override
         public Function<BookScreen, PageSupplier> replicator() {
             return bookScreen -> bookScreen.new IndexPageSupplier();
+        }
+    }
+
+    public class CategoryPageSupplier implements PageSupplier {
+
+        private final Category category;
+        private final List<Component> pages = new ArrayList<>();
+
+        public CategoryPageSupplier(Category category) {
+            this.category = category;
+
+            // --- landing page ---
+
+            var parsedLandingPage = PROCESSOR.process(category.content());
+
+            var landingPageContent = parsedLandingPage.children().get(0);
+            parsedLandingPage.removeChild(landingPageContent);
+
+            this.pages.add(makePageContentWithHeader(Language.getInstance().get(Util.createTranslationKey("category", category.id()))).child(landingPageContent));
+
+            // --- entry index ---
+
+            var entries = book.entriesByCategory(this.category);
+            if (entries != null) {
+                var index = makePageContentWithHeader("Index");
+                buildEntryIndex(entries, index::child);
+                this.pages.add(index);
+            } else {
+                this.pages.add(model.expandTemplate(Component.class, "empty-page-content", Map.of()));
+            }
+        }
+
+        @Override
+        public Component getPageContent(int pageIndex) {
+            return this.pages.get(pageIndex);
+        }
+
+        @Override
+        public int pageCount() {
+            return this.pages.size();
+        }
+
+        @Override
+        public Function<BookScreen, PageSupplier> replicator() {
+            return bookScreen -> bookScreen.new CategoryPageSupplier(bookScreen.book.categoryById(this.category.id()));
         }
     }
 
@@ -318,7 +401,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         @Override
         public Function<BookScreen, PageSupplier> replicator() {
-            return bookScreen -> bookScreen.new EntryPageSupplier(this.entry);
+            return bookScreen -> bookScreen.new EntryPageSupplier(bookScreen.book.entryById(this.entry.id()));
         }
     }
 

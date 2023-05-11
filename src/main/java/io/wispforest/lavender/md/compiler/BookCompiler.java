@@ -1,6 +1,7 @@
 package io.wispforest.lavender.md.compiler;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
@@ -68,9 +69,9 @@ public class BookCompiler extends OwoUICompiler {
 
                 var clickEvent = style.getClickEvent();
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
-                    var linkTargetId = Identifier.tryParse(clickEvent.getValue().substring(1));
-                    if (linkTargetId != null && this.owner.book.entryById(linkTargetId) != null) {
-                        this.owner.navPush(this.owner.new EntryPageSupplier(this.owner.book.entryById(linkTargetId)));
+                    var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
+                    if (linkTarget != null) {
+                        this.owner.navPush(this.owner.new EntryPageSupplier(linkTarget));
                         return true;
                     } else {
                         return false;
@@ -85,6 +86,15 @@ public class BookCompiler extends OwoUICompiler {
             this.owner = screen;
         }
 
+        protected @Nullable Entry resolveLinkTarget(String link) {
+            if (this.owner == null) return null;
+
+            var entryId = Identifier.tryParse(link.substring(1));
+            if (entryId == null) return null;
+
+            return this.owner.book.entryById(entryId);
+        }
+
         @Override
         protected Style styleAt(int mouseX, int mouseY) {
             var style = super.styleAt(mouseX, mouseY);
@@ -92,18 +102,13 @@ public class BookCompiler extends OwoUICompiler {
 
             var event = style.getHoverEvent();
             if (this.owner != null && event != null && event.getAction() == HoverEvent.Action.SHOW_TEXT && event.getValue(HoverEvent.Action.SHOW_TEXT).getString().startsWith("^")) {
-                var rawLink = event.getValue(HoverEvent.Action.SHOW_TEXT).getString().substring(1);
-                var linkTargetId = Identifier.tryParse(rawLink);
+                var rawLink = event.getValue(HoverEvent.Action.SHOW_TEXT).getString();
+                var linkTarget = this.resolveLinkTarget(rawLink);
 
-                if (linkTargetId != null && this.owner.book.entryById(linkTargetId) != null) {
-                    style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(
-                            this.owner.book.entryById(linkTargetId).title()
-                    )));
-                } else {
-                    style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(
-                            "invalid internal link: " + rawLink
-                    ).formatted(Formatting.RED)));
-                }
+                style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
+                        ? Text.literal(linkTarget.title())
+                        : Text.literal("invalid internal link: " + rawLink).formatted(Formatting.RED)
+                ));
             }
 
             return style;

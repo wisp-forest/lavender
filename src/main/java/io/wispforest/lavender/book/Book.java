@@ -4,10 +4,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public final class Book {
 
@@ -17,8 +14,16 @@ public final class Book {
     private final @Nullable Identifier extend;
     private @Nullable Book resolvedExtend = null;
 
-    private final Map<Identifier, Entry> entries = new HashMap<>();
-    private final Collection<Entry> entriesView = Collections.unmodifiableCollection(this.entries.values());
+    private final Map<Identifier, Category> categories = new HashMap<>();
+    private final Collection<Category> categoriesView = Collections.unmodifiableCollection(this.categories.values());
+
+    private final Map<Identifier, Entry> entriesById = new HashMap<>();
+    private final Collection<Entry> entriesView = Collections.unmodifiableCollection(this.entriesById.values());
+
+    private final Map<Category, List<Entry>> entriesByCategory = new HashMap<>();
+
+    private final List<Entry> orphanedEntries = new ArrayList<>();
+    private final Collection<Entry> orphanedEntriesView = Collections.unmodifiableCollection(this.orphanedEntries);
 
     private @Nullable Entry landingPage = null;
 
@@ -36,8 +41,27 @@ public final class Book {
         return this.entriesView;
     }
 
+    public Collection<Entry> orphanedEntries() {
+        return this.orphanedEntriesView;
+    }
+
     public @Nullable Entry entryById(Identifier entryId) {
-        return this.entries.get(entryId);
+        return this.entriesById.get(entryId);
+    }
+
+    public @Nullable Collection<Entry> entriesByCategory(Category category) {
+        var entries = this.entriesByCategory.get(category);
+        if (entries == null) return null;
+
+        return Collections.unmodifiableCollection(entries);
+    }
+
+    public Collection<Category> categories() {
+        return this.categoriesView;
+    }
+
+    public @Nullable Category categoryById(Identifier categoryId) {
+        return this.categories.get(categoryId);
     }
 
     public @Nullable Entry landingPage() {
@@ -56,7 +80,23 @@ public final class Book {
         if (this.resolvedExtend != null) {
             this.resolvedExtend.addEntry(entry);
         } else {
-            this.entries.put(entry.id(), entry);
+            this.entriesById.put(entry.id(), entry);
+
+            if (this.categories.containsKey(entry.category())) {
+                this.entriesByCategory
+                        .computeIfAbsent(this.categories.get(entry.category()), $ -> new ArrayList<>())
+                        .add(entry);
+            } else {
+                this.orphanedEntries.add(entry);
+            }
+        }
+    }
+
+    void addCategory(Category category) {
+        if (this.resolvedExtend != null) {
+            this.resolvedExtend.addCategory(category);
+        } else {
+            this.categories.put(category.id(), category);
         }
     }
 

@@ -1,7 +1,8 @@
 ```json
 {
   "title": "A Profound Page With a Long Name",
-  "icon": "minecraft:melon_slice"
+  "icon": "minecraft:melon_slice",
+  "category": "a_category"
 }
 ```
 

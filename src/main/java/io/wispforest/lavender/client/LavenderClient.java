@@ -4,7 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.BookLoader;
-import io.wispforest.lavender.book.EntryLoader;
+import io.wispforest.lavender.book.BookContentLoader;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.core.Size;
@@ -65,7 +65,7 @@ public class LavenderClient implements ClientModInitializer {
         StructureOverlayRenderer.initialize();
         LavenderStructures.initialize();
         BookLoader.initialize();
-        EntryLoader.initialize();
+        BookContentLoader.initialize();
     }
 
     public static void registerTextureSize(int textureId, int width, int height) {
