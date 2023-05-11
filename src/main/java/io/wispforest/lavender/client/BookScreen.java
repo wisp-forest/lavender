@@ -43,7 +43,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension()
     );
 
-    private final Book book;
+    public final Book book;
     private int previousUiScale;
 
     private ButtonComponent previousButton;
@@ -125,11 +125,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
-    protected void navPush(PageSupplier supplier) {
+    public void navPush(PageSupplier supplier) {
         this.navPush(new NavFrame(supplier));
     }
 
-    protected void navPush(NavFrame frame) {
+    public void navPush(NavFrame frame) {
         if (this.navStack.peek() != null) {
             this.navStack.peek().selectedPage = this.basePageIndex.get();
         }
@@ -140,7 +140,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.client.player.playSound(SoundEvents.ITEM_BOOK_PAGE_TURN, 1f, 1f);
     }
 
-    protected void navPop() {
+    public void navPop() {
         if (this.navStack.size() <= 1) return;
 
         this.navStack.pop();
@@ -291,18 +291,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                 if (component instanceof ParentComponent parent) {
                     parent.forEachDescendant(descendant -> {
-                        if (!(descendant instanceof LabelComponent label)) return;
-                        label.textClickHandler(style -> {
-                            if (style == null) return false;
-
-                            var clickEvent = style.getClickEvent();
-                            if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
-                                BookScreen.this.navPush(new EntryPageSupplier(book.entryById(new Identifier(clickEvent.getValue().substring(1)))));
-                                return true;
-                            } else {
-                                return Drawer.utilityScreen().handleTextClick(style);
-                            }
-                        });
+                        if (descendant instanceof BookCompiler.BookLabelComponent label) {
+                            label.setOwner(BookScreen.this);
+                        }
                     });
                 }
 

@@ -1,6 +1,7 @@
 package io.wispforest.lavender.md.compiler;
 
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -9,9 +10,13 @@ import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
+import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
+import net.minecraft.text.*;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -27,7 +32,7 @@ public class BookCompiler extends OwoUICompiler {
 
     @Override
     protected LabelComponent makeLabel(MutableText text) {
-        return super.makeLabel(text.styled(style -> style.withParent(UNICODE_FONT_STYLE))).color(Color.BLACK).lineHeight(7);
+        return new BookLabelComponent(text.styled(style -> style.withParent(UNICODE_FONT_STYLE))).color(Color.BLACK).lineHeight(7);
     }
 
     @Override
@@ -50,5 +55,58 @@ public class BookCompiler extends OwoUICompiler {
     @Override
     public String name() {
         return "lavender_builtin_book";
+    }
+
+    public static class BookLabelComponent extends LabelComponent {
+
+        private @Nullable BookScreen owner;
+
+        protected BookLabelComponent(Text text) {
+            super(text);
+            this.textClickHandler(style -> {
+                if (style == null || this.owner == null) return false;
+
+                var clickEvent = style.getClickEvent();
+                if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
+                    var linkTargetId = Identifier.tryParse(clickEvent.getValue().substring(1));
+                    if (linkTargetId != null && this.owner.book.entryById(linkTargetId) != null) {
+                        this.owner.navPush(this.owner.new EntryPageSupplier(this.owner.book.entryById(linkTargetId)));
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return Drawer.utilityScreen().handleTextClick(style);
+                }
+            });
+        }
+
+        public void setOwner(@NotNull BookScreen screen) {
+            this.owner = screen;
+        }
+
+        @Override
+        protected Style styleAt(int mouseX, int mouseY) {
+            var style = super.styleAt(mouseX, mouseY);
+            if (style == null) return null;
+
+            var event = style.getHoverEvent();
+            if (this.owner != null && event != null && event.getAction() == HoverEvent.Action.SHOW_TEXT && event.getValue(HoverEvent.Action.SHOW_TEXT).getString().startsWith("^")) {
+                var rawLink = event.getValue(HoverEvent.Action.SHOW_TEXT).getString().substring(1);
+                var linkTargetId = Identifier.tryParse(rawLink);
+
+                if (linkTargetId != null && this.owner.book.entryById(linkTargetId) != null) {
+                    style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(
+                            this.owner.book.entryById(linkTargetId).title()
+                    )));
+                } else {
+                    style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(
+                            "invalid internal link: " + rawLink
+                    ).formatted(Formatting.RED)));
+                }
+            }
+
+            return style;
+        }
     }
 }
