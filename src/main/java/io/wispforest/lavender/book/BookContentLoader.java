@@ -46,26 +46,24 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         var categories = this.findResources(manager, CATEGORY_FINDER);
 
         for (var book : BookLoader.loadedBooks()) {
-            this.forResourceOfBook(categories, book, (identifier, resource) -> {
+            this.forResourceOfBook(categories, book, "category", (identifier, resource) -> {
                 var markdown = this.parseMarkdown(identifier, resource);
                 if (markdown == null) return;
 
                 var icon = JsonHelper.getItem(markdown.meta, "icon");
                 book.addCategory(new Category(identifier, icon, markdown.content));
             });
+        }
 
-            this.forResourceOfBook(entries, book, (identifier, resource) -> {
+        for (var book : BookLoader.loadedBooks()) {
+            this.forResourceOfBook(entries, book, "entry", (identifier, resource) -> {
                 var markdown = this.parseMarkdown(identifier, resource);
                 if (markdown == null) return;
 
                 var category = JsonHelper.getString(markdown.meta, "category", null);
-                var categoryId = category != null ? new Identifier(identifier.getNamespace(), category) : null;
-
-                // TODO this needs to respect extensions
-                if (categoryId != null && book.categoryById(categoryId) == null) {
-                    Lavender.LOGGER.warn("Could not load entry '{}' because the category '{}' does not exist in book '{}'", identifier, categoryId, book.id());
-                    return;
-                }
+                var categoryId = category != null
+                        ? category.indexOf(':') > 0 ? Identifier.tryParse(category) : new Identifier(identifier.getNamespace(), category)
+                        : null;
 
                 var title = JsonHelper.getString(markdown.meta, "title");
                 var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR);
@@ -90,13 +88,19 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         return resources;
     }
 
-    private void forResourceOfBook(Map<String, Map<String, Resource>> resources, Book book, BiConsumer<Identifier, Resource> action) {
+    private void forResourceOfBook(Map<String, Map<String, Resource>> resources, Book book, String resourceType, BiConsumer<Identifier, Resource> action) {
         if (!resources.containsKey(book.id().getNamespace())) return;
 
         var bookPrefix = book.id().getPath() + "/";
         resources.get(book.id().getNamespace()).forEach((path, resource) -> {
             if (!path.startsWith(bookPrefix)) return;
-            action.accept(new Identifier(book.id().getNamespace(), path.substring(bookPrefix.length())), resource);
+
+            var resourceId = new Identifier(book.id().getNamespace(), path.substring(bookPrefix.length()));
+            try {
+                action.accept(resourceId, resource);
+            } catch (RuntimeException e) {
+                Lavender.LOGGER.warn("Could not load {} '{}'", resourceType, resourceId, e);
+            }
         });
     }
 
@@ -125,6 +129,5 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         }
     }
 
-    private record MarkdownResource(JsonObject meta, String content) {
-    }
+    private record MarkdownResource(JsonObject meta, String content) {}
 }

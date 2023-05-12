@@ -86,8 +86,10 @@ public final class Book {
                 this.entriesByCategory
                         .computeIfAbsent(this.categories.get(entry.category()), $ -> new ArrayList<>())
                         .add(entry);
-            } else {
+            } else if (entry.category() == null) {
                 this.orphanedEntries.add(entry);
+            } else {
+                throw new RuntimeException("Could not load entry '" + entry.id() + "' because category '" + entry.category() + "' was not found in book '" + this.effectiveId() + "'");
             }
         }
     }
@@ -105,5 +107,9 @@ public final class Book {
 
         this.resolvedExtend = BookLoader.get(this.extend);
         return this.resolvedExtend != null;
+    }
+
+    Identifier effectiveId() {
+        return this.resolvedExtend != null ? this.resolvedExtend.effectiveId() : this.id;
     }
 }

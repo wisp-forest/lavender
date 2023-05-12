@@ -1,7 +1,8 @@
 ```json
 {
   "title": "Extension",
-  "icon": "minecraft:obsidian"
+  "icon": "minecraft:obsidian",
+  "category": "epic_category"
 }
 ```
 
