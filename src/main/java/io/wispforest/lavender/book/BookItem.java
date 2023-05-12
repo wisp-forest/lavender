@@ -1,5 +1,6 @@
 package io.wispforest.lavender.book;
 
+import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.nbt.NbtKey;
 import net.minecraft.client.MinecraftClient;
@@ -23,6 +24,12 @@ public class BookItem extends Item {
     public static @Nullable Book bookOf(ItemStack bookStack) {
         if (!(bookStack.getItem() instanceof BookItem) || !bookStack.has(BOOK_ID)) return null;
         return BookLoader.get(bookStack.get(BOOK_ID));
+    }
+
+    public static ItemStack create(Book book) {
+        var stack = Lavender.BOOK.getDefaultStack();
+        stack.put(BOOK_ID, book.id());
+        return stack;
     }
 
     @Override

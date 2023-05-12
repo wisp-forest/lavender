@@ -55,8 +55,6 @@ public class LavenderClient implements ClientModInitializer {
     private static final SuggestionProvider<FabricClientCommandSource> STRUCTURE_INFO = (context, builder) ->
             CommandSource.suggestMatching(LavenderStructures.loadedStructures().stream().map(Identifier::toString), builder);
 
-    private static float entryTriggerProgress = 0f;
-
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -90,28 +88,6 @@ public class LavenderClient implements ClientModInitializer {
         BookLoader.initialize();
         BookContentLoader.initialize();
 
-        ItemTooltipCallback.EVENT.register((stack, context, lines) -> {
-            entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.25f : 0f, MinecraftClient.getInstance().getLastFrameDuration() * .125);
-
-            for (var book : BookLoader.loadedBooks()) {
-                var associatedEntry = book.entryByAssociatedItem(stack.getItem());
-                if (associatedEntry == null) continue;
-
-                lines.add(Text.empty());
-                lines.add(Text.literal(associatedEntry.title()));
-
-                lines.add(TextOps.withFormatting("|".repeat((int) (entryTriggerProgress * 30)), Formatting.GRAY).append(TextOps.withFormatting("|".repeat((int) ((1 - entryTriggerProgress) * 30)), Formatting.DARK_GRAY)));
-
-                if (entryTriggerProgress >= 1) {
-                    BookScreen.pushEntry(book, associatedEntry);
-                    MinecraftClient.getInstance().setScreen(new BookScreen(book));
-                    entryTriggerProgress = 0f;
-                }
-
-                return;
-            }
-        });
-
         Hud.add(ENTRY_HUD_ID, () -> Containers.horizontalFlow(Sizing.content(), Sizing.content()).gap(5).positioning(Positioning.across(50, 52)));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null || !(Hud.getComponent(ENTRY_HUD_ID) instanceof FlowLayout hudComponent)) return;
@@ -132,7 +108,7 @@ public class LavenderClient implements ClientModInitializer {
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.item(associatedEntry.icon().getDefaultStack()).margins(Insets.of(0, 1, 0, 1)))
-                        .child(Components.item(client.player.getMainHandStack()).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
+                        .child(Components.item(BookItem.create(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))
                         .child(Components.label(TextOps.withFormatting(client.player.isSneaking() ? "Click to view" : "Sneak to view", Formatting.GRAY))));
@@ -153,9 +129,10 @@ public class LavenderClient implements ClientModInitializer {
             if (associatedEntry == null) return ActionResult.PASS;
 
             BookScreen.pushEntry(book, associatedEntry);
+            MinecraftClient.getInstance().setScreen(new BookScreen(book));
 
             player.swingHand(hand);
-            return ActionResult.PASS;
+            return ActionResult.FAIL;
         });
     }
 

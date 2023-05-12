@@ -2,7 +2,10 @@
 {
   "title": "Ritual Basics",
   "icon": "conjuring:blackstone_pedestal",
-  "category": "another_category"
+  "category": "another_category",
+  "associated_items": [
+    "conjuring:blackstone_pedestal"
+  ]
 }
 ```
 

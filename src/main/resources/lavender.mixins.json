@@ -7,6 +7,8 @@
   ],
   "client": [
     "MouseMixin",
+    "ScreenMixin",
+    "CreativeInventoryScreenMixin",
     "TextureUtilMixin"
   ],
   "injectors": {
