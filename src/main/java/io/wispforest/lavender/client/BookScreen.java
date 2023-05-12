@@ -87,17 +87,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.basePageIndex.observe(this::updateForPageChange);
 
-        var navTrail = NAV_TRAILS.get(this.book.id());
-        if (navTrail != null) {
-            for (int i = navTrail.size() - 1; i > 0; i--) {
-                this.navStack.push(navTrail.get(i).createFrame(this));
-            }
-
-            this.navStack.push(navTrail.get(0).createFrame(this));
-            this.basePageIndex.update(navTrail.get(0).selectedPage);
-        } else {
-            this.navPush(new IndexPageSupplier());
+        var navTrail = getNavTrail(this.book);
+        for (int i = navTrail.size() - 1; i > 0; i--) {
+            this.navStack.push(navTrail.get(i).createFrame(this));
         }
+
+        this.navStack.push(navTrail.get(0).createFrame(this));
+        this.basePageIndex.update(navTrail.get(0).selectedPage);
     }
 
     private void updateForPageChange(int basePageIndex) {
@@ -229,6 +225,18 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         while (!this.navStack.isEmpty()) trail.add(this.navStack.pop().replicator());
 
         NAV_TRAILS.put(this.book.id(), trail);
+    }
+
+    protected static List<NavFrame.Replicator> getNavTrail(Book book) {
+        return NAV_TRAILS.computeIfAbsent(book.id(), $ -> {
+            var trail = new ArrayList<NavFrame.Replicator>();
+            trail.add(0, new NavFrame.Replicator(screen -> screen.new IndexPageSupplier(), 0));
+            return trail;
+        });
+    }
+
+    public static void pushEntry(Book book, Entry entry) {
+        getNavTrail(book).add(0, new NavFrame.Replicator(screen -> screen.new EntryPageSupplier(entry), 0));
     }
 
     public interface PageSupplier {

@@ -1,11 +1,11 @@
 package io.wispforest.lavender.book;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.*;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.resource.*;
 import net.minecraft.util.Identifier;
@@ -14,10 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public class BookContentLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
@@ -68,7 +65,12 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 var title = JsonHelper.getString(markdown.meta, "title");
                 var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR);
 
-                var entry = new Entry(identifier, categoryId, title, icon, markdown.content);
+                var associatedItems = new ImmutableSet.Builder<Item>();
+                for (var itemElement : JsonHelper.getArray(markdown.meta, "associated_items", new JsonArray())) {
+                    associatedItems.add(JsonHelper.asItem(itemElement, "associated_items entry"));
+                }
+
+                var entry = new Entry(identifier, categoryId, title, icon, associatedItems.build(), markdown.content);
                 if (entry.id().getPath().equals("landing_page")) {
                     book.setLandingPage(entry);
                 } else {

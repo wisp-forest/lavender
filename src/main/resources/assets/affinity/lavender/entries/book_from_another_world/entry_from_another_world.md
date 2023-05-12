@@ -2,7 +2,11 @@
 {
   "title": "Entry from Another World",
   "icon": "minecraft:oak_log",
-  "category": "lavender:epic_category"
+  "category": "lavender:epic_category",
+  "associated_items": [
+    "minecraft:diamond",
+    "conjuring:blackstone_pedestal"
+  ]
 }
 ```
 

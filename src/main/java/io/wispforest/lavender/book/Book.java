@@ -1,5 +1,6 @@
 package io.wispforest.lavender.book;
 
+import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,7 @@ public final class Book {
     private final Collection<Entry> entriesView = Collections.unmodifiableCollection(this.entriesById.values());
 
     private final Map<Category, List<Entry>> entriesByCategory = new HashMap<>();
+    private final Map<Item, Entry> entriesByAssociatedItem = new HashMap<>();
 
     private final List<Entry> orphanedEntries = new ArrayList<>();
     private final Collection<Entry> orphanedEntriesView = Collections.unmodifiableCollection(this.orphanedEntries);
@@ -47,6 +49,10 @@ public final class Book {
 
     public @Nullable Entry entryById(Identifier entryId) {
         return this.entriesById.get(entryId);
+    }
+
+    public @Nullable Entry entryByAssociatedItem(Item associatedItem) {
+        return this.entriesByAssociatedItem.get(associatedItem);
     }
 
     public @Nullable Collection<Entry> entriesByCategory(Category category) {
@@ -81,6 +87,7 @@ public final class Book {
             this.resolvedExtend.addEntry(entry);
         } else {
             this.entriesById.put(entry.id(), entry);
+            entry.associatedItems().forEach(item -> this.entriesByAssociatedItem.put(item, entry));
 
             if (this.categories.containsKey(entry.category())) {
                 this.entriesByCategory

@@ -10,13 +10,19 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class BookItem extends Item {
 
-    private static final NbtKey<Identifier> BOOK_ID = new NbtKey<>("BookId", NbtKey.Type.IDENTIFIER);
+    public static final NbtKey<Identifier> BOOK_ID = new NbtKey<>("BookId", NbtKey.Type.IDENTIFIER);
 
     public BookItem() {
         super(new Item.Settings().maxCount(1));
+    }
+
+    public static @Nullable Book bookOf(ItemStack bookStack) {
+        if (!(bookStack.getItem() instanceof BookItem) || !bookStack.has(BOOK_ID)) return null;
+        return BookLoader.get(bookStack.get(BOOK_ID));
     }
 
     @Override
