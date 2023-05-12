@@ -1,7 +1,10 @@
 package io.wispforest.lavender.book;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
@@ -14,7 +17,10 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class BookContentLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
@@ -70,7 +76,20 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                     associatedItems.add(JsonHelper.asItem(itemElement, "associated_items entry"));
                 }
 
-                var entry = new Entry(identifier, categoryId, title, icon, associatedItems.build(), markdown.content);
+                var requiredAdvancements = new ImmutableSet.Builder<Identifier>();
+                for (var advancementElement : JsonHelper.getArray(markdown.meta, "required_advancements", new JsonArray())) {
+                    if (!advancementElement.isJsonPrimitive()) continue;
+
+                    var advancementId = Identifier.tryParse(advancementElement.getAsString());
+                    if (advancementId == null) {
+                        Lavender.LOGGER.warn("Did not add advancement '{}' as requirement to entry '{}' as it is not a valid advancement identifier", advancementElement.getAsString(), identifier);
+                        continue;
+                    }
+
+                    requiredAdvancements.add(advancementId);
+                }
+
+                var entry = new Entry(identifier, categoryId, title, icon, requiredAdvancements.build(), associatedItems.build(), markdown.content);
                 if (entry.id().getPath().equals("landing_page")) {
                     book.setLandingPage(entry);
                 } else {
@@ -131,5 +150,6 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         }
     }
 
-    private record MarkdownResource(JsonObject meta, String content) {}
+    private record MarkdownResource(JsonObject meta, String content) {
+    }
 }

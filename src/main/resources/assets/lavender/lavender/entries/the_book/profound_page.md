@@ -2,7 +2,10 @@
 {
   "title": "A Profound Page With a Long Name",
   "icon": "minecraft:melon_slice",
-  "category": "a_category"
+  "category": "a_category",
+  "required_advancements": [
+    "minecraft:story/lava_bucket"
+  ]
 }
 ```
 

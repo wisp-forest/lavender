@@ -154,7 +154,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     protected void buildEntryIndex(Collection<Entry> entries, Consumer<Component> onto) {
         for (var entry : entries) {
-            if (entry == this.book.landingPage()) continue;
+            if (entry == this.book.landingPage() || !entry.canPlayerView(this.client.player)) continue;
 
             var indexItem = this.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
             indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
@@ -259,6 +259,21 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 landingPage.child(model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
                 landingPage.child(PROCESSOR.process(landingPageEntry.content()));
 
+                if (book.displayCompletion()) {
+                    landingPage.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
+                            .child(UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.bottom(4)))
+                            .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
+                                    .child(Components.label(Text.literal("Unlocked: " + book.countVisibleEntries(client.player) + "/" + book.entries().size()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withFormatting(Formatting.DARK_GRAY))))
+                                    .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
+                                            .child(Components.texture(Lavender.id("textures/gui/book.png"), 268, 129, 100, 5, 512, 256))
+                                            .child(Components.texture(Lavender.id("textures/gui/book.png"), 268, 134, 100, 5, 512, 256)
+                                                    .visibleArea(PositionedRectangle.of(0, 0, (int) (100 * (book.countVisibleEntries(client.player) / (float) book.entries().size())), 5))
+                                                    .positioning(Positioning.absolute(0, 0)))))
+                            .horizontalAlignment(HorizontalAlignment.CENTER)
+                            .positioning(Positioning.relative(50, 100))
+                            .margins(Insets.bottom(3)));
+                }
+
                 this.pages.add(landingPage);
             } else {
                 this.pages.add(model.expandTemplate(Component.class, "empty-page-content", Map.of()));
@@ -275,6 +290,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 categories.child(categoryContainer);
 
                 for (var category : book.categories()) {
+                    if (!book.shouldDisplayCategory(category, client.player)) continue;
+
                     categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
                         categoryButton
                                 .tooltip(Text.translatable(Util.createTranslationKey("category", category.id())))
@@ -292,16 +309,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 indexPage.child(categories);
             }
 
-            if (!book.orphanedEntries().isEmpty()) {
-                indexPage.child(book.categories().isEmpty()
-                        ? model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", "Index"))
-                        : UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.vertical(6))
-                );
+            indexPage.child(book.categories().isEmpty()
+                    ? model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", "Index"))
+                    : UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.vertical(6))
+            );
 
-                var entries = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
-                buildEntryIndex(book.orphanedEntries(), entries::child);
-                indexPage.child(entries);
-            }
+            var entries = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+            buildEntryIndex(book.orphanedEntries(), entries::child);
+            indexPage.child(entries);
         }
 
         @Override

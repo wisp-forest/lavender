@@ -19,7 +19,6 @@ import io.wispforest.owo.ui.core.Positioning;
 import io.wispforest.owo.ui.core.Size;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.hud.Hud;
-import io.wispforest.owo.ui.util.Delta;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
@@ -28,10 +27,9 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.item.Items;
@@ -104,7 +102,7 @@ public class LavenderClient implements ClientModInitializer {
                 if (item == Items.AIR) return;
 
                 var associatedEntry = book.entryByAssociatedItem(item);
-                if (associatedEntry == null) return;
+                if (associatedEntry == null || !associatedEntry.canPlayerView(client.player)) return;
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.item(associatedEntry.icon().getDefaultStack()).margins(Insets.of(0, 1, 0, 1)))
@@ -126,7 +124,8 @@ public class LavenderClient implements ClientModInitializer {
             if (item == Items.AIR) return ActionResult.PASS;
 
             var associatedEntry = book.entryByAssociatedItem(item);
-            if (associatedEntry == null) return ActionResult.PASS;
+            if (associatedEntry == null || !associatedEntry.canPlayerView((ClientPlayerEntity) player))
+                return ActionResult.PASS;
 
             BookScreen.pushEntry(book, associatedEntry);
             MinecraftClient.getInstance().setScreen(new BookScreen(book));

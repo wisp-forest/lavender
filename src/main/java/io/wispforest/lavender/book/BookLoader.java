@@ -56,7 +56,9 @@ public class BookLoader extends JsonDataLoader implements IdentifiableResourceRe
             var extend = JsonHelper.getString(bookObject, "extend", null);
             var extendId = extend != null ? Identifier.tryParse(extend) : null;
 
-            LOADED_BOOKS.put(resourceId, new Book(resourceId, extendId, textureId));
+            var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
+
+            LOADED_BOOKS.put(resourceId, new Book(resourceId, extendId, textureId, displayCompletion));
         });
 
         LOADED_BOOKS.values().removeIf(book -> {

@@ -5,6 +5,9 @@
   "category": "another_category",
   "associated_items": [
     "conjuring:blackstone_pedestal"
+  ],
+  "required_advancements": [
+    "conjuring:soulfire_forge"
   ]
 }
 ```

@@ -15,6 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,6 +27,10 @@ import java.util.List;
 
 @Mixin(Screen.class)
 public class ScreenMixin implements LavenderScreenExtension {
+
+    @Shadow
+    @Nullable
+    protected MinecraftClient client;
 
     @Unique
     protected @Nullable WeakReference<ItemStack> tooltipStack = null;
@@ -41,9 +46,12 @@ public class ScreenMixin implements LavenderScreenExtension {
     @Inject(method = "renderTooltipFromComponents", at = @At("HEAD"))
     private void injectTooltipComponents(MatrixStack matrices, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner, CallbackInfo ci) {
         if (this.tooltipStack != null && this.tooltipStack.get() != null) {
+            var stack = this.tooltipStack.get();
+            this.tooltipStack = null;
+
             for (var book : BookLoader.loadedBooks()) {
-                var associatedEntry = book.entryByAssociatedItem(this.tooltipStack.get().getItem());
-                if (associatedEntry == null) continue;
+                var associatedEntry = book.entryByAssociatedItem(stack.getItem());
+                if (associatedEntry == null || !associatedEntry.canPlayerView(this.client.player)) continue;
 
                 components.add(new AssociatedEntryTooltipComponent(BookItem.create(book), associatedEntry, entryTriggerProgress));
                 entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, MinecraftClient.getInstance().getLastFrameDuration() * .125);

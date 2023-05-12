@@ -1,5 +1,6 @@
 package io.wispforest.lavender.book;
 
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,7 @@ public final class Book {
 
     private final Identifier id;
     private final @Nullable Identifier texture;
+    private final boolean displayCompletion;
 
     private final @Nullable Identifier extend;
     private @Nullable Book resolvedExtend = null;
@@ -29,14 +31,19 @@ public final class Book {
 
     private @Nullable Entry landingPage = null;
 
-    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture) {
+    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, boolean displayCompletion) {
         this.id = id;
         this.extend = extend;
         this.texture = texture;
+        this.displayCompletion = displayCompletion;
     }
 
     public Identifier id() {
         return id;
+    }
+
+    public boolean displayCompletion() {
+        return this.displayCompletion;
     }
 
     public Collection<Entry> entries() {
@@ -70,12 +77,34 @@ public final class Book {
         return this.categories.get(categoryId);
     }
 
+    public boolean shouldDisplayCategory(Category category, ClientPlayerEntity player) {
+        var entries = this.entriesByCategory(category);
+        if (entries == null) return false;
+
+        boolean anyVisible = false;
+        for (var entry : entries) {
+            if (entry.canPlayerView(player)) anyVisible = true;
+        }
+
+        return anyVisible;
+    }
+
     public @Nullable Entry landingPage() {
         return this.landingPage;
     }
 
     public @Nullable Identifier texture() {
         return texture;
+    }
+
+    public int countVisibleEntries(ClientPlayerEntity player) {
+        int visible = 0;
+        for (var entry : this.entriesById.values()) {
+            if (!entry.canPlayerView(player)) continue;
+            visible++;
+        }
+
+        return visible;
     }
 
     void setLandingPage(@NotNull Entry landingPage) {
