@@ -1,0 +1,9 @@
+{
+  "item.book.open": {
+    "sounds": [
+      "lavender:item/book_open_1",
+      "lavender:item/book_open_2",
+      "lavender:item/book_open_3"
+    ]
+  }
+}
