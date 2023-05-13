@@ -56,7 +56,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     private FlowLayout leftPageAnchor;
     private FlowLayout rightPageAnchor;
 
-    private final OpenObservable<Integer> basePageIndex = new OpenObservable<>(-1);
+    private final OpenObservable<Integer> selectedPage = new OpenObservable<>(-1);
     private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
     public BookScreen(Book book) {
@@ -85,15 +85,12 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.turnPage(false);
         });
 
-        this.basePageIndex.observe(this::updateForPageChange);
+        this.selectedPage.observe(this::updateForPageChange);
 
         var navTrail = getNavTrail(this.book);
-        for (int i = navTrail.size() - 1; i > 0; i--) {
-            this.navStack.push(navTrail.get(i).createFrame(this));
+        for (int i = navTrail.size() - 1; i >= 0; i--) {
+            this.navPush(navTrail.get(i).createFrame(this), i != 0);
         }
-
-        this.navStack.push(navTrail.get(0).createFrame(this));
-        this.basePageIndex.update(navTrail.get(0).selectedPage);
     }
 
     private void updateForPageChange(int basePageIndex) {
@@ -122,7 +119,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     private void turnPage(boolean left) {
-        this.basePageIndex.set(Math.max(0, Math.min(this.basePageIndex.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)) / 2 * 2);
+        this.selectedPage.set(Math.max(0, Math.min(this.selectedPage.get() + (left ? -2 : 2), this.pageSupplier().pageCount() - 1)) / 2 * 2);
     }
 
     public void navPush(PageSupplier supplier) {
@@ -130,19 +127,25 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     public void navPush(NavFrame frame) {
-        if (this.navStack.peek() != null) {
-            this.navStack.peek().selectedPage = this.basePageIndex.get();
+        this.navPush(frame, false);
+    }
+
+    public void navPush(NavFrame frame, boolean delayUpdate) {
+        var topFrame = this.navStack.peek();
+        if (topFrame != null && frame.pageSupplier.canMerge(topFrame.pageSupplier)) {
+            topFrame.selectedPage = frame.selectedPage;
+        } else {
+            this.navStack.push(frame);
         }
 
-        this.navStack.push(frame);
-        this.basePageIndex.update(frame.selectedPage);
+        if(!delayUpdate) this.selectedPage.update(frame.selectedPage);
     }
 
     public void navPop() {
         if (this.navStack.size() <= 1) return;
 
         this.navStack.pop();
-        this.basePageIndex.update(this.navStack.peek().selectedPage);
+        this.selectedPage.update(this.navStack.peek().selectedPage);
     }
 
     protected FlowLayout makePageContentWithHeader(@NotNull String title) {
@@ -244,6 +247,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         int pageCount();
 
+        boolean canMerge(PageSupplier other);
+
         Function<BookScreen, PageSupplier> replicator();
     }
 
@@ -330,6 +335,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
+        public boolean canMerge(PageSupplier other) {
+            return other instanceof IndexPageSupplier;
+        }
+
+        @Override
         public Function<BookScreen, PageSupplier> replicator() {
             return bookScreen -> bookScreen.new IndexPageSupplier();
         }
@@ -372,6 +382,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         @Override
         public int pageCount() {
             return this.pages.size();
+        }
+
+        @Override
+        public boolean canMerge(PageSupplier other) {
+            return other instanceof CategoryPageSupplier supplier && supplier.category.id().equals(this.category.id());
         }
 
         @Override
@@ -420,6 +435,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         @Override
         public int pageCount() {
             return this.pages.size();
+        }
+
+        @Override
+        public boolean canMerge(PageSupplier other) {
+            return other instanceof EntryPageSupplier supplier && supplier.entry.id().equals(this.entry.id());
         }
 
         @Override
