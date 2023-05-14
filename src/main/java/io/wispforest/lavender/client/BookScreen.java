@@ -2,13 +2,11 @@ package io.wispforest.lavender.client;
 
 import com.google.common.collect.Iterables;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.book.Book;
-import io.wispforest.lavender.book.Category;
-import io.wispforest.lavender.book.Entry;
-import io.wispforest.lavender.book.StructureComponent;
+import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
+import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
@@ -23,6 +21,7 @@ import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -59,6 +58,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     private FlowLayout leftPageAnchor;
     private FlowLayout rightPageAnchor;
+    private FlowLayout bookmarkPanel;
 
     private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
@@ -75,6 +75,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         this.leftPageAnchor = this.component(FlowLayout.class, "left-page-anchor");
         this.rightPageAnchor = this.component(FlowLayout.class, "right-page-anchor");
+        this.bookmarkPanel = this.component(FlowLayout.class, "bookmark-panel");
 
         (this.previousButton = this.component(ButtonComponent.class, "previous-button")).onPress(buttonComponent -> this.turnPage(true));
         (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(buttonComponent -> this.navPop());
@@ -88,6 +89,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.navPush(frame, true);
         }
 
+        if (this.navStack.isEmpty()) this.navPush(new NavFrame(new IndexPageSupplier(this), 0), true);
         this.rebuildContent(Lavender.ITEM_BOOK_OPEN);
     }
 
@@ -114,6 +116,49 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             index++;
         }
+
+        this.bookmarkPanel.<FlowLayout>configure(bookmarkContainer -> {
+            bookmarkContainer.clearChildren();
+
+            var bookmarks = LavenderBookmarks.getBookmarks(this.book);
+            for (var bookmarkEntry : bookmarks) {
+                var bookmark = this.createBookmarkButton("bookmark");
+                bookmark.childById(ItemComponent.class, "bookmark-preview").stack(bookmarkEntry.icon().getDefaultStack());
+                bookmark.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
+                    bookmarkButton.tooltip(List.of(Text.literal(bookmarkEntry.title()), TextOps.withFormatting("Shift-click to remove", Formatting.GRAY)));
+                    bookmarkButton.onPress($ -> {
+                        if (Screen.hasShiftDown()) {
+                            LavenderBookmarks.removeBookmark(this.book, bookmarkEntry);
+                            this.rebuildContent(null);
+                        } else {
+                            this.navPush(new EntryPageSupplier(this, bookmarkEntry));
+                        }
+                    });
+                });
+
+                bookmarkContainer.child(bookmark);
+            }
+
+            if (this.currentNavFrame().pageSupplier instanceof EntryPageSupplier entry && bookmarks.size() < 15) {
+                var addBookmarkButton = this.createBookmarkButton("add-bookmark");
+                addBookmarkButton.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
+                    bookmarkButton.tooltip(Text.literal("Add bookmark"));
+                    bookmarkButton.onPress($ -> {
+                        LavenderBookmarks.addBookmark(this.book, entry.entry);
+                        this.rebuildContent(null);
+                    });
+                });
+
+                bookmarkContainer.child(addBookmarkButton);
+            }
+        });
+    }
+
+    protected ParentComponent createBookmarkButton(String templateName) {
+        var bookmark = this.model.expandTemplate(ParentComponent.class, templateName, Map.of());
+        bookmark.mouseEnter().subscribe(() -> bookmark.margins(Insets.none()));
+        bookmark.mouseLeave().subscribe(() -> bookmark.margins(Insets.top(1)));
+        return bookmark;
     }
 
     protected NavFrame currentNavFrame() {
@@ -255,15 +300,16 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
 
             for (var entry : entries) {
-                if (entry == this.context.book.landingPage() || !entry.canPlayerView(this.context.client.player))
+                if (entry == this.context.book.landingPage() || !entry.canPlayerView(this.context.client.player)) {
                     continue;
+                }
 
                 var indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
                 indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
 
                 var label = indexItem.childById(LabelComponent.class, "index-label");
 
-                label.text(Text.translatable(Util.createTranslationKey("entry", entry.id())).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
                 label.mouseDown().subscribe((mouseX, mouseY, button) -> {
                     this.context.navPush(new EntryPageSupplier(this.context, entry));
                     UISounds.playInteractionSound();

@@ -1,6 +1,6 @@
 ```json
 {
-  "title": "Landing Page :)"
+  "title": "The Book\nVolume 69"
 }
 ```
 

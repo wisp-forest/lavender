@@ -77,3 +77,7 @@ For when a less concentrated material is required, simply {gold}sneak-right-clic
 smashes it into 4 pieces of {light_purple}Lesser Conjuration Essence{}
 
 *~a fine predicament*
+
+;;;;;
+
+<|structure-preview@lavender:book_components|structure=lavender:nether_portal|>

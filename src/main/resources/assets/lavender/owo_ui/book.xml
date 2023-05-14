@@ -68,6 +68,19 @@
 
                             <positioning type="absolute">252,174</positioning>
                         </button>
+
+                        <flow-layout direction="horizontal" id="bookmark-panel">
+                            <children/>
+
+                            <gap>2</gap>
+                            <horizontal-alignment>center</horizontal-alignment>
+
+                            <positioning type="absolute">10,-14</positioning>
+                            <sizing>
+                                <horizontal method="fixed">245</horizontal>
+                                <vertical method="fixed">14</vertical>
+                            </sizing>
+                        </flow-layout>
                     </children>
 
                     <allow-overflow>true</allow-overflow>
@@ -141,8 +154,12 @@
                     <label id="title-label">
                         <text>{{page-title}}</text>
                         <color>dark-gray</color>
+                        <horizontal-text-alignment>center</horizontal-text-alignment>
 
                         <positioning type="relative">50,50</positioning>
+                        <sizing>
+                            <horizontal method="fill">80</horizontal>
+                        </sizing>
                     </label>
                 </children>
 
@@ -178,11 +195,68 @@
                         <color>black</color>
                         <cursor-style>hand</cursor-style>
                         <line-height>7</line-height>
+
+                        <sizing>
+                            <horizontal method="fill">85</horizontal>
+                        </sizing>
                     </label>
                 </children>
 
                 <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
             </flow-layout>
+        </template>
+
+        <template name="bookmark-button">
+            <flow-layout direction="vertical">
+                <children>
+                    <template-child id="icon">
+                        <z-index>10</z-index>
+
+                        <positioning type="absolute">3,4</positioning>
+                        <sizing>
+                            <horizontal method="fixed">8</horizontal>
+                            <vertical method="fixed">8</vertical>
+                        </sizing>
+                    </template-child>
+                    <button id="bookmark-button">
+                        <renderer>
+                            <texture texture="lavender:textures/gui/book.png" u="0" v="210" texture-width="512"
+                                     texture-height="256"/>
+                        </renderer>
+
+                        <sizing>
+                            <horizontal method="fixed">14</horizontal>
+                            <vertical method="fixed">14</vertical>
+                        </sizing>
+                    </button>
+                </children>
+
+                <margins>
+                    <top>1</top>
+                </margins>
+            </flow-layout>
+        </template>
+
+        <template name="bookmark">
+            <template name="bookmark-button">
+                <child id="icon">
+                    <item id="bookmark-preview"/>
+                </child>
+            </template>
+        </template>
+
+        <template name="add-bookmark">
+            <template name="bookmark-button">
+                <child id="icon">
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="14"
+                             v="211" region-width="8" region-height="8">
+                    </texture>
+                </child>
+            </template>
         </template>
     </templates>
 

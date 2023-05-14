@@ -1,12 +1,11 @@
 {
   "keys": {
     "o": "minecraft:obsidian",
-    "n": "minecraft:nether_portal",
-    "d": "minecraft:diamond_block"
+    "n": "minecraft:nether_portal"
   },
   "layers": [
     [
-      "ooooood"
+      "ooooooo"
     ],
     [
       "onnnnno"
