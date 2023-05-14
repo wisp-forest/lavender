@@ -1,6 +1,7 @@
 ```json
 {
-  "icon": "minecraft:nether_star"
+  "icon": "minecraft:nether_star",
+  "title": "Epic Category"
 }
 ```
 

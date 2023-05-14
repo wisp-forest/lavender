@@ -1,6 +1,7 @@
 ```json
 {
-  "icon": "minecraft:stone"
+  "icon": "minecraft:stone",
+  "title": "A Category"
 }
 ```
 

@@ -381,7 +381,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                     categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
                         categoryButton
-                                .tooltip(Text.translatable(Util.createTranslationKey("category", category.id())))
+                                .tooltip(Text.literal(category.title()))
                                 .margins(Insets.of(4))
                                 .cursorStyle(CursorStyle.HAND);
 
@@ -436,7 +436,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             var landingPageContent = parsedLandingPage.children().get(0);
             parsedLandingPage.removeChild(landingPageContent);
 
-            this.pages.add(this.pageWithHeader(Language.getInstance().get(Util.createTranslationKey("category", category.id()))).child(landingPageContent));
+            this.pages.add(this.pageWithHeader(category.title()).child(landingPageContent));
 
             // --- entry index ---
 

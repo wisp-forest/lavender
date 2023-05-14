@@ -53,8 +53,12 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 var markdown = this.parseMarkdown(identifier, resource);
                 if (markdown == null) return;
 
-                var icon = JsonHelper.getItem(markdown.meta, "icon");
-                book.addCategory(new Category(identifier, icon, markdown.content));
+                book.addCategory(new Category(
+                        identifier,
+                        JsonHelper.getString(markdown.meta, "title"),
+                        JsonHelper.getItem(markdown.meta, "icon"),
+                        markdown.content
+                ));
             });
         }
 

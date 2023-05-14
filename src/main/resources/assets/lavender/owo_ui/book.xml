@@ -157,6 +157,10 @@
                         <horizontal-text-alignment>center</horizontal-text-alignment>
 
                         <positioning type="relative">50,50</positioning>
+                        <margins>
+                            <bottom>3</bottom>
+                        </margins>
+
                         <sizing>
                             <horizontal method="fill">80</horizontal>
                         </sizing>
