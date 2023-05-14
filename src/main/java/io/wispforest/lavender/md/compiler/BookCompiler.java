@@ -71,7 +71,7 @@ public class BookCompiler extends OwoUICompiler {
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                     var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
                     if (linkTarget != null) {
-                        this.owner.navPush(this.owner.new EntryPageSupplier(linkTarget));
+                        this.owner.navPush(new BookScreen.EntryPageSupplier(this.owner, linkTarget));
                         return true;
                     } else {
                         return false;
