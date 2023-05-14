@@ -4,8 +4,8 @@ import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.structure.BlockStatePredicate;
-import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.lavender.structure.LavenderStructures;
+import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -60,10 +60,29 @@ public class StructureOverlayRenderer {
 
     public static void addPendingOverlay(Identifier structure) {
         PENDING_OVERLAY = structure;
+        PENDING_ROTATION = BlockRotation.NONE;
     }
 
     public static void addOverlay(BlockPos anchorPoint, Identifier structure, BlockRotation rotation) {
         ACTIVE_OVERLAYS.put(anchorPoint, new OverlayEntry(structure, rotation));
+    }
+
+    public static boolean isShowingOverlay(Identifier structure) {
+        if (structure.equals(PENDING_OVERLAY)) return true;
+
+        for (var entry : ACTIVE_OVERLAYS.values()) {
+            if (structure.equals(entry.structureId)) return true;
+        }
+
+        return false;
+    }
+
+    public static void removeAllOverlays(Identifier structure) {
+        if (structure.equals(PENDING_OVERLAY)) {
+            addPendingOverlay(null);
+        }
+
+        ACTIVE_OVERLAYS.values().removeIf(entry -> structure.equals(entry.structureId));
     }
 
     public static void clearOverlays() {

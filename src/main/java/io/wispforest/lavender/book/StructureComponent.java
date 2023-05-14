@@ -1,9 +1,11 @@
 package io.wispforest.lavender.book;
 
 import io.wispforest.lavender.client.StructureOverlayRenderer;
-import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.lavender.structure.LavenderStructures;
+import io.wispforest.lavender.structure.StructureInfo;
+import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseComponent;
+import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
@@ -13,8 +15,10 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
+import org.lwjgl.glfw.GLFW;
 import org.w3c.dom.Element;
 
 public class StructureComponent extends BaseComponent {
@@ -23,15 +27,13 @@ public class StructureComponent extends BaseComponent {
 
     public StructureComponent(StructureInfo structure) {
         this.structure = structure;
-
         this.cursorStyle(CursorStyle.HAND);
-        this.tooltip(Text.literal("Click to place"));
     }
 
     @Override
     public void draw(MatrixStack matrices, int mouseX, int mouseY, float partialTicks, float delta) {
-        var blockRenderer = MinecraftClient.getInstance().getBlockRenderManager();
-        var entityBuffers = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+        var client = MinecraftClient.getInstance();
+        var entityBuffers = client.getBufferBuilders().getEntityVertexConsumers();
 
         float scale = Math.min(this.width, this.height);
         scale /= Math.max(structure.xSize, Math.max(structure.ySize, structure.zSize));
@@ -45,12 +47,11 @@ public class StructureComponent extends BaseComponent {
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 75d % 360d)));
         matrices.translate(this.structure.xSize / -2f, this.structure.ySize / -2f, this.structure.zSize / -2f);
 
-
         structure.forEachPredicate((blockPos, predicate) -> {
             matrices.push();
             matrices.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
 
-            blockRenderer.renderBlockAsEntity(
+            client.getBlockRenderManager().renderBlockAsEntity(
                     predicate.preview(), matrices, entityBuffers,
                     LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
                     OverlayTexture.DEFAULT_UV
@@ -64,14 +65,26 @@ public class StructureComponent extends BaseComponent {
         DiffuseLighting.disableGuiDepthLighting();
         entityBuffers.draw();
         DiffuseLighting.enableGuiDepthLighting();
+
+        if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
+            client.textRenderer.draw(matrices, TextOps.withFormatting("⚓", Formatting.GRAY), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0);
+            this.tooltip(Text.literal("❌ Click to hide"));
+        } else {
+            this.tooltip(Text.literal("⚓ Click to place"));
+        }
     }
 
     @Override
     public boolean onMouseDown(double mouseX, double mouseY, int button) {
-        super.onMouseDown(mouseX, mouseY, button);
+        var result = super.onMouseDown(mouseX, mouseY, button);
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return result;
 
-        StructureOverlayRenderer.addPendingOverlay(this.structure.id);
-        MinecraftClient.getInstance().setScreen(null);
+        if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
+            StructureOverlayRenderer.removeAllOverlays(this.structure.id);
+        } else {
+            StructureOverlayRenderer.addPendingOverlay(this.structure.id);
+            MinecraftClient.getInstance().setScreen(null);
+        }
 
         return true;
     }
@@ -80,7 +93,8 @@ public class StructureComponent extends BaseComponent {
         UIParsing.expectAttributes(element, "structure-id");
 
         var structureId = Identifier.tryParse(element.getAttribute("structure-id"));
-        if (structureId == null) throw new UIModelParsingException("Invalid structure id '" + element.getAttribute("structure-id") + "'");
+        if (structureId == null)
+            throw new UIModelParsingException("Invalid structure id '" + element.getAttribute("structure-id") + "'");
 
         var structure = LavenderStructures.get(structureId);
         if (structure == null) throw new UIModelParsingException("Unknown structure '" + structureId + "'");
