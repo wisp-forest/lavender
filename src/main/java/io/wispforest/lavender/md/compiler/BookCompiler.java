@@ -1,5 +1,6 @@
 package io.wispforest.lavender.md.compiler;
 
+import com.google.common.primitives.Ints;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
@@ -71,7 +72,7 @@ public class BookCompiler extends OwoUICompiler {
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                     var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
                     if (linkTarget != null) {
-                        this.owner.navPush(new BookScreen.EntryPageSupplier(this.owner, linkTarget));
+                        this.owner.navPush(new BookScreen.NavFrame(new BookScreen.EntryPageSupplier(this.owner, linkTarget.entry), linkTarget.page));
                         return true;
                     } else {
                         return false;
@@ -86,13 +87,25 @@ public class BookCompiler extends OwoUICompiler {
             this.owner = screen;
         }
 
-        protected @Nullable Entry resolveLinkTarget(String link) {
+        protected @Nullable LinkTarget resolveLinkTarget(String link) {
             if (this.owner == null) return null;
 
-            var entryId = Identifier.tryParse(link.substring(1));
+            var rawLinkText = link.substring(1);
+            int targetPage = 0;
+
+            int pageSeparatorIndex = rawLinkText.indexOf('#');
+            if (pageSeparatorIndex > 0) {
+                var parsed = Ints.tryParse(rawLinkText.substring(pageSeparatorIndex + 1));
+                if (parsed == null) return null;
+
+                targetPage = Math.max(0, (parsed - 1) / 2 * 2);
+                rawLinkText = rawLinkText.substring(0, pageSeparatorIndex);
+            }
+
+            var entryId = Identifier.tryParse(rawLinkText);
             if (entryId == null) return null;
 
-            return this.owner.book.entryById(entryId);
+            return new LinkTarget(this.owner.book.entryById(entryId), targetPage);
         }
 
         @Override
@@ -105,13 +118,16 @@ public class BookCompiler extends OwoUICompiler {
                 var rawLink = event.getValue(HoverEvent.Action.SHOW_TEXT).getString();
                 var linkTarget = this.resolveLinkTarget(rawLink);
 
-                style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
-                        ? Text.literal(linkTarget.title())
+                style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
+                        ? Text.literal(linkTarget.entry.title())
                         : Text.literal("invalid internal link: " + rawLink).formatted(Formatting.RED)
                 ));
             }
 
             return style;
+        }
+
+        private record LinkTarget(Entry entry, int page) {
         }
     }
 }

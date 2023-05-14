@@ -128,7 +128,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     public void navPush(PageSupplier supplier) {
-        this.navPush(new NavFrame(supplier));
+        this.navPush(new NavFrame(supplier, 0));
     }
 
     public void navPush(NavFrame frame) {
@@ -140,6 +140,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         if (topFrame != null && frame.pageSupplier.canMerge(topFrame.pageSupplier)) {
             topFrame.selectedPage = frame.selectedPage;
         } else {
+            if (frame.selectedPage >= frame.pageSupplier.pageCount() - 1) {
+                frame.selectedPage = frame.pageSupplier.pageCount() / 2 * 2;
+            }
+
             this.navStack.push(frame);
         }
 
@@ -459,12 +463,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
-    private static class NavFrame {
+    public static class NavFrame {
         public final PageSupplier pageSupplier;
-        public int selectedPage = 0;
+        public int selectedPage;
 
-        private NavFrame(PageSupplier pageSupplier) {
+        public NavFrame(PageSupplier pageSupplier, int selectedPage) {
             this.pageSupplier = pageSupplier;
+            this.selectedPage = selectedPage;
         }
 
         public Replicator replicator() {
@@ -476,9 +481,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 var supplier = this.pageSupplier.apply(screen);
                 if (supplier == null) return null;
 
-                var frame = new NavFrame(supplier);
-                frame.selectedPage = this.selectedPage;
-                return frame;
+                return new NavFrame(supplier, this.selectedPage);
             }
         }
     }
