@@ -53,7 +53,7 @@ public class ScreenMixin implements LavenderScreenExtension {
                 var associatedEntry = book.entryByAssociatedItem(stack.getItem());
                 if (associatedEntry == null || !associatedEntry.canPlayerView(this.client.player)) continue;
 
-                components.add(new AssociatedEntryTooltipComponent(BookItem.create(book), associatedEntry, entryTriggerProgress));
+                components.add(new AssociatedEntryTooltipComponent(BookItem.itemOf(book), associatedEntry, entryTriggerProgress));
                 entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, MinecraftClient.getInstance().getLastFrameDuration() * .125);
 
                 if (entryTriggerProgress >= .95) {

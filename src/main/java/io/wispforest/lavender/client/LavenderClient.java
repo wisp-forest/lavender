@@ -106,7 +106,7 @@ public class LavenderClient implements ClientModInitializer {
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.item(associatedEntry.icon().getDefaultStack()).margins(Insets.of(0, 1, 0, 1)))
-                        .child(Components.item(BookItem.create(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
+                        .child(Components.item(BookItem.itemOf(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))
                         .child(Components.label(TextOps.withFormatting(client.player.isSneaking() ? "Click to view" : "Sneak to view", Formatting.GRAY))));

@@ -16,13 +16,14 @@ public class Lavender implements ModInitializer {
 
     public static final String MOD_ID = "lavender";
 
-    public static final Item BOOK = new BookItem();
     public static final SoundEvent ITEM_BOOK_OPEN = SoundEvent.of(id("item.book.open"));
 
     @Override
     public void onInitialize() {
-        Registry.register(Registries.ITEM, id("book"), BOOK);
+        Registry.register(Registries.ITEM, id("dynamic_book"), BookItem.DYNAMIC_BOOK);
         Registry.register(Registries.SOUND_EVENT, ITEM_BOOK_OPEN.getId(), ITEM_BOOK_OPEN);
+
+        BookItem.registerForBook(Lavender.id("the_book"));
     }
 
     public static Identifier id(String path) {
