@@ -148,4 +148,9 @@ public final class Book {
     Identifier effectiveId() {
         return this.resolvedExtend != null ? this.resolvedExtend.effectiveId() : this.id;
     }
+
+    public interface BookmarkableElement {
+        String title();
+        Item icon();
+    }
 }

@@ -28,7 +28,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Language;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.NotNull;
@@ -123,30 +122,35 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             bookmarkContainer.clearChildren();
 
             var bookmarks = LavenderBookmarks.getBookmarks(this.book);
-            for (var bookmarkEntry : bookmarks) {
-                var bookmark = this.createBookmarkButton("bookmark");
-                bookmark.childById(ItemComponent.class, "bookmark-preview").stack(bookmarkEntry.icon().getDefaultStack());
-                bookmark.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
-                    bookmarkButton.tooltip(List.of(Text.literal(bookmarkEntry.title()), TextOps.withFormatting("Shift-click to remove", Formatting.GRAY)));
+            for (var bookmark : bookmarks) {
+                var element = bookmark.tryResolve(this.book);
+                if (element == null) continue;
+
+                var bookmarkComponent = this.createBookmarkButton("bookmark");
+                bookmarkComponent.childById(ItemComponent.class, "bookmark-preview").stack(element.icon().getDefaultStack());
+                bookmarkComponent.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
+                    bookmarkButton.tooltip(List.of(Text.literal(element.title()), TextOps.withFormatting("Shift-click to remove", Formatting.GRAY)));
                     bookmarkButton.onPress($ -> {
                         if (Screen.hasShiftDown()) {
-                            LavenderBookmarks.removeBookmark(this.book, bookmarkEntry);
+                            LavenderBookmarks.removeBookmark(this.book, bookmark);
                             this.rebuildContent(null);
-                        } else {
-                            this.navPush(new EntryPageSupplier(this, bookmarkEntry));
+                        } else if (element instanceof Entry entry) {
+                            this.navPush(new EntryPageSupplier(this, entry));
+                        } else if (element instanceof Category category) {
+                            this.navPush(new CategoryPageSupplier(this, category));
                         }
                     });
                 });
 
-                bookmarkContainer.child(bookmark);
+                bookmarkContainer.child(bookmarkComponent);
             }
 
-            if (this.currentNavFrame().pageSupplier instanceof EntryPageSupplier entry) {
+            if (this.currentNavFrame().pageSupplier instanceof PageSupplier.Bookmarkable bookmarkable) {
                 var addBookmarkButton = this.createBookmarkButton("add-bookmark");
                 addBookmarkButton.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
                     bookmarkButton.tooltip(Text.literal("Add bookmark"));
                     bookmarkButton.onPress($ -> {
-                        LavenderBookmarks.addBookmark(this.book, entry.entry);
+                        bookmarkable.addBookmark();
                         this.rebuildContent(null);
                         this.component(ScrollContainer.class, "bookmark-scroll").scrollTo(1);
                     });
@@ -333,6 +337,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             return indexSections;
         }
+
+        public interface Bookmarkable {
+            void addBookmark();
+        }
     }
 
     public static class IndexPageSupplier extends PageSupplier {
@@ -424,7 +432,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
-    public static class CategoryPageSupplier extends PageSupplier {
+    public static class CategoryPageSupplier extends PageSupplier implements PageSupplier.Bookmarkable {
 
         private final Category category;
 
@@ -464,9 +472,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 return category != null && context.book.shouldDisplayCategory(category, context.client.player) ? new CategoryPageSupplier(context, category) : null;
             };
         }
+
+        @Override
+        public void addBookmark() {
+            LavenderBookmarks.addBookmark(this.context.book, this.category);
+        }
     }
 
-    public static class EntryPageSupplier extends PageSupplier {
+    public static class EntryPageSupplier extends PageSupplier implements PageSupplier.Bookmarkable {
 
         private final Entry entry;
 
@@ -509,6 +522,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 var entry = context.book.entryById(this.entry.id());
                 return entry != null && entry.canPlayerView(context.client.player) ? new EntryPageSupplier(context, entry) : null;
             };
+        }
+
+        @Override
+        public void addBookmark() {
+            LavenderBookmarks.addBookmark(this.context.book, this.entry);
         }
     }
 
