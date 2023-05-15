@@ -23,6 +23,8 @@ import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.Window;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -51,7 +53,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     );
 
     public final Book book;
-    private int previousUiScale;
+
+    private Window window;
+    private int scaleFactor;
 
     private ButtonComponent previousButton;
     private ButtonComponent returnButton;
@@ -69,11 +73,23 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
-    protected void build(FlowLayout rootComponent) {
-        this.previousUiScale = this.client.options.getGuiScale().getValue();
-        this.client.options.getGuiScale().setValue(MathHelper.ceilDiv(this.client.options.getGuiScale().getValue(), 2) * 2);
-        this.client.onResolutionChanged();
+    protected void init() {
+        this.window = this.client.getWindow();
+        double gameScale = this.window.getScaleFactor();
 
+        this.scaleFactor = this.window.calculateScaleFactor(this.client.options.getGuiScale().getValue(), true);
+        this.window.setScaleFactor(this.scaleFactor);
+
+        this.width = this.window.getScaledWidth();
+        this.height = this.window.getScaledHeight();
+
+        super.init();
+
+        this.window.setScaleFactor(gameScale);
+    }
+
+    @Override
+    protected void build(FlowLayout rootComponent) {
         this.leftPageAnchor = this.component(FlowLayout.class, "left-page-anchor");
         this.rightPageAnchor = this.component(FlowLayout.class, "right-page-anchor");
         this.bookmarkPanel = this.component(FlowLayout.class, "bookmark-panel");
@@ -210,6 +226,17 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
+    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+        mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
+        mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
+
+        matrices.push();
+        matrices.scale(this.scaleFactor / (float) this.window.getScaleFactor(), this.scaleFactor / (float) this.window.getScaleFactor(), 1);
+        super.render(matrices, mouseX, mouseY, delta);
+        matrices.pop();
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
 
@@ -228,6 +255,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
+
         if (super.mouseClicked(mouseX, mouseY, button)) return true;
 
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
@@ -244,11 +274,29 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
+        return super.mouseScrolled(mouseX, mouseY, amount);
+    }
+
+    @Override
     public void removed() {
         super.removed();
-
-        this.client.options.getGuiScale().setValue(this.previousUiScale);
-        this.client.onResolutionChanged();
 
         var trail = new ArrayList<NavFrame.Replicator>();
         while (!this.navStack.isEmpty()) trail.add(this.navStack.pop().replicator());
