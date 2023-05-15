@@ -26,7 +26,7 @@ wielding a [Conjuring Scepter](^lavender:profound_page#3) of any kind
 
 ;;;;;
 
-<|structure-preview@lavender:book_components|structure=lavender:ritual_of_extraction|>
+<structure;lavender:well>
 
 ;;;;;
 

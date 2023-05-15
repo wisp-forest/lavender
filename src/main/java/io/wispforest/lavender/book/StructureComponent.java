@@ -5,7 +5,6 @@ import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseComponent;
-import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
@@ -24,6 +23,7 @@ import org.w3c.dom.Element;
 public class StructureComponent extends BaseComponent {
 
     private final StructureInfo structure;
+    private int visibleLayer = -1;
 
     public StructureComponent(StructureInfo structure) {
         this.structure = structure;
@@ -48,6 +48,8 @@ public class StructureComponent extends BaseComponent {
         matrices.translate(this.structure.xSize / -2f, this.structure.ySize / -2f, this.structure.zSize / -2f);
 
         structure.forEachPredicate((blockPos, predicate) -> {
+            if (this.visibleLayer != -1 && this.visibleLayer != blockPos.getY()) return;
+
             matrices.push();
             matrices.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
 
@@ -83,10 +85,19 @@ public class StructureComponent extends BaseComponent {
             StructureOverlayRenderer.removeAllOverlays(this.structure.id);
         } else {
             StructureOverlayRenderer.addPendingOverlay(this.structure.id);
+            StructureOverlayRenderer.restrictVisibleLayer(this.structure.id, this.visibleLayer);
+
             MinecraftClient.getInstance().setScreen(null);
         }
 
         return true;
+    }
+
+    public StructureComponent visibleLayer(int visibleLayer) {
+        StructureOverlayRenderer.restrictVisibleLayer(this.structure.id, visibleLayer);
+
+        this.visibleLayer = visibleLayer;
+        return this;
     }
 
     public static StructureComponent parse(Element element) {

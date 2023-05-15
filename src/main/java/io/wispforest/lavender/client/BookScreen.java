@@ -46,7 +46,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     private static final MarkdownProcessor<ParentComponent> PROCESSOR = new MarkdownProcessor<>(
             BookCompiler::new,
             new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
-            new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension()
+            new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(),
+            new StructureExtension()
     );
 
     public final Book book;

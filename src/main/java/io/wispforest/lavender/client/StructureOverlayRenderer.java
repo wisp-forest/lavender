@@ -52,15 +52,13 @@ public class StructureOverlayRenderer {
 
     private static final Map<BlockPos, OverlayEntry> ACTIVE_OVERLAYS = new HashMap<>();
 
-    private static @Nullable Identifier PENDING_OVERLAY = null;
-    private static BlockRotation PENDING_ROTATION = BlockRotation.NONE;
+    private static @Nullable OverlayEntry PENDING_OVERLAY = null;
 
     private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
     private static final Identifier BARS_TEXTURE = new Identifier("textures/gui/bars.png");
 
     public static void addPendingOverlay(Identifier structure) {
-        PENDING_OVERLAY = structure;
-        PENDING_ROTATION = BlockRotation.NONE;
+        PENDING_OVERLAY = new OverlayEntry(structure, BlockRotation.NONE);
     }
 
     public static void addOverlay(BlockPos anchorPoint, Identifier structure, BlockRotation rotation) {
@@ -68,7 +66,7 @@ public class StructureOverlayRenderer {
     }
 
     public static boolean isShowingOverlay(Identifier structure) {
-        if (structure.equals(PENDING_OVERLAY)) return true;
+        if (PENDING_OVERLAY != null && structure.equals(PENDING_OVERLAY.structureId)) return true;
 
         for (var entry : ACTIVE_OVERLAYS.values()) {
             if (structure.equals(entry.structureId)) return true;
@@ -78,11 +76,31 @@ public class StructureOverlayRenderer {
     }
 
     public static void removeAllOverlays(Identifier structure) {
-        if (structure.equals(PENDING_OVERLAY)) {
+        if (PENDING_OVERLAY != null && structure.equals(PENDING_OVERLAY.structureId)) {
             addPendingOverlay(null);
         }
 
         ACTIVE_OVERLAYS.values().removeIf(entry -> structure.equals(entry.structureId));
+    }
+
+    public static int getLayerRestriction(Identifier structure) {
+        for (var entry : ACTIVE_OVERLAYS.values()) {
+            if (entry.visibleLayer == -1) continue;
+            return entry.visibleLayer;
+        }
+
+        return -1;
+    }
+
+    public static void restrictVisibleLayer(Identifier structure, int visibleLayer) {
+        if (PENDING_OVERLAY != null && structure.equals(PENDING_OVERLAY.structureId)) {
+            PENDING_OVERLAY.visibleLayer = visibleLayer;
+        }
+
+        for (var entry : ACTIVE_OVERLAYS.values()) {
+            if (!structure.equals(entry.structureId)) continue;
+            entry.visibleLayer = visibleLayer;
+        }
     }
 
     public static void clearOverlays() {
@@ -90,7 +108,8 @@ public class StructureOverlayRenderer {
     }
 
     public static void rotatePending(boolean clockwise) {
-        PENDING_ROTATION = PENDING_ROTATION.rotate(clockwise ? BlockRotation.CLOCKWISE_90 : BlockRotation.COUNTERCLOCKWISE_90);
+        if (PENDING_OVERLAY == null) return;
+        PENDING_OVERLAY.rotation = PENDING_OVERLAY.rotation.rotate(clockwise ? BlockRotation.CLOCKWISE_90 : BlockRotation.COUNTERCLOCKWISE_90);
     }
 
     public static boolean hasPending() {
@@ -137,6 +156,7 @@ public class StructureOverlayRenderer {
                                 hasInvalidBlock.setTrue();
                             }
 
+                            if (entry.visibleLayer != -1 && pos.getY() != entry.visibleLayer) return;
                             renderOverlayBlock(matrices, context.consumers(), pos, predicate, entry.rotation);
                         }, entry.rotation);
 
@@ -176,13 +196,14 @@ public class StructureOverlayRenderer {
             });
 
             if (PENDING_OVERLAY != null) {
-                var structure = LavenderStructures.get(PENDING_OVERLAY);
+                var structure = PENDING_OVERLAY.fetchStructure();
                 if (structure != null) {
                     if (client.player.raycast(5, client.getTickDelta(), false) instanceof BlockHitResult target) {
-                        var targetPos = target.getBlockPos().offset(target.getSide()).add(getPendingOffset(structure));
+                        var targetPos = target.getBlockPos().add(getPendingOffset(structure));
+                        if (!client.player.isSneaking()) targetPos = targetPos.offset(target.getSide());
 
                         matrices.translate(targetPos.getX(), targetPos.getY(), targetPos.getZ());
-                        structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, context.consumers(), pos, predicate, PENDING_ROTATION), PENDING_ROTATION);
+                        structure.forEachPredicate((pos, predicate) -> renderOverlayBlock(matrices, context.consumers(), pos, predicate, PENDING_OVERLAY.rotation), PENDING_OVERLAY.rotation);
                     }
                 } else {
                     PENDING_OVERLAY = null;
@@ -216,10 +237,12 @@ public class StructureOverlayRenderer {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             if (PENDING_OVERLAY == null) return ActionResult.PASS;
 
-            var structure = LavenderStructures.get(PENDING_OVERLAY);
-            if (structure == null) return ActionResult.PASS;
+            var structure = PENDING_OVERLAY.fetchStructure();
 
-            addOverlay(hitResult.getBlockPos().offset(hitResult.getSide()).add(getPendingOffset(structure)), PENDING_OVERLAY, PENDING_ROTATION);
+            var targetPos = hitResult.getBlockPos().add(getPendingOffset(structure));
+            if (!player.isSneaking()) targetPos = targetPos.offset(hitResult.getSide());
+
+            ACTIVE_OVERLAYS.put(targetPos, PENDING_OVERLAY);
             PENDING_OVERLAY = null;
 
             player.swingHand(hand);
@@ -228,7 +251,8 @@ public class StructureOverlayRenderer {
     }
 
     private static Vec3i getPendingOffset(StructureInfo structure) {
-        return PENDING_ROTATION == BlockRotation.NONE || PENDING_ROTATION == BlockRotation.CLOCKWISE_180
+        if (PENDING_OVERLAY == null) return Vec3i.ZERO;
+        return PENDING_OVERLAY.rotation == BlockRotation.NONE || PENDING_OVERLAY.rotation == BlockRotation.CLOCKWISE_180
                 ? new Vec3i(-structure.xSize / 2, 0, -structure.zSize / 2)
                 : new Vec3i(-structure.zSize / 2, 0, -structure.xSize / 2);
     }
@@ -254,7 +278,9 @@ public class StructureOverlayRenderer {
     private static class OverlayEntry {
 
         public final Identifier structureId;
-        public final BlockRotation rotation;
+
+        public BlockRotation rotation;
+        public int visibleLayer = -1;
 
         public float decayTime = -1;
         public float visualCompleteness = 0f;

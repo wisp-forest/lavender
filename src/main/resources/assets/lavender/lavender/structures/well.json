@@ -1,0 +1,44 @@
+{
+  "keys": {
+    "c": "minecraft:chiseled_stone_bricks",
+    "s": "minecraft:stone_brick_stairs[facing=north]",
+    "u": "minecraft:stone_brick_stairs[facing=south]",
+    "e": "minecraft:stone_brick_stairs[facing=east]",
+    "t": "minecraft:stone_brick_stairs[facing=west]",
+    "l": "minecraft:smooth_stone_slab",
+    "b": "minecraft:stone_bricks",
+    "w": "minecraft:stone_brick_wall",
+    "a": "minecraft:lantern",
+    "v": "minecraft:lantern"
+  },
+  "layers": [
+    [
+      "bbbbb",
+      "bcbcb",
+      "bbbbb",
+      "bcbcb",
+      "bbbbb"
+    ],
+    [
+      "culuc",
+      "e   t",
+      "l b l",
+      "e   t",
+      "cslsc"
+    ],
+    [
+      "w   w",
+      "     ",
+      "  c  ",
+      "     ",
+      "w   w"
+    ],
+    [
+      "a   a",
+      "     ",
+      "  b  ",
+      "     ",
+      "a   a"
+    ]
+  ]
+}

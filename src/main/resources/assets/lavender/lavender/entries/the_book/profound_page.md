@@ -80,4 +80,4 @@ smashes it into 4 pieces of {light_purple}Lesser Conjuration Essence{}
 
 ;;;;;
 
-<|structure-preview@lavender:book_components|structure=lavender:nether_portal|>
+<structure;lavender:nether_portal>

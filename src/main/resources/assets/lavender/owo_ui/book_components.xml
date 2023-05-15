@@ -137,25 +137,28 @@
             </flow-layout>
         </template>
 
-        <template name="structure-preview">
+        <template name="structure-preview-base">
             <flow-layout direction="vertical">
                 <children>
-                    <flow-layout direction="vertical">
+                    <flow-layout direction="horizontal">
                         <children>
                             <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
-                                     u="267"
-                                     v="0" region-width="100" region-height="100">
+                                     u="267" v="0" region-width="100" region-height="100">
                                 <blend>true</blend>
                                 <positioning type="absolute">0,0</positioning>
                             </texture>
 
-                            <lavender.structure structure-id="{{structure}}">
+                            <lavender.structure structure-id="{{structure}}" id="structure">
                                 <sizing>
                                     <horizontal method="fixed">100</horizontal>
                                     <vertical method="fixed">100</vertical>
                                 </sizing>
                             </lavender.structure>
+
+                            <template-child id="slider-anchor"/>
                         </children>
+
+                        <vertical-alignment>center</vertical-alignment>
                     </flow-layout>
                 </children>
 
@@ -165,6 +168,46 @@
                     <horizontal method="fill">100</horizontal>
                 </sizing>
             </flow-layout>
+        </template>
+
+        <template name="structure-preview">
+            <template name="structure-preview-base">
+                <child id="slider-anchor">
+                    <flow-layout direction="vertical"/>
+                </child>
+            </template>
+        </template>
+
+        <template name="structure-preview-with-layers">
+            <template name="structure-preview-base">
+                <child id="slider-anchor">
+                    <flow-layout direction="vertical">
+                        <children>
+                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                     u="367" v="14" region-width="11" region-height="72">
+                                <blend>true</blend>
+                                <positioning type="absolute">0,0</positioning>
+                            </texture>
+
+                            <slim-slider direction="vertical" id="layer-slider">
+                                <sizing>
+                                    <vertical method="fixed">66</vertical>
+                                </sizing>
+                                <step-size>1</step-size>
+
+                                <margins>
+                                    <right>2</right>
+                                    <vertical>3</vertical>
+                                </margins>
+                            </slim-slider>
+                        </children>
+
+                        <margins>
+                            <left>-1</left>
+                        </margins>
+                    </flow-layout>
+                </child>
+            </template>
         </template>
     </templates>
 
