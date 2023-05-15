@@ -90,8 +90,8 @@ public class StructureExtension implements MarkdownExtension {
             if (layerSlider != null) {
                 layerSlider.max(0).min(this.structure.ySize).tooltipSupplier(layer -> {
                     return layer > 0
-                            ? Text.literal("Layer: " + layer.intValue())
-                            : Text.literal("All layers");
+                            ? Text.translatable("text.lavender.structure_component.layer_tooltip", layer.intValue())
+                            : Text.translatable("text.lavender.structure_component.all_layers_tooltip");
                 }).onChanged().subscribe(layer -> {
                     structurePreview.visibleLayer((int) layer - 1);
                 });

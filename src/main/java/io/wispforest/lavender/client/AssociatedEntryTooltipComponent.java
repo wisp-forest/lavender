@@ -27,10 +27,8 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                 .child(Components.label(Text.literal(entry.title()).formatted(Formatting.GRAY)))
-                .child(Components.label(TextOps.withFormatting(
-                        "Hold §Alt §[§" + "|".repeat((int) (30 * progress)) + "§" + "|".repeat((int) Math.ceil(30 * (1 - progress))) + "§]",
-                        Formatting.DARK_GRAY, Formatting.GOLD, Formatting.GREEN, Formatting.GRAY, Formatting.DARK_GRAY, Formatting.GREEN)
-                )));
+                .child(Components.label(Text.translatable("text.lavender.entry_tooltip", "|".repeat((int) (30 * progress)), "|".repeat((int) Math.ceil(30 * (1 - progress)))))));
+
         this.layout.verticalAlignment(VerticalAlignment.CENTER);
 
         this.layout.inflate(Size.of(1000, 1000));

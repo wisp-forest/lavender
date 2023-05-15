@@ -3,7 +3,6 @@ package io.wispforest.lavender.book;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureInfo;
-import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
@@ -14,7 +13,6 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import org.lwjgl.glfw.GLFW;
@@ -69,10 +67,10 @@ public class StructureComponent extends BaseComponent {
         DiffuseLighting.enableGuiDepthLighting();
 
         if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
-            client.textRenderer.draw(matrices, TextOps.withFormatting("⚓", Formatting.GRAY), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0);
-            this.tooltip(Text.literal("❌ Click to hide"));
+            client.textRenderer.draw(matrices, Text.translatable("text.lavender.structure_component.active_overlay_hint"), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0);
+            this.tooltip(Text.translatable("text.lavender.structure_component.hide_hint"));
         } else {
-            this.tooltip(Text.literal("⚓ Click to place"));
+            this.tooltip(Text.translatable("text.lavender.structure_component.place_hint"));
         }
     }
 
@@ -104,8 +102,9 @@ public class StructureComponent extends BaseComponent {
         UIParsing.expectAttributes(element, "structure-id");
 
         var structureId = Identifier.tryParse(element.getAttribute("structure-id"));
-        if (structureId == null)
+        if (structureId == null) {
             throw new UIModelParsingException("Invalid structure id '" + element.getAttribute("structure-id") + "'");
+        }
 
         var structure = LavenderStructures.get(structureId);
         if (structure == null) throw new UIModelParsingException("Unknown structure '" + structureId + "'");

@@ -15,7 +15,6 @@ import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.*;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -120,7 +119,7 @@ public class BookCompiler extends OwoUICompiler {
 
                 style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
                         ? Text.literal(linkTarget.entry.title())
-                        : Text.literal("invalid internal link: " + rawLink).formatted(Formatting.RED)
+                        : Text.translatable("text.lavender.invalid_internal_link", rawLink)
                 ));
             }
 

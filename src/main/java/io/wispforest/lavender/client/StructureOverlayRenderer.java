@@ -175,7 +175,7 @@ public class StructureOverlayRenderer {
 
                     entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, client.getLastFrameDuration());
                     layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                            .child(Components.label(Text.translatable(Util.createTranslationKey("structure", entry.structureId)).append(Text.literal(": " + valid + " / " + total))).shadow(true))
+                            .child(Components.label(Text.translatable("text.lavender.structure_hud.completion", Text.translatable(Util.createTranslationKey("structure", entry.structureId)), valid, total)).shadow(true))
                             .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                                     .child(Components.texture(BARS_TEXTURE, 0, 10 + barTextureOffset, 182, 5))
                                     .child(Components.texture(BARS_TEXTURE, 0, 15 + barTextureOffset, Math.round(182 * entry.visualCompleteness), 5).positioning(Positioning.absolute(0, 0)))

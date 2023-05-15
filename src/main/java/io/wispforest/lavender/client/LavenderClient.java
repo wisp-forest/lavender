@@ -10,7 +10,6 @@ import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.LavenderStructures;
-import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -35,7 +34,6 @@ import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
@@ -109,7 +107,7 @@ public class LavenderClient implements ClientModInitializer {
                         .child(Components.item(BookItem.itemOf(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))
-                        .child(Components.label(TextOps.withFormatting(client.player.isSneaking() ? "Click to view" : "Sneak to view", Formatting.GRAY))));
+                        .child(Components.label(Text.translatable(client.player.isSneaking() ? "text.lavender.entry_hud.click_to_view" : "text.lavender.entry_hud.sneak_to_view"))));
             });
         });
 
@@ -124,8 +122,9 @@ public class LavenderClient implements ClientModInitializer {
             if (item == Items.AIR) return ActionResult.PASS;
 
             var associatedEntry = book.entryByAssociatedItem(item);
-            if (associatedEntry == null || !associatedEntry.canPlayerView((ClientPlayerEntity) player))
+            if (associatedEntry == null || !associatedEntry.canPlayerView((ClientPlayerEntity) player)) {
                 return ActionResult.PASS;
+            }
 
             BookScreen.pushEntry(book, associatedEntry);
             MinecraftClient.getInstance().setScreen(new BookScreen(book));

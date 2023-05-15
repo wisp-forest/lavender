@@ -6,7 +6,6 @@ import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
-import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.ButtonComponent;
 import io.wispforest.owo.ui.component.Components;
@@ -145,7 +144,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 var bookmarkComponent = this.createBookmarkButton("bookmark");
                 bookmarkComponent.childById(ItemComponent.class, "bookmark-preview").stack(element.icon().getDefaultStack());
                 bookmarkComponent.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
-                    bookmarkButton.tooltip(List.of(Text.literal(element.title()), TextOps.withFormatting("Shift-click to remove", Formatting.GRAY)));
+                    bookmarkButton.tooltip(List.of(Text.literal(element.title()), Text.translatable("text.lavender.book.bookmark.remove_hint")));
                     bookmarkButton.onPress($ -> {
                         if (Screen.hasShiftDown()) {
                             LavenderBookmarks.removeBookmark(this.book, bookmark);
@@ -164,7 +163,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             if (this.currentNavFrame().pageSupplier instanceof PageSupplier.Bookmarkable bookmarkable) {
                 var addBookmarkButton = this.createBookmarkButton("add-bookmark");
                 addBookmarkButton.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
-                    bookmarkButton.tooltip(Text.literal("Add bookmark"));
+                    bookmarkButton.tooltip(Text.translatable("text.book.lavender.bookmark.add"));
                     bookmarkButton.onPress($ -> {
                         bookmarkable.addBookmark();
                         this.rebuildContent(null);
@@ -413,10 +412,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                             Map.of("progress", String.valueOf((int) (100 * (book.countVisibleEntries(this.context.client.player) / (float) book.entries().size()))))
                     );
 
-                    completionBar.childById(LabelComponent.class, "completion-label").text(
-                            Text.literal("Unlocked: " + book.countVisibleEntries(this.context.client.player) + "/" + book.entries().size())
-                                    .styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withFormatting(Formatting.DARK_GRAY))
-                    );
+                    completionBar.childById(LabelComponent.class, "completion-label")
+                            .text(Text.translatable("text.lavender.book.unlock_progress", book.countVisibleEntries(this.context.client.player), book.entries().size()));
 
                     landingPage.child(completionBar);
                 }
