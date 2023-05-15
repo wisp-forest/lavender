@@ -318,6 +318,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                 label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
                 label.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                    if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
                     this.context.navPush(new EntryPageSupplier(this.context, entry));
                     UISounds.playInteractionSound();
                     return true;
@@ -397,6 +399,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                                 .cursorStyle(CursorStyle.HAND);
 
                         categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                            if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
                             this.context.navPush(new CategoryPageSupplier(this.context, category));
                             UISounds.playInteractionSound();
                             return true;
