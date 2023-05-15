@@ -12,6 +12,7 @@ repositories {
 
     // rei
     maven { url "https://maven.shedaniel.me/" }
+    mavenLocal()
 }
 
 dependencies {

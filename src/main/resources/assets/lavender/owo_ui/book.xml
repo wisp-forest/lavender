@@ -69,18 +69,20 @@
                             <positioning type="absolute">252,174</positioning>
                         </button>
 
-                        <flow-layout direction="horizontal" id="bookmark-panel">
-                            <children/>
+                        <scroll direction="horizontal" id="bookmark-scroll">
+                            <flow-layout direction="horizontal" id="bookmark-panel">
+                                <children/>
+                                <gap>2</gap>
+                            </flow-layout>
 
-                            <gap>2</gap>
-                            <horizontal-alignment>center</horizontal-alignment>
-
-                            <positioning type="absolute">10,-14</positioning>
+                            <positioning type="absolute">6,-14</positioning>
                             <sizing>
-                                <horizontal method="fixed">245</horizontal>
+                                <horizontal method="fixed">255</horizontal>
                                 <vertical method="fixed">14</vertical>
                             </sizing>
-                        </flow-layout>
+
+                            <scrollbar-thiccness>2</scrollbar-thiccness>
+                        </scroll>
                     </children>
 
                     <allow-overflow>true</allow-overflow>

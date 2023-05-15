@@ -14,6 +14,7 @@ import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
@@ -140,13 +141,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 bookmarkContainer.child(bookmark);
             }
 
-            if (this.currentNavFrame().pageSupplier instanceof EntryPageSupplier entry && bookmarks.size() < 15) {
+            if (this.currentNavFrame().pageSupplier instanceof EntryPageSupplier entry) {
                 var addBookmarkButton = this.createBookmarkButton("add-bookmark");
                 addBookmarkButton.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
                     bookmarkButton.tooltip(Text.literal("Add bookmark"));
                     bookmarkButton.onPress($ -> {
                         LavenderBookmarks.addBookmark(this.book, entry.entry);
                         this.rebuildContent(null);
+                        this.component(ScrollContainer.class, "bookmark-scroll").scrollTo(1);
                     });
                 });
 
