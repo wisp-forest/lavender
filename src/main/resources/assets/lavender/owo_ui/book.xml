@@ -264,6 +264,46 @@
                 </child>
             </template>
         </template>
+
+        <template name="completion-bar">
+            <flow-layout direction="vertical">
+                <children>
+                    <template name="horizontal-rule@lavender:book_components"/>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <label id="completion-label"/>
+                            <flow-layout direction="vertical">
+                                <children>
+                                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                             u="268" v="129" region-width="100" region-height="5">
+                                    </texture>
+                                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                             u="268" v="134" region-width="100" region-height="5">
+
+                                        <visible-area>
+                                            <width>{{progress}}</width>
+                                        </visible-area>
+
+                                        <positioning type="absolute">0,0</positioning>
+                                    </texture>
+                                </children>
+                            </flow-layout>
+                        </children>
+
+                        <margins>
+                            <top>4</top>
+                        </margins>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+
+                <margins>
+                    <bottom>3</bottom>
+                </margins>
+                <positioning type="relative">50,100</positioning>
+            </flow-layout>
+        </template>
     </templates>
 
 </owo-ui>

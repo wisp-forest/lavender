@@ -406,20 +406,19 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 landingPage.child(this.context.model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
                 landingPage.child(PROCESSOR.process(landingPageEntry.content()));
 
-                // TODO this should use a builtin book component
                 if (book.displayCompletion()) {
-                    landingPage.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                            .child(BOOK_COMPONENTS.get().expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.bottom(4)))
-                            .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                                    .child(Components.label(Text.literal("Unlocked: " + book.countVisibleEntries(this.context.client.player) + "/" + book.entries().size()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withFormatting(Formatting.DARK_GRAY))))
-                                    .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                                            .child(Components.texture(Lavender.id("textures/gui/book.png"), 268, 129, 100, 5, 512, 256))
-                                            .child(Components.texture(Lavender.id("textures/gui/book.png"), 268, 134, 100, 5, 512, 256)
-                                                    .visibleArea(PositionedRectangle.of(0, 0, (int) (100 * (book.countVisibleEntries(this.context.client.player) / (float) book.entries().size())), 5))
-                                                    .positioning(Positioning.absolute(0, 0)))))
-                            .horizontalAlignment(HorizontalAlignment.CENTER)
-                            .positioning(Positioning.relative(50, 100))
-                            .margins(Insets.bottom(3)));
+                    var completionBar = this.context.model.expandTemplate(
+                            FlowLayout.class,
+                            "completion-bar",
+                            Map.of("progress", String.valueOf((int) (100 * (book.countVisibleEntries(this.context.client.player) / (float) book.entries().size()))))
+                    );
+
+                    completionBar.childById(LabelComponent.class, "completion-label").text(
+                            Text.literal("Unlocked: " + book.countVisibleEntries(this.context.client.player) + "/" + book.entries().size())
+                                    .styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withFormatting(Formatting.DARK_GRAY))
+                    );
+
+                    landingPage.child(completionBar);
                 }
 
                 this.pages.add(landingPage);
