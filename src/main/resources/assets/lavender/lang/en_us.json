@@ -28,6 +28,13 @@
   "text.lavender.structure_component.layer_tooltip": "Layer: %d",
   "text.lavender.structure_component.all_layers_tooltip": "All layers",
 
+  "text.lavender.keybind_tooltip": [
+    {"text": "Key Binding:\n "},
+    {"index": 0, "color": "gray"},
+    {"text": " > ", "color": "dark_gray"},
+    {"index": 1, "color": "gray"}
+  ],
+
   "text.lavender.invalid_internal_link": [
     {"text": "Invalid internal link: ", "color": "red"},
     {"index": 0, "color": "gray"}

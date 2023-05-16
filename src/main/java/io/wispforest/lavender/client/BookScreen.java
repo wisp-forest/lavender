@@ -48,7 +48,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             BookCompiler::new,
             new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
             new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(),
-            new StructureExtension()
+            new StructureExtension(), new KeybindExtension()
     );
 
     public final Book book;
