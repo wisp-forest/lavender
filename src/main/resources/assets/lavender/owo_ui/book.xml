@@ -216,6 +216,49 @@
             </flow-layout>
         </template>
 
+        <template name="locked-index-item">
+            <flow-layout direction="horizontal">
+                <children>
+                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                             u="172" v="180" region-width="16" region-height="16">
+                        <blend>true</blend>
+
+                        <margins>
+                            <vertical>1</vertical>
+                            <left>2</left>
+                            <right>4</right>
+                        </margins>
+
+                        <sizing>
+                            <horizontal method="fixed">8</horizontal>
+                            <vertical method="fixed">8</vertical>
+                        </sizing>
+                    </texture>
+
+                    <label id="index-label">
+                        <color>black</color>
+                        <line-height>7</line-height>
+                    </label>
+                </children>
+
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
+
+        <template name="locked-category-button">
+            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                     u="172" v="180" region-width="16" region-height="16">
+                <blend>true</blend>
+                <margins>
+                    <all>4</all>
+                </margins>
+            </texture>
+        </template>
+
         <template name="bookmark-button">
             <flow-layout direction="vertical">
                 <children>

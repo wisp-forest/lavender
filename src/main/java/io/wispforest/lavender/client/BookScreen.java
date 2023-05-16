@@ -23,6 +23,7 @@ import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvent;
@@ -246,8 +247,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         super.render(matrices, mouseX, mouseY, delta);
 
-        this.window.setScaleFactor(gameScale);
         RenderSystem.restoreProjectionMatrix();
+        this.window.setScaleFactor(gameScale);
     }
 
     @Override
@@ -379,28 +380,34 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             var indexSections = new ArrayList<FlowLayout>();
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
 
-            for (var entry : entries) {
-                if (entry == this.context.book.landingPage() || !entry.canPlayerView(this.context.client.player)) {
-                    continue;
+            entries.stream().sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player))).forEach(entry -> {
+                if (entry == this.context.book.landingPage()) {
+                    return;
                 }
 
-                var indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
-                indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+                ParentComponent indexItem;
+                if (entry.canPlayerView(this.context.client.player)) {
+                    indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+                    indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
 
-                var label = indexItem.childById(LabelComponent.class, "index-label");
+                    var label = indexItem.childById(LabelComponent.class, "index-label");
 
-                label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
-                label.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                    if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                    label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                    label.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
-                    this.context.navPush(new EntryPageSupplier(this.context, entry));
-                    UISounds.playInteractionSound();
-                    return true;
-                });
+                        this.context.navPush(new EntryPageSupplier(this.context, entry));
+                        UISounds.playInteractionSound();
+                        return true;
+                    });
 
-                var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
-                label.mouseEnter().subscribe(animation::forwards);
-                label.mouseLeave().subscribe(animation::backwards);
+                    var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
+                    label.mouseEnter().subscribe(animation::forwards);
+                    label.mouseLeave().subscribe(animation::backwards);
+                } else {
+                    indexItem = this.context.model.expandTemplate(ParentComponent.class, "locked-index-item", Map.of());
+                    indexItem.childById(LabelComponent.class, "index-label").text(Text.literal("Locked").styled($ -> $.withColor(Formatting.GRAY).withFont(MinecraftClient.UNICODE_FONT_ID)));
+                }
 
                 int sectionIndex = indexSections.size() - 1;
                 if (indexSections.get(sectionIndex).children().size() >= (sectionIndex < maxEntriesPerPage.length ? maxEntriesPerPage[sectionIndex] : 12)) {
@@ -408,7 +415,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 }
 
                 Iterables.getLast(indexSections).child(indexItem);
-            }
+            });
 
             return indexSections;
         }
@@ -459,24 +466,26 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 var categoryContainer = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content()).gap(4);
                 categories.child(categoryContainer);
 
-                for (var category : book.categories()) {
-                    if (!book.shouldDisplayCategory(category, this.context.client.player)) continue;
+                book.categories().stream().sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player))).forEach(category -> {
+                    if (book.shouldDisplayCategory(category, this.context.client.player)) {
+                        categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
+                            categoryButton
+                                    .tooltip(Text.literal(category.title()))
+                                    .margins(Insets.of(4))
+                                    .cursorStyle(CursorStyle.HAND);
 
-                    categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
-                        categoryButton
-                                .tooltip(Text.literal(category.title()))
-                                .margins(Insets.of(4))
-                                .cursorStyle(CursorStyle.HAND);
+                            categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                                if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
-                        categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                            if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
-
-                            this.context.navPush(new CategoryPageSupplier(this.context, category));
-                            UISounds.playInteractionSound();
-                            return true;
-                        });
-                    }));
-                }
+                                this.context.navPush(new CategoryPageSupplier(this.context, category));
+                                UISounds.playInteractionSound();
+                                return true;
+                            });
+                        }));
+                    } else {
+                        categoryContainer.child(this.context.model.expandTemplate(Component.class, "locked-category-button", Map.of()));
+                    }
+                });
 
                 indexPage.child(categories);
             }
@@ -521,7 +530,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             var landingPageContent = parsedLandingPage.children().get(0);
             parsedLandingPage.removeChild(landingPageContent);
 
-            this.pages.add(this.pageWithHeader(category.title()).child(landingPageContent));
+            var landingPage = this.pageWithHeader(category.title()).child(landingPageContent);
+            this.pages.add(landingPage);
 
             // --- entry index ---
 
@@ -531,7 +541,30 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 for (int i = 0; i < indexPages.size(); i++) {
                     this.pages.add(i == 0 ? this.pageWithHeader("Index").child(indexPages.get(0)) : indexPages.get(i));
                 }
+
+                if (this.context.book.displayCompletion()) {
+                    var completionBar = this.context.model.expandTemplate(
+                            FlowLayout.class,
+                            "completion-bar",
+                            Map.of("progress", String.valueOf((int) (100 * (this.countVisibleEntries(entries, this.context.client.player) / (float) entries.size()))))
+                    );
+
+                    completionBar.childById(LabelComponent.class, "completion-label")
+                            .text(Text.translatable("text.lavender.book.unlock_progress", this.countVisibleEntries(entries, this.context.client.player), entries.size()));
+
+                    landingPage.child(completionBar);
+                }
             }
+        }
+
+        protected int countVisibleEntries(Collection<Entry> entries, ClientPlayerEntity player) {
+            int visible = 0;
+            for (var entry : entries) {
+                if (!entry.canPlayerView(player)) continue;
+                visible++;
+            }
+
+            return visible;
         }
 
         @Override
@@ -623,3 +656,4 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         UIParsing.registerFactory("lavender.structure", StructureComponent::parse);
     }
 }
+

@@ -5,6 +5,9 @@
   "category": "lavender:epic_category",
   "associated_items": [
     "minecraft:diamond"
+  ],
+  "required_advancements": [
+    "minecraft:story/lava_bucket"
   ]
 }
 ```
