@@ -29,7 +29,7 @@
   "text.lavender.structure_component.all_layers_tooltip": "All layers",
 
   "text.lavender.keybind_tooltip": [
-    {"text": "Key Binding:\n "},
+    {"text": "Key Bind:\n "},
     {"index": 0, "color": "gray"},
     {"text": " > ", "color": "dark_gray"},
     {"index": 1, "color": "gray"}

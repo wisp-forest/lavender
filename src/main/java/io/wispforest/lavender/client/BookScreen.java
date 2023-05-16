@@ -1,6 +1,7 @@
 package io.wispforest.lavender.client;
 
 import com.google.common.collect.Iterables;
+import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.MarkdownProcessor;
@@ -33,6 +34,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
@@ -163,7 +165,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             if (this.currentNavFrame().pageSupplier instanceof PageSupplier.Bookmarkable bookmarkable) {
                 var addBookmarkButton = this.createBookmarkButton("add-bookmark");
                 addBookmarkButton.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
-                    bookmarkButton.tooltip(Text.translatable("text.book.lavender.bookmark.add"));
+                    bookmarkButton.tooltip(Text.translatable("text.lavender.book.bookmark.add"));
                     bookmarkButton.onPress($ -> {
                         bookmarkable.addBookmark();
                         this.rebuildContent(null);
@@ -229,10 +231,23 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
         mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
 
-        matrices.push();
-        matrices.scale(this.scaleFactor / (float) this.window.getScaleFactor(), this.scaleFactor / (float) this.window.getScaleFactor(), 1);
+        double gameScale = this.window.getScaleFactor();
+        this.window.setScaleFactor(this.scaleFactor);
+
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(
+                0,
+                this.window.getFramebufferWidth() / (float) this.scaleFactor,
+                this.window.getFramebufferHeight() / (float) this.scaleFactor,
+                0,
+                1000,
+                3000
+        ));
+
         super.render(matrices, mouseX, mouseY, delta);
-        matrices.pop();
+
+        this.window.setScaleFactor(gameScale);
+        RenderSystem.restoreProjectionMatrix();
     }
 
     @Override
@@ -349,6 +364,17 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             return container;
         }
 
+        protected ParentComponent parseMarkdown(String markdown) {
+            var component = PROCESSOR.process(markdown);
+            component.forEachDescendant(descendant -> {
+                if (descendant instanceof BookCompiler.BookLabelComponent label) {
+                    label.setOwner(this.context);
+                }
+            });
+
+            return component;
+        }
+
         protected List<FlowLayout> buildEntryIndex(Collection<Entry> entries, int... maxEntriesPerPage) {
             var indexSections = new ArrayList<FlowLayout>();
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
@@ -403,7 +429,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             if (landingPageEntry != null) {
                 var landingPage = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
                 landingPage.child(this.context.model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
-                landingPage.child(PROCESSOR.process(landingPageEntry.content()));
+                landingPage.child(this.parseMarkdown(landingPageEntry.content()));
 
                 if (book.displayCompletion()) {
                     var completionBar = this.context.model.expandTemplate(
@@ -490,7 +516,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             // --- landing page ---
 
-            var parsedLandingPage = PROCESSOR.process(category.content());
+            var parsedLandingPage = this.parseMarkdown(category.content());
 
             var landingPageContent = parsedLandingPage.children().get(0);
             parsedLandingPage.removeChild(landingPageContent);
@@ -535,20 +561,12 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             super(context);
             this.entry = entry;
 
-            var pages = PROCESSOR.process(entry.content());
+            var pages = this.parseMarkdown(entry.content());
             boolean firstPage = true;
 
             while (!pages.children().isEmpty()) {
                 var component = pages.children().get(0);
                 pages.removeChild(component);
-
-                if (component instanceof ParentComponent parent) {
-                    parent.forEachDescendant(descendant -> {
-                        if (descendant instanceof BookCompiler.BookLabelComponent label) {
-                            label.setOwner(this.context);
-                        }
-                    });
-                }
 
                 if (firstPage) {
                     firstPage = false;

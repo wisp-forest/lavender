@@ -126,7 +126,6 @@ public class BookCompiler extends OwoUICompiler {
             return style;
         }
 
-        private record LinkTarget(Entry entry, int page) {
-        }
+        private record LinkTarget(Entry entry, int page) {}
     }
 }
