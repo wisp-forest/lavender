@@ -1,0 +1,14 @@
+{
+  "keys": {
+    "c": "minecraft:crafting_table",
+    "a": "affinity:assembly_augment"
+  },
+  "layers": [
+    [
+      "c"
+    ],
+    [
+      "a"
+    ]
+  ]
+}
