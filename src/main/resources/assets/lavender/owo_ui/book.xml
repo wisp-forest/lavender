@@ -83,6 +83,16 @@
 
                             <scrollbar-thiccness>2</scrollbar-thiccness>
                         </scroll>
+
+                        <text-box id="search-box">
+                            <show-background>false</show-background>
+
+                            <sizing>
+                                <horizontal method="fixed">100</horizontal>
+                            </sizing>
+
+                            <positioning type="absolute">145,174</positioning>
+                        </text-box>
                     </children>
 
                     <allow-overflow>true</allow-overflow>

@@ -8,10 +8,7 @@ import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
-import io.wispforest.owo.ui.component.ButtonComponent;
-import io.wispforest.owo.ui.component.Components;
-import io.wispforest.owo.ui.component.ItemComponent;
-import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
@@ -62,6 +59,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     private ButtonComponent previousButton;
     private ButtonComponent returnButton;
     private ButtonComponent nextButton;
+    private TextBoxComponent searchBox;
 
     private FlowLayout leftPageAnchor;
     private FlowLayout rightPageAnchor;
@@ -100,6 +98,17 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(buttonComponent -> this.navPop());
         (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(buttonComponent -> this.turnPage(false));
 
+        this.searchBox = this.component(TextBoxComponent.class, "search-box");
+        searchBox.visible = searchBox.active = false;
+        searchBox.onChanged().subscribe(value -> {
+            var frame = this.currentNavFrame();
+
+            this.navStack.pop();
+            this.navPush(new NavFrame(frame.pageSupplier.replicator().apply(this), frame.selectedPage), true);
+
+            this.rebuildContent(null);
+        });
+
         var navTrail = getNavTrail(this.book);
         for (int i = navTrail.size() - 1; i >= 0; i--) {
             var frame = navTrail.get(i).createFrame(this);
@@ -118,9 +127,15 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         var pageSupplier = this.currentNavFrame().pageSupplier;
         int selectedPage = this.currentNavFrame().selectedPage;
 
+        if (selectedPage >= pageSupplier.pageCount()) {
+            selectedPage = this.currentNavFrame().selectedPage = (pageSupplier.pageCount() - 1) / 2 * 2;
+        }
+
         this.returnButton.active(this.navStack.size() > 1);
         this.previousButton.active(selectedPage > 0);
         this.nextButton.active(selectedPage + 2 < pageSupplier.pageCount());
+
+        searchBox.visible = searchBox.active = pageSupplier.searchable();
 
         int index = 0;
         while (index < 2) {
@@ -252,6 +267,16 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (super.charTyped(chr, modifiers)) return true;
+
+        this.searchBox.focusHandler().focus(this.searchBox, Component.FocusSource.MOUSE_CLICK);
+        this.searchBox.charTyped(chr, modifiers);
+
+        return true;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
 
@@ -352,6 +377,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             return this.pages.get(pageIndex);
         }
 
+        public boolean searchable() {
+            return false;
+        }
+
         abstract boolean canMerge(PageSupplier other);
 
         abstract Function<BookScreen, @Nullable PageSupplier> replicator();
@@ -380,42 +409,61 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             var indexSections = new ArrayList<FlowLayout>();
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
 
-            entries.stream().sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player))).forEach(entry -> {
-                if (entry == this.context.book.landingPage()) {
-                    return;
-                }
+            var searchText = this.context.searchBox.getText().strip();
+            var filter = searchText.isEmpty() ? new String[0] : searchText.split(" ");
+            for (int i = 0; i < filter.length; i++) {
+                filter[i] = filter[i].strip().toLowerCase(Locale.ROOT);
+            }
 
-                ParentComponent indexItem;
-                if (entry.canPlayerView(this.context.client.player)) {
-                    indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
-                    indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+            entries.stream()
+                    .sorted((o1, o2) -> AlphanumComparator.compare(o1.title(), o2.title()))
+                    .sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player)))
+                    .forEach(entry -> {
+                        if (entry == this.context.book.landingPage()) {
+                            return;
+                        }
 
-                    var label = indexItem.childById(LabelComponent.class, "index-label");
+                        boolean entryVisible = entry.canPlayerView(this.context.client.player);
+                        if (filter.length > 0) {
+                            if (!entryVisible) return;
 
-                    label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
-                    label.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                            var entryTitle = entry.title().toLowerCase(Locale.ROOT);
+                            for (var term : filter) {
+                                if (!entryTitle.contains(term)) return;
+                            }
+                        }
 
-                        this.context.navPush(new EntryPageSupplier(this.context, entry));
-                        UISounds.playInteractionSound();
-                        return true;
+                        ParentComponent indexItem;
+                        if (entryVisible) {
+                            indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+                            indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+
+                            var label = indexItem.childById(LabelComponent.class, "index-label");
+
+                            label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                            label.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                                if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+                                this.context.navPush(new EntryPageSupplier(this.context, entry));
+                                UISounds.playInteractionSound();
+                                return true;
+                            });
+
+                            var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
+                            label.mouseEnter().subscribe(animation::forwards);
+                            label.mouseLeave().subscribe(animation::backwards);
+                        } else {
+                            indexItem = this.context.model.expandTemplate(ParentComponent.class, "locked-index-item", Map.of());
+                            indexItem.childById(LabelComponent.class, "index-label").text(Text.literal("Locked").styled($ -> $.withColor(Formatting.GRAY).withFont(MinecraftClient.UNICODE_FONT_ID)));
+                        }
+
+                        int sectionIndex = indexSections.size() - 1;
+                        if (indexSections.get(sectionIndex).children().size() >= (sectionIndex < maxEntriesPerPage.length ? maxEntriesPerPage[sectionIndex] : 12)) {
+                            indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
+                        }
+
+                        Iterables.getLast(indexSections).child(indexItem);
                     });
-
-                    var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
-                    label.mouseEnter().subscribe(animation::forwards);
-                    label.mouseLeave().subscribe(animation::backwards);
-                } else {
-                    indexItem = this.context.model.expandTemplate(ParentComponent.class, "locked-index-item", Map.of());
-                    indexItem.childById(LabelComponent.class, "index-label").text(Text.literal("Locked").styled($ -> $.withColor(Formatting.GRAY).withFont(MinecraftClient.UNICODE_FONT_ID)));
-                }
-
-                int sectionIndex = indexSections.size() - 1;
-                if (indexSections.get(sectionIndex).children().size() >= (sectionIndex < maxEntriesPerPage.length ? maxEntriesPerPage[sectionIndex] : 12)) {
-                    indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
-                }
-
-                Iterables.getLast(indexSections).child(indexItem);
-            });
 
             return indexSections;
         }
@@ -505,6 +553,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
+        public boolean searchable() {
+            return true;
+        }
+
+        @Override
         public boolean canMerge(PageSupplier other) {
             return other instanceof IndexPageSupplier;
         }
@@ -565,6 +618,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             }
 
             return visible;
+        }
+
+        @Override
+        public boolean searchable() {
+            return true;
         }
 
         @Override
