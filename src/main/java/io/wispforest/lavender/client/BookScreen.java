@@ -117,7 +117,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.navPush(frame, true);
         }
 
-        if (this.navStack.isEmpty()) this.navPush(new NavFrame(new IndexPageSupplier(this), 0), true);
+        if (this.navStack.isEmpty()) this.navPush(new NavFrame(new LandingPageSupplier(this), 0), true);
         this.rebuildContent(Lavender.ITEM_BOOK_OPEN);
     }
 
@@ -352,7 +352,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     protected static List<NavFrame.Replicator> getNavTrail(Book book) {
         return NAV_TRAILS.computeIfAbsent(book.id(), $ -> Util.make(
                 new ArrayList<>(),
-                trail -> trail.add(0, new NavFrame.Replicator(IndexPageSupplier::new, 0))
+                trail -> trail.add(0, new NavFrame.Replicator(LandingPageSupplier::new, 0))
         ));
     }
 
@@ -473,9 +473,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
     }
 
-    public static class IndexPageSupplier extends PageSupplier {
+    public static class LandingPageSupplier extends PageSupplier {
 
-        public IndexPageSupplier(BookScreen context) {
+        public LandingPageSupplier(BookScreen context) {
             super(context);
 
             var book = this.context.book;
@@ -535,6 +535,21 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                     }
                 });
 
+                categoryContainer.child(Components.item(BookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
+                    categoryButton
+                            .tooltip(Text.literal("All Entries"))
+                            .margins(Insets.of(4))
+                            .cursorStyle(CursorStyle.HAND);
+
+                    categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+                        this.context.navPush(new IndexPageSupplier(this.context));
+                        UISounds.playInteractionSound();
+                        return true;
+                    });
+                }));
+
                 indexPage.child(categories);
             }
 
@@ -559,11 +574,37 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         @Override
         public boolean canMerge(PageSupplier other) {
-            return other instanceof IndexPageSupplier;
+            return other instanceof LandingPageSupplier;
         }
 
         @Override
         public Function<BookScreen, @Nullable PageSupplier> replicator() {
+            return LandingPageSupplier::new;
+        }
+    }
+
+    public static class IndexPageSupplier extends PageSupplier {
+
+        public IndexPageSupplier(BookScreen context) {
+            super(context);
+
+            var entries = this.buildEntryIndex(this.context.book.entries(), 10);
+            this.pages.add(this.pageWithHeader("Entries").child(entries.remove(0)));
+            this.pages.addAll(entries);
+        }
+
+        @Override
+        public boolean searchable() {
+            return true;
+        }
+
+        @Override
+        boolean canMerge(PageSupplier other) {
+            return other instanceof IndexPageSupplier;
+        }
+
+        @Override
+        Function<BookScreen, @Nullable PageSupplier> replicator() {
             return IndexPageSupplier::new;
         }
     }
