@@ -5,6 +5,17 @@
   "associated_items": [
     "affinity:assembly_augment",
     "affinity:arcane_treetap"
+  ],
+  "fabric:load_conditions": [
+    {
+      "condition": "fabric:not",
+      "value": {
+        "condition": "fabric:all_mods_loaded",
+        "values": [
+          "ok-boomer"
+        ]
+      }
+    }
   ]
 }
 ```

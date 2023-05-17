@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.resource.*;
@@ -144,7 +145,9 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 meta = GSON.fromJson(content.substring(0, frontmatterEnd), JsonObject.class);
                 content = content.substring(frontmatterEnd + 3).stripLeading();
 
-                return new MarkdownResource(meta, content);
+                return ResourceConditions.objectMatchesConditions(meta)
+                        ? new MarkdownResource(meta, content)
+                        : null;
             } else {
                 throw new RuntimeException("Missing markdown meta");
             }
