@@ -419,11 +419,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                     .sorted((o1, o2) -> AlphanumComparator.compare(o1.title(), o2.title()))
                     .sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player)))
                     .forEach(entry -> {
-                        if (entry == this.context.book.landingPage()) {
+                        boolean entryVisible = entry.canPlayerView(this.context.client.player);
+                        if (entry.secret() && !entryVisible) {
                             return;
                         }
 
-                        boolean entryVisible = entry.canPlayerView(this.context.client.player);
                         if (filter.length > 0) {
                             if (!entryVisible) return;
 
@@ -530,7 +530,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                                 return true;
                             });
                         }));
-                    } else {
+                    } else if (!category.secret()) {
                         categoryContainer.child(this.context.model.expandTemplate(Component.class, "locked-category-button", Map.of()));
                     }
                 });

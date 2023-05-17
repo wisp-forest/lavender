@@ -58,6 +58,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                         identifier,
                         JsonHelper.getString(markdown.meta, "title"),
                         JsonHelper.getItem(markdown.meta, "icon"),
+                        JsonHelper.getBoolean(markdown.meta, "secret", false),
                         markdown.content
                 ));
             });
@@ -75,6 +76,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
                 var title = JsonHelper.getString(markdown.meta, "title");
                 var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR);
+                var secret = JsonHelper.getBoolean(markdown.meta, "secret", false);
 
                 var associatedItems = new ImmutableSet.Builder<Item>();
                 for (var itemElement : JsonHelper.getArray(markdown.meta, "associated_items", new JsonArray())) {
@@ -94,7 +96,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                     requiredAdvancements.add(advancementId);
                 }
 
-                var entry = new Entry(identifier, categoryId, title, icon, requiredAdvancements.build(), associatedItems.build(), markdown.content);
+                var entry = new Entry(identifier, categoryId, title, icon, secret, requiredAdvancements.build(), associatedItems.build(), markdown.content);
                 if (entry.id().getPath().equals("landing_page")) {
                     book.setLandingPage(entry);
                 } else {

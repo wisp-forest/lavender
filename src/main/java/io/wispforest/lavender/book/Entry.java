@@ -7,7 +7,7 @@ import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-public record Entry(Identifier id, @Nullable Identifier category, String title, Item icon,
+public record Entry(Identifier id, @Nullable Identifier category, String title, Item icon, boolean secret,
                     ImmutableSet<Identifier> requiredAdvancements, ImmutableSet<Item> associatedItems, String content) implements Book.BookmarkableElement {
 
     public boolean canPlayerView(ClientPlayerEntity player) {
