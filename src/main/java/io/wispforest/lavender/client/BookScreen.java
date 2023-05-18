@@ -287,6 +287,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     public boolean charTyped(char chr, int modifiers) {
         if (super.charTyped(chr, modifiers)) return true;
 
+        if (chr == 'e' && (modifiers & GLFW.GLFW_MOD_ALT) != 0) {
+            this.navPush(new EditorPageSupplier(this));
+            return true;
+        }
+
         this.searchBox.focusHandler().focus(this.searchBox, Component.FocusSource.MOUSE_CLICK);
         this.searchBox.charTyped(chr, modifiers);
 
@@ -623,6 +628,73 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         @Override
         Function<BookScreen, @Nullable PageSupplier> replicator() {
             return IndexPageSupplier::new;
+        }
+    }
+
+    public static class EditorPageSupplier extends PageSupplier {
+
+        private static String editorTextCache = "";
+        private boolean showEditor = false;
+
+        protected EditorPageSupplier(BookScreen context) {
+            super(context);
+            var editorComponent = Components.textArea(Sizing.fill(100), Sizing.fill(100)).<TextAreaComponent>configure(editor -> {
+                editor.onChanged().subscribe(value -> {
+                    editorTextCache = value;
+
+                    if (this.pages.size() > 1) {
+                        this.pages.subList(1, this.pages.size()).clear();
+                    }
+
+                    var compiled = PROCESSOR.process(editorTextCache);
+                    boolean firstPage = true;
+
+                    while (!compiled.children().isEmpty()) {
+                        var component = compiled.children().get(0);
+                        compiled.removeChild(component);
+
+                        if (firstPage) {
+                            firstPage = false;
+                            this.pages.add(this.pageWithHeader("Title Here").child(component));
+                        } else {
+                            this.pages.add(component);
+                        }
+                    }
+
+                    this.context.rebuildContent(null);
+                });
+            });
+
+            this.pages.add(editorComponent);
+            editorComponent.text(editorTextCache);
+        }
+
+        @Override
+        public Component getPageContent(int pageIndex) {
+            if (this.showEditor) {
+                return pageIndex % 2 == 0
+                        ? super.getPageContent(0)
+                        : super.getPageContent(pageIndex / 2 + 1);
+            } else {
+                return super.getPageContent(pageIndex + 1);
+            }
+        }
+
+        @Override
+        public int pageCount() {
+            return this.showEditor
+                    ? Math.max(1, (super.pageCount() - 1) * 2)
+                    : super.pageCount() - 1;
+        }
+
+        @Override
+        boolean canMerge(PageSupplier other) {
+            return other instanceof EditorPageSupplier;
+        }
+
+        @Override
+        Function<BookScreen, @Nullable PageSupplier> replicator() {
+            return EditorPageSupplier::new;
         }
     }
 
