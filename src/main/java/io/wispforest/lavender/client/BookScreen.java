@@ -762,8 +762,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         @Override
         public Function<BookScreen, @Nullable PageSupplier> replicator() {
+            var categoryId = this.category.id();
             return context -> {
-                var category = context.book.categoryById(this.category.id());
+                var category = context.book.categoryById(categoryId);
                 return category != null && context.book.shouldDisplayCategory(category, context.client.player) ? new CategoryPageSupplier(context, category) : null;
             };
         }
@@ -805,8 +806,9 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         @Override
         public Function<BookScreen, @Nullable PageSupplier> replicator() {
+            var entryId = this.entry.id();
             return context -> {
-                var entry = context.book.entryById(this.entry.id());
+                var entry = context.book.entryById(entryId);
                 return entry != null && entry.canPlayerView(context.client.player) ? new EntryPageSupplier(context, entry) : null;
             };
         }
