@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -40,12 +39,16 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
     @Override
     public void reload(ResourceManager manager) {
-        var entries = this.findResources(manager, ENTRY_FINDER);
-        var categories = this.findResources(manager, CATEGORY_FINDER);
+        reloadContents(manager);
+    }
+
+    public static void reloadContents(ResourceManager manager) {
+        var entries = findResources(manager, ENTRY_FINDER);
+        var categories = findResources(manager, CATEGORY_FINDER);
 
         for (var book : BookLoader.loadedBooks()) {
-            this.forResourceOfBook(categories, book, "category", (identifier, resource) -> {
-                var markdown = this.parseMarkdown(identifier, resource);
+            forResourceOfBook(categories, book, "category", (identifier, resource) -> {
+                var markdown = parseMarkdown(identifier, resource);
                 if (markdown == null) return;
 
                 book.addCategory(new Category(
@@ -59,8 +62,8 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         }
 
         for (var book : BookLoader.loadedBooks()) {
-            this.forResourceOfBook(entries, book, "entry", (identifier, resource) -> {
-                var markdown = this.parseMarkdown(identifier, resource);
+            forResourceOfBook(entries, book, "entry", (identifier, resource) -> {
+                var markdown = parseMarkdown(identifier, resource);
                 if (markdown == null) return;
 
                 var category = JsonHelper.getString(markdown.meta, "category", null);
@@ -100,7 +103,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         }
     }
 
-    private Map<String, Map<String, Resource>> findResources(ResourceManager manager, ResourceFinder finder) {
+    private static Map<String, Map<String, Resource>> findResources(ResourceManager manager, ResourceFinder finder) {
         var resources = new HashMap<String, Map<String, Resource>>();
         finder.findResources(manager).forEach((identifier, resource) -> {
             var resourceId = finder.toResourceId(identifier);
@@ -110,7 +113,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         return resources;
     }
 
-    private void forResourceOfBook(Map<String, Map<String, Resource>> resources, Book book, String resourceType, BiConsumer<Identifier, Resource> action) {
+    private static void forResourceOfBook(Map<String, Map<String, Resource>> resources, Book book, String resourceType, BiConsumer<Identifier, Resource> action) {
         if (!resources.containsKey(book.id().getNamespace())) return;
 
         var bookPrefix = book.id().getPath() + "/";
@@ -126,7 +129,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         });
     }
 
-    private @Nullable MarkdownResource parseMarkdown(Identifier resourceId, Resource resource) {
+    private static @Nullable MarkdownResource parseMarkdown(Identifier resourceId, Resource resource) {
         try {
             var content = IOUtils.toString(resource.getInputStream(), StandardCharsets.UTF_8).strip();
             JsonObject meta;

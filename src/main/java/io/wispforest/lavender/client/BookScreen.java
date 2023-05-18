@@ -7,6 +7,7 @@ import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.extensions.*;
+import io.wispforest.owo.Owo;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
@@ -94,9 +95,25 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.rightPageAnchor = this.component(FlowLayout.class, "right-page-anchor");
         this.bookmarkPanel = this.component(FlowLayout.class, "bookmark-panel");
 
-        (this.previousButton = this.component(ButtonComponent.class, "previous-button")).onPress(buttonComponent -> this.turnPage(true));
-        (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(buttonComponent -> this.navPop());
-        (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(buttonComponent -> this.turnPage(false));
+        (this.previousButton = this.component(ButtonComponent.class, "previous-button")).onPress(button -> this.turnPage(true));
+        (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> this.navPop());
+        (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(button -> this.turnPage(false));
+
+        if (Owo.DEBUG) {
+            this.component(FlowLayout.class, "primary-panel").child(
+                    this.model.expandTemplate(ButtonComponent.class, "reload-button", Map.of()).onPress(buttonComponent -> {
+                        BookLoader.reload(this.client.getResourceManager());
+                        BookContentLoader.reloadContents(this.client.getResourceManager());
+
+                        var newBook = BookLoader.get(this.book.id());
+                        if (newBook != null) {
+                            this.client.setScreen(new BookScreen(newBook));
+                        } else {
+                            this.client.setScreen(null);
+                        }
+                    })
+            );
+        }
 
         this.searchBox = this.component(TextBoxComponent.class, "search-box");
         searchBox.visible = searchBox.active = false;
