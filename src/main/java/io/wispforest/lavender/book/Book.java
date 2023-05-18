@@ -12,6 +12,7 @@ public final class Book {
 
     private final Identifier id;
     private final @Nullable Identifier texture;
+    private final @Nullable Identifier dynamicBookModel;
     private final boolean displayCompletion;
 
     private final @Nullable Identifier extend;
@@ -31,10 +32,11 @@ public final class Book {
 
     private @Nullable Entry landingPage = null;
 
-    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, boolean displayCompletion) {
+    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, boolean displayCompletion) {
         this.id = id;
         this.extend = extend;
         this.texture = texture;
+        this.dynamicBookModel = dynamicBookModel;
         this.displayCompletion = displayCompletion;
     }
 
@@ -94,7 +96,11 @@ public final class Book {
     }
 
     public @Nullable Identifier texture() {
-        return texture;
+        return this.texture;
+    }
+
+    public @Nullable Identifier dynamicBookModel() {
+        return this.dynamicBookModel;
     }
 
     public int countVisibleEntries(ClientPlayerEntity player) {

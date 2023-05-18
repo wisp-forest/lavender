@@ -19,6 +19,7 @@
       "io.wispforest.lavender.Lavender"
     ]
   },
+  "accessWidener": "lavender.accesswidener",
   "mixins": [
     "lavender.mixins.json"
   ],

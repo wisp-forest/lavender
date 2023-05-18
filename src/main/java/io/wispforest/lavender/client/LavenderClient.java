@@ -26,6 +26,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -69,6 +70,7 @@ public class LavenderClient implements ClientModInitializer {
                         StructureOverlayRenderer.clearOverlays();
                         return 0;
                     }))
+
                     .then(literal("add")
                             .then(argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
                                 var structureId = context.getArgument("structure", Identifier.class);
@@ -77,6 +79,11 @@ public class LavenderClient implements ClientModInitializer {
                                 StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
                             }))));
+        });
+
+        ModelLoadingRegistry.INSTANCE.registerResourceProvider(manager -> (resourceId, context) -> {
+            if (!resourceId.equals(Lavender.id("item/dynamic_book"))) return null;
+            return new BookBakedModel.Unbaked();
         });
 
         StructureOverlayRenderer.initialize();

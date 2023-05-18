@@ -1,6 +1,6 @@
 package io.wispforest.lavender.mixin;
 
-import io.wispforest.lavender.LavenderScreenExtension;
+import io.wispforest.lavender.pond.LavenderScreenExtension;
 import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.client.AssociatedEntryTooltipComponent;

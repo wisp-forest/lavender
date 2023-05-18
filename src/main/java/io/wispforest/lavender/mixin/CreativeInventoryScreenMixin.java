@@ -1,6 +1,6 @@
 package io.wispforest.lavender.mixin;
 
-import io.wispforest.lavender.LavenderScreenExtension;
+import io.wispforest.lavender.pond.LavenderScreenExtension;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;

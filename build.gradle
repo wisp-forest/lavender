@@ -7,6 +7,10 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+loom {
+    accessWidenerPath = project.file("src/main/resources/lavender.accesswidener")
+}
+
 repositories {
     maven { url "https://maven.wispforest.io/" }
 

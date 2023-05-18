@@ -18,7 +18,6 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +36,6 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
     @Override
     public Identifier getFabricId() {
         return Lavender.id("entry_loader");
-    }
-
-    @Override
-    public Collection<Identifier> getFabricDependencies() {
-        return List.of(Lavender.id("book_loader"));
     }
 
     @Override
@@ -159,6 +153,5 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         }
     }
 
-    private record MarkdownResource(JsonObject meta, String content) {
-    }
+    private record MarkdownResource(JsonObject meta, String content) {}
 }

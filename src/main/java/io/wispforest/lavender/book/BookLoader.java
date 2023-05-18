@@ -1,33 +1,39 @@
 package io.wispforest.lavender.book;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import io.wispforest.lavender.Lavender;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.resource.JsonDataLoader;
+import io.wispforest.lavender.client.BookBakedModel;
+import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
+import net.minecraft.client.util.ModelIdentifier;
+import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
-import net.minecraft.util.profiler.Profiler;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BookLoader extends JsonDataLoader implements IdentifiableResourceReloadListener {
+public class BookLoader {
+
+    private static final Gson GSON = new GsonBuilder().setLenient().disableHtmlEscaping().create();
+    private static final ResourceFinder BOOK_FINDER = ResourceFinder.json("lavender/books");
 
     private static final Map<Identifier, Book> LOADED_BOOKS = new HashMap<>();
 
-    private BookLoader() {
-        super(new GsonBuilder().setLenient().disableHtmlEscaping().create(), "lavender/books");
-    }
-
     public static void initialize() {
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new BookLoader());
+        ModelLoadingRegistry.INSTANCE.registerModelProvider(($, out) -> {
+            out.accept(BookBakedModel.Unbaked.BROWN_BOOK_ID);
+            for (var book : LOADED_BOOKS.values()) {
+                if (book.dynamicBookModel() == null) return;
+                out.accept(new ModelIdentifier(book.dynamicBookModel(), "inventory"));
+            }
+        });
     }
 
     public static @Nullable Book get(Identifier bookId) {
@@ -38,17 +44,20 @@ public class BookLoader extends JsonDataLoader implements IdentifiableResourceRe
         return Collections.unmodifiableCollection(LOADED_BOOKS.values());
     }
 
-    @Override
-    public Identifier getFabricId() {
-        return Lavender.id("book_loader");
-    }
-
-    @Override
-    protected void apply(Map<Identifier, JsonElement> prepared, ResourceManager manager, Profiler profiler) {
+    public static void reload(ResourceManager manager) {
         LOADED_BOOKS.clear();
-        prepared.forEach((resourceId, jsonElement) -> {
+        BOOK_FINDER.findResources(manager).forEach((identifier, resource) -> {
+            JsonElement jsonElement;
+            try (var reader = resource.getReader()) {
+                jsonElement = JsonHelper.deserialize(GSON, reader, JsonElement.class);
+            } catch (IOException e) {
+                Lavender.LOGGER.warn("Could not load book '{}'", identifier, e);
+                return;
+            }
+
             if (!jsonElement.isJsonObject()) return;
             var bookObject = jsonElement.getAsJsonObject();
+            var resourceId = BOOK_FINDER.toResourceId(identifier);
 
             var texture = JsonHelper.getString(bookObject, "texture", null);
             var textureId = texture != null ? Identifier.tryParse(texture) : null;
@@ -56,9 +65,12 @@ public class BookLoader extends JsonDataLoader implements IdentifiableResourceRe
             var extend = JsonHelper.getString(bookObject, "extend", null);
             var extendId = extend != null ? Identifier.tryParse(extend) : null;
 
+            var dynamicBookModel = JsonHelper.getString(bookObject, "dynamic_book_model", null);
+            var dynamicBookModelId = dynamicBookModel != null ? Identifier.tryParse(dynamicBookModel) : null;
+
             var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
 
-            LOADED_BOOKS.put(resourceId, new Book(resourceId, extendId, textureId, displayCompletion));
+            LOADED_BOOKS.put(resourceId, new Book(resourceId, extendId, textureId, dynamicBookModelId, displayCompletion));
         });
 
         LOADED_BOOKS.values().removeIf(book -> {

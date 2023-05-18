@@ -1,4 +1,4 @@
-package io.wispforest.lavender;
+package io.wispforest.lavender.pond;
 
 import net.minecraft.item.ItemStack;
 
