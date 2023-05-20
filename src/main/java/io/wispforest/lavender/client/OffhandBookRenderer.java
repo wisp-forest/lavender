@@ -24,24 +24,38 @@ public class OffhandBookRenderer {
         return framebuffer;
     });
 
+    private static BookScreen cachedScreen = null;
+    private static boolean cacheExpired = true;
+
     public static void initialize() {
         WindowResizeCallback.EVENT.register((client, window) -> {
             FRAMEBUFFER.get().resize(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
+            cachedScreen = null;
         });
+    }
+
+    public static void beginFrame() {
+        cacheExpired = true;
     }
 
     public static void render(MatrixStack matrices, Book book) {
         final var client = MinecraftClient.getInstance();
+        client.getBufferBuilders().getEntityVertexConsumers().draw();
+
+        cacheExpired = false;
 
         // --- render book screen to separate framebuffer ---
 
-        var screen = new BookScreen(book, true);
-        screen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
+        var screen = cachedScreen;
+        if (screen == null || screen.book != book) {
+            cachedScreen = screen = new BookScreen(book, true);
+            screen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
 
-        // we dispose the ui adapter here to
-        // stop it from messing with and/or
-        // GLFW cursor objects
-        screen.adapter().dispose();
+            // we dispose the ui adapter here to
+            // stop it from messing with and/or
+            // leaking GLFW cursor objects
+            screen.adapter().dispose();
+        }
 
         var modelView = RenderSystem.getModelViewStack();
         modelView.push();
@@ -74,5 +88,9 @@ public class OffhandBookRenderer {
         Drawer.drawTexture(matrices, 0, 1, 1, -1, 0, framebuffer.textureHeight, framebuffer.textureWidth, -framebuffer.textureHeight, framebuffer.textureWidth, framebuffer.textureHeight);
 
         matrices.pop();
+    }
+
+    public static void endFrame(){
+        if (cacheExpired) cachedScreen = null;
     }
 }

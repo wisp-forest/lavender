@@ -7,7 +7,7 @@
     "minecraft:diamond"
   ],
   "required_advancements": [
-    "minecraft:story/lava_bucket"
+    "minecraft:story/iron_tools"
   ]
 }
 ```

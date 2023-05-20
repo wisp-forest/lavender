@@ -11,6 +11,7 @@
   "client": [
     "CreativeInventoryScreenMixin",
     "HeldItemRendererMixin",
+    "MinecraftClientMixin",
     "MouseMixin",
     "ScreenMixin",
     "TextureUtilMixin"
