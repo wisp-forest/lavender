@@ -5,10 +5,12 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "ClientAdvancementManagerAccessor",
-    "LifecycledResourceManagerMixin", "SimpleResourceReloadMixin"
+    "LifecycledResourceManagerMixin",
+    "SimpleResourceReloadMixin"
   ],
   "client": [
     "CreativeInventoryScreenMixin",
+    "HeldItemRendererMixin",
     "MouseMixin",
     "ScreenMixin",
     "TextureUtilMixin"

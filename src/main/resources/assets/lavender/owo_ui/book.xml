@@ -39,6 +39,7 @@
                             </sizing>
 
                             <positioning type="absolute">-3,174</positioning>
+                            <active>false</active>
                         </button>
 
                         <button id="back-button">
@@ -53,6 +54,7 @@
                             </sizing>
 
                             <positioning type="absolute">122,176</positioning>
+                            <active>false</active>
                         </button>
 
                         <button id="next-button">
@@ -67,6 +69,7 @@
                             </sizing>
 
                             <positioning type="absolute">252,174</positioning>
+                            <active>false</active>
                         </button>
 
                         <scroll direction="horizontal" id="bookmark-scroll">

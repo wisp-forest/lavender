@@ -53,6 +53,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     );
 
     public final Book book;
+    public final boolean isOverlay;
 
     private Window window;
     private int scaleFactor;
@@ -68,9 +69,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
-    public BookScreen(Book book) {
+    public BookScreen(Book book, boolean isOverlay) {
         super(FlowLayout.class, Lavender.id("book"));
         this.book = book;
+        this.isOverlay = isOverlay;
+    }
+
+    public BookScreen(Book book) {
+        this(book, false);
     }
 
     @Override
@@ -91,6 +97,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     @Override
     protected void build(FlowLayout rootComponent) {
+        if (this.isOverlay) rootComponent.surface(Surface.BLANK);
+
         this.leftPageAnchor = this.component(FlowLayout.class, "left-page-anchor");
         this.rightPageAnchor = this.component(FlowLayout.class, "right-page-anchor");
         this.bookmarkPanel = this.component(FlowLayout.class, "bookmark-panel");
@@ -99,7 +107,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> this.navPop());
         (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(button -> this.turnPage(false));
 
-        if (Owo.DEBUG) {
+        if (Owo.DEBUG && !this.isOverlay) {
             this.component(FlowLayout.class, "primary-panel").child(
                     this.model.expandTemplate(ButtonComponent.class, "reload-button", Map.of()).onPress(buttonComponent -> {
                         BookLoader.reload(this.client.getResourceManager());
@@ -135,7 +143,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         if (this.navStack.isEmpty()) this.navPush(new NavFrame(new LandingPageSupplier(this), 0), true);
-        this.rebuildContent(Lavender.ITEM_BOOK_OPEN);
+        this.rebuildContent(!this.isOverlay ? Lavender.ITEM_BOOK_OPEN : null);
     }
 
     private void rebuildContent(@Nullable SoundEvent sound) {
@@ -148,9 +156,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             selectedPage = this.currentNavFrame().selectedPage = (pageSupplier.pageCount() - 1) / 2 * 2;
         }
 
-        this.returnButton.active(this.navStack.size() > 1);
-        this.previousButton.active(selectedPage > 0);
-        this.nextButton.active(selectedPage + 2 < pageSupplier.pageCount());
+        if (!this.isOverlay) {
+            this.returnButton.active(this.navStack.size() > 1);
+            this.previousButton.active(selectedPage > 0);
+            this.nextButton.active(selectedPage + 2 < pageSupplier.pageCount());
+        }
 
         searchBox.visible = searchBox.active = pageSupplier.searchable();
 
@@ -369,6 +379,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+    public OwoUIAdapter<?> adapter() {
+        return this.uiAdapter;
     }
 
     protected static List<NavFrame.Replicator> getNavTrail(Book book) {
@@ -634,7 +648,6 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     public static class EditorPageSupplier extends PageSupplier {
 
         private static String editorTextCache = "";
-        private boolean showEditor = false;
 
         protected EditorPageSupplier(BookScreen context) {
             super(context);
@@ -671,20 +684,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         @Override
         public Component getPageContent(int pageIndex) {
-            if (this.showEditor) {
-                return pageIndex % 2 == 0
-                        ? super.getPageContent(0)
-                        : super.getPageContent(pageIndex / 2 + 1);
-            } else {
-                return super.getPageContent(pageIndex + 1);
-            }
+            return pageIndex % 2 == 0
+                    ? super.getPageContent(0)
+                    : super.getPageContent(pageIndex / 2 + 1);
         }
 
         @Override
         public int pageCount() {
-            return this.showEditor
-                    ? Math.max(1, (super.pageCount() - 1) * 2)
-                    : super.pageCount() - 1;
+            return Math.max(1, (super.pageCount() - 1) * 2);
         }
 
         @Override

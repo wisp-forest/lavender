@@ -87,6 +87,8 @@ public class LavenderClient implements ClientModInitializer {
         });
 
         StructureOverlayRenderer.initialize();
+        OffhandBookRenderer.initialize();
+
         LavenderStructures.initialize();
         BookLoader.initialize();
         BookContentLoader.initialize();
