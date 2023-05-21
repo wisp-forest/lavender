@@ -1,15 +1,11 @@
 package io.wispforest.lavender.client;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.LavenderCommands;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookContentLoader;
 import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.book.BookLoader;
-import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
@@ -25,14 +21,12 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -40,14 +34,15 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class LavenderClient implements ClientModInitializer {
 
     private static final Int2ObjectMap<Size> TEXTURE_SIZES = new Int2ObjectOpenHashMap<>();
     private static final Identifier ENTRY_HUD_ID = Lavender.id("entry_hud");
+
+    private static UUID currentWorldId = null;
 
     @Override
     public void onInitializeClient() {
@@ -113,6 +108,14 @@ public class LavenderClient implements ClientModInitializer {
             player.swingHand(hand);
             return ActionResult.FAIL;
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(Lavender.WORLD_ID_CHANNEL, (client, handler, buf, responseSender) -> {
+            currentWorldId = buf.readUuid();
+        });
+    }
+
+    public static UUID currentWorldId() {
+        return currentWorldId;
     }
 
     public static void registerTextureSize(int textureId, int width, int height) {
