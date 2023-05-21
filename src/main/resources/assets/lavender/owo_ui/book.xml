@@ -128,7 +128,6 @@
             <flow-layout direction="vertical">
                 <children>
                     <label id="title-label">
-                        <text>{{page-title}}</text>
                         <color>dark-gray</color>
 
                         <horizontal-text-alignment>center</horizontal-text-alignment>
@@ -368,7 +367,7 @@
                              texture-width="512" texture-height="256"/>
                 </renderer>
 
-                <tooltip-text>Reload</tooltip-text>
+                <tooltip-text translate="true">text.lavender.book.reload</tooltip-text>
 
                 <sizing>
                     <horizontal method="fixed">16</horizontal>

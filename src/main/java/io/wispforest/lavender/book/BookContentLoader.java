@@ -9,6 +9,7 @@ import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.resource.*;
@@ -117,10 +118,21 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         if (!resources.containsKey(book.id().getNamespace())) return;
 
         var bookPrefix = book.id().getPath() + "/";
-        resources.get(book.id().getNamespace()).forEach((path, resource) -> {
-            if (!path.startsWith(bookPrefix)) return;
+        var langPrefix = bookPrefix + MinecraftClient.getInstance().getLanguageManager().getLanguage() + "/";
 
-            var resourceId = new Identifier(book.id().getNamespace(), path.substring(bookPrefix.length()));
+        var discoveredResources = new HashMap<Identifier, Resource>();
+
+        resources.get(book.id().getNamespace()).forEach((path, resource) -> {
+            if (!path.startsWith(bookPrefix) || path.startsWith(langPrefix)) return;
+            discoveredResources.put(new Identifier(book.id().getNamespace(), path.substring(bookPrefix.length())), resource);
+        });
+
+        resources.get(book.id().getNamespace()).forEach((path, resource) -> {
+            if (!path.startsWith(langPrefix)) return;
+            discoveredResources.put(new Identifier(book.id().getNamespace(), path.substring(langPrefix.length())), resource);
+        });
+
+        discoveredResources.forEach((resourceId, resource) -> {
             try {
                 action.accept(resourceId, resource);
             } catch (RuntimeException e) {

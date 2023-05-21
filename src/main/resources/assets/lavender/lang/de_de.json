@@ -1,0 +1,59 @@
+{
+  "structure.lavender.iron_golem": "Eisengolem",
+  "structure.lavender.nether_portal": "Netherportal",
+  "structure.lavender.ritual_of_extraction": "Ritual der Extraktion",
+  "structure.affinity.augmented_crafting_table": "Erweiterte Werkbank",
+
+  "item.lavender.dynamic_book": "Buch",
+  "item.lavender.the_book": "Das Buch",
+
+  "text.lavender.structure_hud.completion": "%s: %s / %s",
+  "text.lavender.entry_hud.sneak_to_view": {"text": "Schleichen zum öffnen", "color": "gray"},
+  "text.lavender.entry_hud.click_to_view": {"text": "Klick zum öffnen", "color": "gray"},
+
+  "text.lavender.entry_tooltip": [
+    {"text": "Halte ", "color": "dark_gray"},
+    {"text": "Alt ", "color": "gold"},
+    {"text": "[", "color": "green"},
+    {"index": 0, "color": "gray"},
+    {"index": 1, "color": "dark_gray"},
+    {"text": "]", "color": "green"}
+  ],
+
+  "text.lavender.structure_component.hide_hint": "❌ Klick zum verstecken",
+  "text.lavender.structure_component.place_hint": "⚓ Klick zum platzieren",
+  "text.lavender.structure_component.active_overlay_hint": {"text": "⚓", "color": "gray"},
+  "text.lavender.structure_component.layer_tooltip": "Schicht: %d",
+  "text.lavender.structure_component.all_layers_tooltip": "Alle Schichten",
+
+  "text.lavender.keybind_tooltip": [
+    {"text": "Tastebelegung:\n "},
+    {"index": 0, "color": "gray"},
+    {"text": " > ", "color": "dark_gray"},
+    {"index": 1, "color": "gray"}
+  ],
+
+  "text.lavender.invalid_internal_link": [
+    {"text": "Ungültiger interner link: ", "color": "red"},
+    {"index": 0, "color": "gray"}
+  ],
+
+  "text.lavender.entry.locked": {"text": "Gesperrt", "font": "minecraft:uniform", "color": "gray"},
+
+  "text.lavender.categories": "Kategorien",
+  "text.lavender.index": "Index",
+  "text.lavender.index_category": "Alle Einträge",
+  "text.lavender.index_category.title": "Einträge",
+
+  "text.lavender.book.reload": "Neu laden",
+
+  "text.lavender.book.unlock_progress": [
+    {"text": "Entdeckt: ", "font": "minecraft:uniform", "color": "dark_gray"},
+    {"index": 0},
+    {"text": "/"},
+    {"index": 1}
+  ],
+
+  "text.lavender.book.bookmark.add": "Leszeichen hinzufügen",
+  "text.lavender.book.bookmark.remove_hint": {"text": "Shift-Klick zum entfernen", "color": "dark_gray"}
+}

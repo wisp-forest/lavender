@@ -423,11 +423,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         // --- prebuilt utility ---
 
-        protected FlowLayout pageWithHeader(@NotNull String title) {
-            var container = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
-            container.child(this.context.model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", title)));
+        protected FlowLayout pageWithHeader(@NotNull Text title) {
+            return Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100)).child(this.pageTitleHeader(title));
+        }
 
-            return container;
+        protected Component pageTitleHeader(Text text) {
+            var component = this.context.model.expandTemplate(ParentComponent.class, "page-title-header", Map.of());
+            component.childById(LabelComponent.class, "title-label").text(text);
+            return component;
         }
 
         protected ParentComponent parseMarkdown(String markdown) {
@@ -490,7 +493,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                             label.mouseLeave().subscribe(animation::backwards);
                         } else {
                             indexItem = this.context.model.expandTemplate(ParentComponent.class, "locked-index-item", Map.of());
-                            indexItem.childById(LabelComponent.class, "index-label").text(Text.literal("Locked").styled($ -> $.withColor(Formatting.GRAY).withFont(MinecraftClient.UNICODE_FONT_ID)));
+                            indexItem.childById(LabelComponent.class, "index-label").text(Text.translatable("text.lavender.entry.locked"));
                         }
 
                         int sectionIndex = indexSections.size() - 1;
@@ -544,7 +547,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             this.pages.add(indexPage);
 
             if (!book.categories().isEmpty()) {
-                var categories = this.pageWithHeader("Categories");
+                var categories = this.pageWithHeader(Text.translatable("text.lavender.categories"));
                 categories.verticalSizing(Sizing.content());
 
                 var categoryContainer = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content()).gap(4);
@@ -573,7 +576,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                 categoryContainer.child(Components.item(BookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
                     categoryButton
-                            .tooltip(Text.literal("All Entries"))
+                            .tooltip(Text.translatable("text.lavender.index_category"))
                             .margins(Insets.of(4))
                             .cursorStyle(CursorStyle.HAND);
 
@@ -590,7 +593,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             }
 
             indexPage.child(book.categories().isEmpty()
-                    ? this.context.model.expandTemplate(Component.class, "page-title-header", Map.of("page-title", "Index"))
+                    ? this.pageTitleHeader(Text.translatable("text.lavender.index"))
                     : BOOK_COMPONENTS.get().expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.vertical(6))
             );
 
@@ -625,7 +628,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             super(context);
 
             var entries = this.buildEntryIndex(this.context.book.entries(), 10);
-            this.pages.add(this.pageWithHeader("Entries").child(entries.remove(0)));
+            this.pages.add(this.pageWithHeader(Text.translatable("text.lavender.index_category.title")).child(entries.remove(0)));
             this.pages.addAll(entries);
         }
 
@@ -668,7 +671,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                         if (firstPage) {
                             firstPage = false;
-                            this.pages.add(this.pageWithHeader("Title Here").child(component));
+                            this.pages.add(this.pageWithHeader(Text.literal("Title Here")).child(component));
                         } else {
                             this.pages.add(component);
                         }
@@ -720,7 +723,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             var landingPageContent = parsedLandingPage.children().get(0);
             parsedLandingPage.removeChild(landingPageContent);
 
-            var landingPage = this.pageWithHeader(category.title()).child(landingPageContent);
+            var landingPage = this.pageWithHeader(Text.literal(category.title())).child(landingPageContent);
             this.pages.add(landingPage);
 
             // --- entry index ---
@@ -729,7 +732,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             if (entries != null) {
                 var indexPages = this.buildEntryIndex(entries);
                 for (int i = 0; i < indexPages.size(); i++) {
-                    this.pages.add(i == 0 ? this.pageWithHeader("Index").child(indexPages.get(0)) : indexPages.get(i));
+                    this.pages.add(i == 0 ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0)) : indexPages.get(i));
                 }
 
                 if (this.context.book.displayCompletion()) {
@@ -799,7 +802,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                 if (firstPage) {
                     firstPage = false;
-                    this.pages.add(this.pageWithHeader(entry.title()).child(component));
+                    this.pages.add(this.pageWithHeader(Text.literal(entry.title())).child(component));
                 } else {
                     this.pages.add(component);
                 }

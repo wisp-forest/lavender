@@ -4,9 +4,6 @@
   "structure.lavender.ritual_of_extraction": "Ritual of Extraction",
   "structure.affinity.augmented_crafting_table": "Augmented Crafting Table",
 
-  "entry.lavender.profound_page": "A Profound Page",
-  "entry.lavender.ritual_basics": "Ritual Basics",
-
   "item.lavender.dynamic_book": "Book",
   "item.lavender.the_book": "The Book",
 
@@ -40,6 +37,15 @@
     {"text": "Invalid internal link: ", "color": "red"},
     {"index": 0, "color": "gray"}
   ],
+
+  "text.lavender.entry.locked": {"text": "Locked", "font": "minecraft:uniform", "color": "gray"},
+
+  "text.lavender.categories": "Categories",
+  "text.lavender.index": "Index",
+  "text.lavender.index_category": "All Entries",
+  "text.lavender.index_category.title": "Entries",
+
+  "text.lavender.book.reload": "Reload",
 
   "text.lavender.book.unlock_progress": [
     {"text": "Unlocked: ", "font": "minecraft:uniform", "color": "dark_gray"},

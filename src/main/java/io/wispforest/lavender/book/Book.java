@@ -113,6 +113,8 @@ public final class Book {
         return visible;
     }
 
+    // --- construction-related methods ---
+
     void setLandingPage(@NotNull Entry landingPage) {
         this.landingPage = landingPage;
     }
