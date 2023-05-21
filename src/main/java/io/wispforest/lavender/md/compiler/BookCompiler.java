@@ -1,7 +1,6 @@
 package io.wispforest.lavender.md.compiler;
 
 import com.google.common.primitives.Ints;
-import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
@@ -11,7 +10,6 @@ import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.core.Sizing;
-import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.*;
@@ -26,9 +24,11 @@ public class BookCompiler extends OwoUICompiler {
     private static final Style UNICODE_FONT_STYLE = Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID);
 
     private final FlowLayout resultContainer = Containers.verticalFlow(Sizing.content(), Sizing.content());
+    private final ComponentSource bookComponentSource;
 
-    public BookCompiler() {
+    public BookCompiler(ComponentSource bookComponentSource) {
         this.push(Containers.verticalFlow(Sizing.content(), Sizing.content()));
+        this.bookComponentSource = bookComponentSource;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class BookCompiler extends OwoUICompiler {
 
     @Override
     public void visitHorizontalRule() {
-        this.append(UIModelLoader.get(Lavender.id("book_components")).expandTemplate(Component.class, "horizontal-rule", Map.of()));
+        this.append(this.bookComponentSource.template(Component.class, "horizontal-rule"));
     }
 
     public void visitPageBreak() {
@@ -130,5 +130,14 @@ public class BookCompiler extends OwoUICompiler {
         }
 
         private record LinkTarget(Entry entry, int page) {}
+    }
+
+    @FunctionalInterface
+    public interface ComponentSource {
+        <C extends Component> C template(Class<C> expectedComponentClass, String name, Map<String, String> params);
+
+        default <C extends Component> C template(Class<C> expectedComponentClass, String name) {
+            return this.template(expectedComponentClass, name, Map.of());
+        }
     }
 }

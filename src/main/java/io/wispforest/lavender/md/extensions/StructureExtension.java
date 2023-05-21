@@ -1,24 +1,29 @@
 package io.wispforest.lavender.md.extensions;
 
-import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.md.Lexer;
 import io.wispforest.lavender.md.MarkdownExtension;
 import io.wispforest.lavender.md.Parser;
+import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureInfo;
 import io.wispforest.owo.ui.component.SlimSliderComponent;
 import io.wispforest.owo.ui.core.ParentComponent;
-import io.wispforest.owo.ui.parsing.UIModelLoader;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.Map;
 
 public class StructureExtension implements MarkdownExtension {
+
+    private final BookCompiler.ComponentSource bookComponentSource;
+
+    public StructureExtension(BookCompiler.ComponentSource bookComponentSource) {
+        this.bookComponentSource = bookComponentSource;
+    }
 
     @Override
     public String name() {
@@ -67,7 +72,7 @@ public class StructureExtension implements MarkdownExtension {
         }
     }
 
-    private static class StructureNode extends Parser.Node {
+    private class StructureNode extends Parser.Node {
 
         private final StructureInfo structure;
 
@@ -78,7 +83,7 @@ public class StructureExtension implements MarkdownExtension {
         @Override
         @SuppressWarnings("DataFlowIssue")
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var structureComponent = UIModelLoader.get(Lavender.id("book_components")).expandTemplate(
+            var structureComponent = StructureExtension.this.bookComponentSource.template(
                     ParentComponent.class,
                     this.structure.ySize > 1 ? "structure-preview-with-layers" : "structure-preview",
                     Map.of("structure", this.structure.id.toString())

@@ -35,7 +35,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
     @Override
     public Identifier getFabricId() {
-        return Lavender.id("entry_loader");
+        return Lavender.id("book_content_loader");
     }
 
     @Override

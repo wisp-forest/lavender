@@ -5,7 +5,7 @@
         <template name="horizontal-rule">
             <flow-layout direction="vertical">
                 <children>
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="54"
                              v="183"
                              region-width="109" region-height="3">
                         <blend>true</blend>
@@ -38,7 +38,7 @@
                 <children>
                     <flow-layout direction="vertical">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                                      u="54" v="186" region-width="104" region-height="54">
                                 <blend>true</blend>
                             </texture>
@@ -142,7 +142,7 @@
                 <children>
                     <flow-layout direction="horizontal">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                                      u="267" v="0" region-width="100" region-height="100">
                                 <blend>true</blend>
                                 <positioning type="absolute">0,0</positioning>
@@ -183,7 +183,7 @@
                 <child id="slider-anchor">
                     <flow-layout direction="vertical">
                         <children>
-                            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                                      u="367" v="14" region-width="11" region-height="72">
                                 <blend>true</blend>
                                 <positioning type="absolute">0,0</positioning>

@@ -4,106 +4,7 @@
     <components>
         <flow-layout direction="vertical">
             <children>
-                <flow-layout direction="vertical" id="primary-panel">
-                    <children>
-                        <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
-                                 region-width="267" region-height="180"/>
 
-                        <flow-layout direction="vertical" id="left-page-anchor">
-                            <children/>
-                            <positioning type="absolute">15,15</positioning>
-                            <sizing>
-                                <horizontal method="fixed">112</horizontal>
-                                <vertical method="fixed">153</vertical>
-                            </sizing>
-                        </flow-layout>
-
-                        <flow-layout direction="vertical" id="right-page-anchor">
-                            <children/>
-                            <positioning type="absolute">139,15</positioning>
-                            <sizing>
-                                <horizontal method="fixed">112</horizontal>
-                                <vertical method="fixed">153</vertical>
-                            </sizing>
-                        </flow-layout>
-
-                        <button id="previous-button">
-                            <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="0" v="180" texture-width="512"
-                                         texture-height="256"/>
-                            </renderer>
-
-                            <sizing>
-                                <horizontal method="fixed">18</horizontal>
-                                <vertical method="fixed">10</vertical>
-                            </sizing>
-
-                            <positioning type="absolute">-3,174</positioning>
-                            <active>false</active>
-                        </button>
-
-                        <button id="back-button">
-                            <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="18" v="180" texture-width="512"
-                                         texture-height="256"/>
-                            </renderer>
-
-                            <sizing>
-                                <horizontal method="fixed">18</horizontal>
-                                <vertical method="fixed">10</vertical>
-                            </sizing>
-
-                            <positioning type="absolute">122,176</positioning>
-                            <active>false</active>
-                        </button>
-
-                        <button id="next-button">
-                            <renderer>
-                                <texture texture="lavender:textures/gui/book.png" u="36" v="180" texture-width="512"
-                                         texture-height="256"/>
-                            </renderer>
-
-                            <sizing>
-                                <horizontal method="fixed">18</horizontal>
-                                <vertical method="fixed">10</vertical>
-                            </sizing>
-
-                            <positioning type="absolute">252,174</positioning>
-                            <active>false</active>
-                        </button>
-
-                        <scroll direction="horizontal" id="bookmark-scroll">
-                            <flow-layout direction="horizontal" id="bookmark-panel">
-                                <children/>
-                                <gap>2</gap>
-                            </flow-layout>
-
-                            <positioning type="absolute">6,-14</positioning>
-                            <sizing>
-                                <horizontal method="fixed">255</horizontal>
-                                <vertical method="fixed">14</vertical>
-                            </sizing>
-
-                            <scrollbar-thiccness>2</scrollbar-thiccness>
-                        </scroll>
-
-                        <text-box id="search-box">
-                            <show-background>false</show-background>
-
-                            <sizing>
-                                <horizontal method="fixed">100</horizontal>
-                            </sizing>
-
-                            <positioning type="absolute">145,174</positioning>
-                        </text-box>
-                    </children>
-
-                    <allow-overflow>true</allow-overflow>
-
-                    <padding>
-                        <all>25</all>
-                    </padding>
-                </flow-layout>
             </children>
 
             <horizontal-alignment>center</horizontal-alignment>
@@ -116,8 +17,111 @@
     </components>
 
     <templates>
+        <template name="primary-panel">
+            <flow-layout direction="vertical" id="primary-panel">
+                <children>
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                             region-width="267" region-height="180"/>
+
+                    <flow-layout direction="vertical" id="left-page-anchor">
+                        <children/>
+                        <positioning type="absolute">15,15</positioning>
+                        <sizing>
+                            <horizontal method="fixed">112</horizontal>
+                            <vertical method="fixed">153</vertical>
+                        </sizing>
+                    </flow-layout>
+
+                    <flow-layout direction="vertical" id="right-page-anchor">
+                        <children/>
+                        <positioning type="absolute">139,15</positioning>
+                        <sizing>
+                            <horizontal method="fixed">112</horizontal>
+                            <vertical method="fixed">153</vertical>
+                        </sizing>
+                    </flow-layout>
+
+                    <button id="previous-button">
+                        <renderer>
+                            <texture texture="{{book-texture}}" u="0" v="180" texture-width="512"
+                                     texture-height="256"/>
+                        </renderer>
+
+                        <sizing>
+                            <horizontal method="fixed">18</horizontal>
+                            <vertical method="fixed">10</vertical>
+                        </sizing>
+
+                        <positioning type="absolute">-3,174</positioning>
+                        <active>false</active>
+                    </button>
+
+                    <button id="back-button">
+                        <renderer>
+                            <texture texture="{{book-texture}}" u="18" v="180" texture-width="512"
+                                     texture-height="256"/>
+                        </renderer>
+
+                        <sizing>
+                            <horizontal method="fixed">18</horizontal>
+                            <vertical method="fixed">10</vertical>
+                        </sizing>
+
+                        <positioning type="absolute">122,176</positioning>
+                        <active>false</active>
+                    </button>
+
+                    <button id="next-button">
+                        <renderer>
+                            <texture texture="{{book-texture}}" u="36" v="180" texture-width="512"
+                                     texture-height="256"/>
+                        </renderer>
+
+                        <sizing>
+                            <horizontal method="fixed">18</horizontal>
+                            <vertical method="fixed">10</vertical>
+                        </sizing>
+
+                        <positioning type="absolute">252,174</positioning>
+                        <active>false</active>
+                    </button>
+
+                    <scroll direction="horizontal" id="bookmark-scroll">
+                        <flow-layout direction="horizontal" id="bookmark-panel">
+                            <children/>
+                            <gap>2</gap>
+                        </flow-layout>
+
+                        <positioning type="absolute">6,-14</positioning>
+                        <sizing>
+                            <horizontal method="fixed">255</horizontal>
+                            <vertical method="fixed">14</vertical>
+                        </sizing>
+
+                        <scrollbar-thiccness>2</scrollbar-thiccness>
+                    </scroll>
+
+                    <text-box id="search-box">
+                        <show-background>false</show-background>
+
+                        <sizing>
+                            <horizontal method="fixed">100</horizontal>
+                        </sizing>
+
+                        <positioning type="absolute">145,174</positioning>
+                    </text-box>
+                </children>
+
+                <allow-overflow>true</allow-overflow>
+
+                <padding>
+                    <all>25</all>
+                </padding>
+            </flow-layout>
+        </template>
+
         <template name="empty-page-content">
-            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="163" v="180"
+            <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="163" v="180"
                      region-width="9" region-height="11">
                 <blend>true</blend>
                 <positioning type="relative">50,50</positioning>
@@ -140,7 +144,7 @@
                         </sizing>
                     </label>
 
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="54"
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="54"
                              v="180" region-width="109" region-height="3">
                         <blend>true</blend>
                         <margins>
@@ -160,7 +164,7 @@
         <template name="landing-page-header">
             <flow-layout direction="vertical">
                 <children>
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="267"
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="267"
                              v="100" region-width="100" region-height="29">
                         <blend>true</blend>
                     </texture>
@@ -231,7 +235,7 @@
         <template name="locked-index-item">
             <flow-layout direction="horizontal">
                 <children>
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                              u="172" v="180" region-width="16" region-height="16">
                         <blend>true</blend>
 
@@ -262,7 +266,7 @@
         </template>
 
         <template name="locked-category-button">
-            <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                      u="172" v="180" region-width="16" region-height="16">
                 <blend>true</blend>
                 <margins>
@@ -285,7 +289,7 @@
                     </template-child>
                     <button id="bookmark-button">
                         <renderer>
-                            <texture texture="lavender:textures/gui/book.png" u="0" v="210" texture-width="512"
+                            <texture texture="{{book-texture}}" u="0" v="210" texture-width="512"
                                      texture-height="256"/>
                         </renderer>
 
@@ -313,7 +317,7 @@
         <template name="add-bookmark">
             <template name="bookmark-button">
                 <child id="icon">
-                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256" u="14"
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="14"
                              v="211" region-width="8" region-height="8">
                     </texture>
                 </child>
@@ -329,10 +333,10 @@
                             <label id="completion-label"/>
                             <flow-layout direction="vertical">
                                 <children>
-                                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                                              u="268" v="129" region-width="100" region-height="5">
                                     </texture>
-                                    <texture texture="lavender:textures/gui/book.png" texture-width="512" texture-height="256"
+                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
                                              u="268" v="134" region-width="100" region-height="5">
 
                                         <visible-area>
@@ -363,7 +367,7 @@
         <template name="reload-button">
             <button>
                 <renderer>
-                    <texture texture="lavender:textures/gui/book.png" u="21" v="210"
+                    <texture texture="{{book-texture}}" u="21" v="210"
                              texture-width="512" texture-height="256"/>
                 </renderer>
 

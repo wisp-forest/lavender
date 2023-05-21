@@ -38,18 +38,24 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
+    private static final Identifier DEFAULT_BOOK_TEXTURE = Lavender.id("textures/gui/brown_book.png");
     private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
-    private static final Supplier<UIModel> BOOK_COMPONENTS = () -> UIModelLoader.get(Lavender.id("book_components"));
-    private static final MarkdownProcessor<ParentComponent> PROCESSOR = new MarkdownProcessor<>(
-            BookCompiler::new,
+    private final BookCompiler.ComponentSource bookComponentSource = new BookCompiler.ComponentSource() {
+        @Override
+        public <C extends Component> C template(Class<C> expectedComponentClass, String name, Map<String, String> params) {
+            return BookScreen.this.template(UIModelLoader.get(Lavender.id("book_components")), expectedComponentClass, name, params);
+        }
+    };
+
+    private final MarkdownProcessor<ParentComponent> processor = new MarkdownProcessor<>(
+            () -> new BookCompiler(this.bookComponentSource),
             new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
-            new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(),
-            new StructureExtension(), new KeybindExtension()
+            new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(this.bookComponentSource),
+            new StructureExtension(this.bookComponentSource), new KeybindExtension()
     );
 
     public final Book book;
@@ -95,9 +101,26 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.window.setScaleFactor(gameScale);
     }
 
+    protected <C extends Component> C template(Class<C> expectedComponentClass, String name) {
+        return this.template(expectedComponentClass, name, Map.of());
+    }
+
+    protected <C extends Component> C template(Class<C> expectedComponentClass, String name, Map<String, String> parameters) {
+        return this.template(this.model, expectedComponentClass, name, parameters);
+    }
+
+    protected <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name, Map<String, String> parameters) {
+        var params = new HashMap<String, String>();
+        params.put("book-texture", (this.book.texture() != null ? this.book.texture() : DEFAULT_BOOK_TEXTURE).toString() );
+        params.putAll(parameters);
+
+        return model.expandTemplate(expectedComponentClass, name, params);
+    }
+
     @Override
     protected void build(FlowLayout rootComponent) {
         if (this.isOverlay) rootComponent.surface(Surface.BLANK);
+        rootComponent.child(this.template(Component.class, "primary-panel"));
 
         this.leftPageAnchor = this.component(FlowLayout.class, "left-page-anchor");
         this.rightPageAnchor = this.component(FlowLayout.class, "right-page-anchor");
@@ -109,7 +132,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         if (Owo.DEBUG && !this.isOverlay) {
             this.component(FlowLayout.class, "primary-panel").child(
-                    this.model.expandTemplate(ButtonComponent.class, "reload-button", Map.of()).onPress(buttonComponent -> {
+                    this.template(ButtonComponent.class, "reload-button").onPress(buttonComponent -> {
                         BookLoader.reload(this.client.getResourceManager());
                         BookContentLoader.reloadContents(this.client.getResourceManager());
 
@@ -172,7 +195,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             if (selectedPage + index < pageSupplier.pageCount()) {
                 anchor.child(pageSupplier.getPageContent(selectedPage + index));
             } else {
-                anchor.child(this.model.expandTemplate(Component.class, "empty-page-content", Map.of()));
+                anchor.child(this.template(Component.class, "empty-page-content"));
             }
 
             index++;
@@ -222,7 +245,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     protected ParentComponent createBookmarkButton(String templateName) {
-        var bookmark = this.model.expandTemplate(ParentComponent.class, templateName, Map.of());
+        var bookmark = this.template(ParentComponent.class, templateName);
         bookmark.mouseEnter().subscribe(() -> bookmark.margins(Insets.none()));
         bookmark.mouseLeave().subscribe(() -> bookmark.margins(Insets.top(1)));
         return bookmark;
@@ -428,13 +451,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         protected Component pageTitleHeader(Text text) {
-            var component = this.context.model.expandTemplate(ParentComponent.class, "page-title-header", Map.of());
+            var component = this.context.template(ParentComponent.class, "page-title-header");
             component.childById(LabelComponent.class, "title-label").text(text);
             return component;
         }
 
         protected ParentComponent parseMarkdown(String markdown) {
-            var component = PROCESSOR.process(markdown);
+            var component = this.context.processor.process(markdown);
             component.forEachDescendant(descendant -> {
                 if (descendant instanceof BookCompiler.BookLabelComponent label) {
                     label.setOwner(this.context);
@@ -474,7 +497,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                         ParentComponent indexItem;
                         if (entryVisible) {
-                            indexItem = this.context.model.expandTemplate(ParentComponent.class, "index-item", Map.of());
+                            indexItem = this.context.template(ParentComponent.class, "index-item");
                             indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
 
                             var label = indexItem.childById(LabelComponent.class, "index-label");
@@ -492,7 +515,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                             label.mouseEnter().subscribe(animation::forwards);
                             label.mouseLeave().subscribe(animation::backwards);
                         } else {
-                            indexItem = this.context.model.expandTemplate(ParentComponent.class, "locked-index-item", Map.of());
+                            indexItem = this.context.template(ParentComponent.class, "locked-index-item");
                             indexItem.childById(LabelComponent.class, "index-label").text(Text.translatable("text.lavender.entry.locked"));
                         }
 
@@ -522,11 +545,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             if (landingPageEntry != null) {
                 var landingPage = Containers.verticalFlow(Sizing.fill(100), Sizing.fill(100));
-                landingPage.child(this.context.model.expandTemplate(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
+                landingPage.child(this.context.template(Component.class, "landing-page-header", Map.of("page-title", landingPageEntry.title())));
                 landingPage.child(this.parseMarkdown(landingPageEntry.content()));
 
                 if (book.displayCompletion()) {
-                    var completionBar = this.context.model.expandTemplate(
+                    var completionBar = this.context.template(
                             FlowLayout.class,
                             "completion-bar",
                             Map.of("progress", String.valueOf((int) (100 * (book.countVisibleEntries(this.context.client.player) / (float) book.entries().size()))))
@@ -540,7 +563,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                 this.pages.add(landingPage);
             } else {
-                this.pages.add(this.context.model.expandTemplate(Component.class, "empty-page-content", Map.of()));
+                this.pages.add(this.context.template(Component.class, "empty-page-content"));
             }
 
             var indexPage = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
@@ -570,7 +593,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                             });
                         }));
                     } else if (!category.secret()) {
-                        categoryContainer.child(this.context.model.expandTemplate(Component.class, "locked-category-button", Map.of()));
+                        categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
                     }
                 });
 
@@ -594,7 +617,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             indexPage.child(book.categories().isEmpty()
                     ? this.pageTitleHeader(Text.translatable("text.lavender.index"))
-                    : BOOK_COMPONENTS.get().expandTemplate(Component.class, "horizontal-rule", Map.of()).margins(Insets.vertical(6))
+                    : this.context.bookComponentSource.template(Component.class, "horizontal-rule").margins(Insets.vertical(6))
             );
 
             int entriesOnCategoryPage = book.categories().size() > 0
@@ -662,7 +685,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                         this.pages.subList(1, this.pages.size()).clear();
                     }
 
-                    var compiled = PROCESSOR.process(editorTextCache);
+                    var compiled = this.context.processor.process(editorTextCache);
                     boolean firstPage = true;
 
                     while (!compiled.children().isEmpty()) {
@@ -736,7 +759,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 }
 
                 if (this.context.book.displayCompletion()) {
-                    var completionBar = this.context.model.expandTemplate(
+                    var completionBar = this.context.template(
                             FlowLayout.class,
                             "completion-bar",
                             Map.of("progress", String.valueOf((int) (100 * (this.countVisibleEntries(entries, this.context.client.player) / (float) entries.size()))))

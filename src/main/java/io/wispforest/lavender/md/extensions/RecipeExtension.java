@@ -1,14 +1,13 @@
 package io.wispforest.lavender.md.extensions;
 
-import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.md.Lexer;
 import io.wispforest.lavender.md.MarkdownExtension;
 import io.wispforest.lavender.md.Parser;
+import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.core.ParentComponent;
-import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
@@ -18,9 +17,13 @@ import net.minecraft.recipe.RecipeGridAligner;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-
 public class RecipeExtension implements MarkdownExtension {
+
+    private final BookCompiler.ComponentSource bookComponentSource;
+
+    public RecipeExtension(BookCompiler.ComponentSource bookComponentSource) {
+        this.bookComponentSource = bookComponentSource;
+    }
 
     @Override
     public String name() {
@@ -69,7 +72,7 @@ public class RecipeExtension implements MarkdownExtension {
         }
     }
 
-    private static class RecipeNode extends Parser.Node {
+    private class RecipeNode extends Parser.Node {
 
         private final Recipe<?> recipe;
 
@@ -80,7 +83,7 @@ public class RecipeExtension implements MarkdownExtension {
         @Override
         @SuppressWarnings("DataFlowIssue")
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var recipeComponent = UIModelLoader.get(Lavender.id("book_components")).expandTemplate(ParentComponent.class, "crafting-recipe", Map.of());
+            var recipeComponent = RecipeExtension.this.bookComponentSource.template(ParentComponent.class, "crafting-recipe");
             var inputGrid = recipeComponent.childById(ParentComponent.class, "input-grid");
 
             ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {

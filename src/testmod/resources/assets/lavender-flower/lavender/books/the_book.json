@@ -1,3 +1,4 @@
 {
-  "display_completion": true
+  "display_completion": true,
+  "texture": "lavender:textures/gui/red_book.png"
 }
