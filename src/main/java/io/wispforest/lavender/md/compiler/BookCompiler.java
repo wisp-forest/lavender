@@ -70,7 +70,7 @@ public class BookCompiler extends OwoUICompiler {
                 var clickEvent = style.getClickEvent();
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                     var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
-                    if (linkTarget != null) {
+                    if (linkTarget != null && linkTarget.entry != null) {
                         this.owner.navPush(new BookScreen.NavFrame(new BookScreen.EntryPageSupplier(this.owner, linkTarget.entry), linkTarget.page));
                         return true;
                     } else {
@@ -107,7 +107,7 @@ public class BookCompiler extends OwoUICompiler {
             var entry = this.owner.book.entryById(entryId);
             if (entry == null) return null;
 
-            return new LinkTarget(entry, targetPage);
+            return new LinkTarget(entry.canPlayerView(MinecraftClient.getInstance().player) ? entry : null, targetPage);
         }
 
         @Override
@@ -121,7 +121,7 @@ public class BookCompiler extends OwoUICompiler {
                 var linkTarget = this.resolveLinkTarget(rawLink);
 
                 style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
-                        ? Text.literal(linkTarget.entry.title())
+                        ? linkTarget.entry != null ? Text.literal(linkTarget.entry.title()) : Text.translatable("text.lavender.locked_internal_link")
                         : Text.translatable("text.lavender.invalid_internal_link", rawLink)
                 ));
             }

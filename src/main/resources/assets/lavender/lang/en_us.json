@@ -27,6 +27,7 @@
     {"index": 1, "color": "gray"}
   ],
 
+  "text.lavender.locked_internal_link": {"text": "Locked", "color": "gray"},
   "text.lavender.invalid_internal_link": [
     {"text": "Invalid internal link: ", "color": "red"},
     {"index": 0, "color": "gray"}
