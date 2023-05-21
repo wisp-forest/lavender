@@ -1,11 +1,5 @@
 {
-  "structure.lavender.iron_golem": "Iron Golem",
-  "structure.lavender.nether_portal": "Nether Portal",
-  "structure.lavender.ritual_of_extraction": "Ritual of Extraction",
-  "structure.affinity.augmented_crafting_table": "Augmented Crafting Table",
-
   "item.lavender.dynamic_book": "Book",
-  "item.lavender.the_book": "The Book",
 
   "text.lavender.structure_hud.completion": "%s: %s / %s",
   "text.lavender.entry_hud.sneak_to_view": {"text": "Sneak to view", "color": "gray"},

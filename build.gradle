@@ -7,8 +7,24 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+sourceSets {
+    testmod {
+        runtimeClasspath += main.runtimeClasspath
+        compileClasspath += main.compileClasspath
+    }
+}
+
 loom {
     accessWidenerPath = project.file("src/main/resources/lavender.accesswidener")
+
+    runs {
+        testmodClient {
+            client()
+            ideConfigGenerated true
+            name "Testmod Client"
+            source sourceSets.testmod
+        }
+    }
 }
 
 repositories {
@@ -16,6 +32,10 @@ repositories {
 
     // rei
     maven { url "https://maven.shedaniel.me/" }
+
+    // modmenu
+    maven { url "https://maven.terraformersmc.com/releases/" }
+
     mavenLocal()
 }
 
@@ -32,6 +52,12 @@ dependencies {
 
     modLocalRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_version}"
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${project.rei_version}"
+
+    modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    // --- testmod ---
+
+    testmodImplementation sourceSets.main.output
 }
 
 base {

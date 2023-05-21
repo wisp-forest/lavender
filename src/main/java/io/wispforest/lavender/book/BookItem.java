@@ -69,10 +69,14 @@ public class BookItem extends Item {
         if (bookItem != null) {
             return bookItem.getDefaultStack();
         } else {
-            var stack = DYNAMIC_BOOK.getDefaultStack();
-            stack.put(BOOK_ID, book.id());
-            return stack;
+            return createDynamic(book);
         }
+    }
+
+    public static ItemStack createDynamic(Book book) {
+        var stack = DYNAMIC_BOOK.getDefaultStack();
+        stack.put(BOOK_ID, book.id());
+        return stack;
     }
 
     @Override

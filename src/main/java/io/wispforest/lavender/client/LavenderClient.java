@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.LavenderCommands;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookContentLoader;
 import io.wispforest.lavender.book.BookItem;
@@ -48,38 +49,9 @@ public class LavenderClient implements ClientModInitializer {
     private static final Int2ObjectMap<Size> TEXTURE_SIZES = new Int2ObjectOpenHashMap<>();
     private static final Identifier ENTRY_HUD_ID = Lavender.id("entry_hud");
 
-    private static final SimpleCommandExceptionType NO_SUCH_STRUCTURE = new SimpleCommandExceptionType(Text.literal("No such structure is loaded"));
-    private static final SuggestionProvider<FabricClientCommandSource> STRUCTURE_INFO = (context, builder) ->
-            CommandSource.suggestMatching(LavenderStructures.loadedStructures().stream().map(Identifier::toString), builder);
-
     @Override
     public void onInitializeClient() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(literal("parse-md").then(argument("md", StringArgumentType.greedyString()).executes(context -> {
-                context.getSource().sendFeedback(MarkdownProcessor.TEXT.process(StringArgumentType.getString(context, "md")));
-                return 0;
-            })));
-
-            dispatcher.register(literal("edit-md").executes(context -> {
-                MinecraftClient.getInstance().setScreen(new EditMdScreen());
-                return 0;
-            }));
-
-            dispatcher.register(literal("structure-overlay")
-                    .then(literal("clear-all").executes(context -> {
-                        StructureOverlayRenderer.clearOverlays();
-                        return 0;
-                    }))
-
-                    .then(literal("add")
-                            .then(argument("structure", IdentifierArgumentType.identifier()).suggests(STRUCTURE_INFO).executes(context -> {
-                                var structureId = context.getArgument("structure", Identifier.class);
-                                if (LavenderStructures.get(structureId) == null) throw NO_SUCH_STRUCTURE.create();
-
-                                StructureOverlayRenderer.addPendingOverlay(structureId);
-                                return 0;
-                            }))));
-        });
+        ClientCommandRegistrationCallback.EVENT.register(LavenderCommands.Client::register);
 
         ModelLoadingRegistry.INSTANCE.registerResourceProvider(manager -> (resourceId, context) -> {
             if (!resourceId.equals(Lavender.id("item/dynamic_book"))) return null;

@@ -35,7 +35,7 @@ Once you have obtained {gold}at least one{} treetap alongside your augment, you 
 
 ;;;;;
 
-<structure;affinity:augmented_crafting_table>
+<structure;lavender-bud:augmented_crafting_table>
 
 ... and then continue by installing all treetaps onto {gold}naturally grown trees{} in close vicinity of the augmented
 crafting table.

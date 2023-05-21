@@ -25,11 +25,12 @@ public class BookLoader {
     private static final ResourceFinder BOOK_FINDER = ResourceFinder.json("lavender/books");
 
     private static final Map<Identifier, Book> LOADED_BOOKS = new HashMap<>();
+    private static final Map<Identifier, Book> VISIBLE_BOOKS = new HashMap<>();
 
     public static void initialize() {
         ModelLoadingRegistry.INSTANCE.registerModelProvider(($, out) -> {
             out.accept(BookBakedModel.Unbaked.BROWN_BOOK_ID);
-            for (var book : LOADED_BOOKS.values()) {
+            for (var book : VISIBLE_BOOKS.values()) {
                 if (book.dynamicBookModel() == null) return;
                 out.accept(new ModelIdentifier(book.dynamicBookModel(), "inventory"));
             }
@@ -41,6 +42,10 @@ public class BookLoader {
     }
 
     public static Collection<Book> loadedBooks() {
+        return Collections.unmodifiableCollection(VISIBLE_BOOKS.values());
+    }
+
+    static Collection<Book> allBooks() {
         return Collections.unmodifiableCollection(LOADED_BOOKS.values());
     }
 
@@ -70,7 +75,9 @@ public class BookLoader {
 
             var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
 
-            LOADED_BOOKS.put(resourceId, new Book(resourceId, extendId, textureId, dynamicBookModelId, displayCompletion));
+            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, displayCompletion);
+            LOADED_BOOKS.put(resourceId, book);
+            if (extendId == null) VISIBLE_BOOKS.put(resourceId, book);
         });
 
         LOADED_BOOKS.values().removeIf(book -> {

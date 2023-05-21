@@ -22,11 +22,11 @@ ritual's core.
 <recipe;conjuring:crafting/blackstone_pedestal>
 
 This is accomplished by {gold}shift-right-clicking{} first a pedestal and then the corresponding ritual core, all while
-wielding a [Conjuring Scepter](^lavender:profound_page#3) of any kind
+wielding a [Conjuring Scepter](^lavender-flower:profound_page#3) of any kind
 
 ;;;;;
 
-<structure;lavender:well>
+<structure;lavender-flower:well>
 
 ;;;;;
 

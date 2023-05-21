@@ -1,11 +1,5 @@
 {
-  "structure.lavender.iron_golem": "Eisengolem",
-  "structure.lavender.nether_portal": "Netherportal",
-  "structure.lavender.ritual_of_extraction": "Ritual der Extraktion",
-  "structure.affinity.augmented_crafting_table": "Erweiterte Werkbank",
-
   "item.lavender.dynamic_book": "Buch",
-  "item.lavender.the_book": "Das Buch",
 
   "text.lavender.structure_hud.completion": "%s: %s / %s",
   "text.lavender.entry_hud.sneak_to_view": {"text": "Schleichen zum öffnen", "color": "gray"},
@@ -34,7 +28,7 @@
   ],
 
   "text.lavender.invalid_internal_link": [
-    {"text": "Ungültiger interner link: ", "color": "red"},
+    {"text": "Ungültiger interner Verweis: ", "color": "red"},
     {"index": 0, "color": "gray"}
   ],
 

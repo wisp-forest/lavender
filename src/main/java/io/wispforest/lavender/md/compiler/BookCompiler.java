@@ -104,7 +104,10 @@ public class BookCompiler extends OwoUICompiler {
             var entryId = Identifier.tryParse(rawLinkText);
             if (entryId == null) return null;
 
-            return new LinkTarget(this.owner.book.entryById(entryId), targetPage);
+            var entry = this.owner.book.entryById(entryId);
+            if (entry == null) return null;
+
+            return new LinkTarget(entry, targetPage);
         }
 
         @Override

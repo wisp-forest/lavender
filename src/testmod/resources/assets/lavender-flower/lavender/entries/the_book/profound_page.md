@@ -41,7 +41,7 @@ page 3
 
 still page three
 
-[**ritual basics**](^lavender:ritual_basics)
+[**ritual basics**](^lavender-flower:ritual_basics)
 
 ---
 
@@ -80,4 +80,4 @@ smashes it into 4 pieces of {light_purple}Lesser Conjuration Essence{}
 
 ;;;;;
 
-<structure;lavender:nether_portal>
+<structure;lavender-flower:nether_portal>

@@ -2,7 +2,7 @@
 {
   "title": "Eintrag aus einer anderen Welt",
   "icon": "minecraft:oak_log",
-  "category": "lavender:epic_category",
+  "category": "lavender-flower:epic_category",
   "associated_items": [
     "minecraft:diamond"
   ],

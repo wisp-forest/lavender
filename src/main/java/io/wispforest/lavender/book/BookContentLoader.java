@@ -47,7 +47,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         var entries = findResources(manager, ENTRY_FINDER);
         var categories = findResources(manager, CATEGORY_FINDER);
 
-        for (var book : BookLoader.loadedBooks()) {
+        for (var book : BookLoader.allBooks()) {
             forResourceOfBook(categories, book, "category", (identifier, resource) -> {
                 var markdown = parseMarkdown(identifier, resource);
                 if (markdown == null) return;
@@ -62,7 +62,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
             });
         }
 
-        for (var book : BookLoader.loadedBooks()) {
+        for (var book : BookLoader.allBooks()) {
             forResourceOfBook(entries, book, "entry", (identifier, resource) -> {
                 var markdown = parseMarkdown(identifier, resource);
                 if (markdown == null) return;

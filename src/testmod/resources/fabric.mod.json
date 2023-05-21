@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "lavender-flower",
+  "version": "${version}",
+  "name": "Lavender Flower",
+  "description": "Lavender Testmod",
+  "authors": [
+    "glisco"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.wispforest.lavenderflower.LavenderFlower"
+    ]
+  },
+  "depends": {
+    "fabricloader": "*",
+    "fabric": "*",
+    "lavender": "*"
+  }
+}
