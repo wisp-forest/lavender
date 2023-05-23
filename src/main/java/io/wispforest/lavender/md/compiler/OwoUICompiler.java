@@ -75,6 +75,9 @@ public class OwoUICompiler implements MarkdownCompiler<ParentComponent> {
         if (textureSize == null) textureSize = Size.of(64, 64);
 
         this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
+//        this.append(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+//                .child(Components.texture(image, 0, 0, 200, 200, textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)).sizing(Sizing.fixed(100)))
+//                .horizontalAlignment(HorizontalAlignment.CENTER));
     }
 
     @Override

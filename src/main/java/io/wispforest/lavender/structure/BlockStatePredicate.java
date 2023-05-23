@@ -26,6 +26,18 @@ public interface BlockStatePredicate extends Predicate<BlockState> {
         }
     };
 
+    BlockStatePredicate AIR_PREDICATE = new BlockStatePredicate() {
+        @Override
+        public BlockState preview() {
+            return Blocks.AIR.getDefaultState();
+        }
+
+        @Override
+        public boolean test(BlockState blockState) {
+            return blockState.isAir();
+        }
+    };
+
     /**
      * @return A representative sample state for this predicate. As this function
      * is called every frame the preview is rendered, returning a different sample

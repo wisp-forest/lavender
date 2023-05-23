@@ -6,10 +6,7 @@ import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
-import io.wispforest.owo.ui.core.Color;
-import io.wispforest.owo.ui.core.Component;
-import io.wispforest.owo.ui.core.ParentComponent;
-import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.*;
@@ -64,6 +61,7 @@ public class BookCompiler extends OwoUICompiler {
 
         protected BookLabelComponent(Text text) {
             super(text);
+            this.margins(Insets.horizontal(1));
             this.textClickHandler(style -> {
                 if (style == null || this.owner == null) return false;
 

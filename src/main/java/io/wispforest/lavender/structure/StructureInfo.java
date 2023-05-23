@@ -293,11 +293,14 @@ public class StructureInfo {
                     char key = row.charAt(x);
 
                     BlockStatePredicate predicate;
-                    if (key == ' ') {
-                        predicate = BlockStatePredicate.NULL_PREDICATE;
-                    } else {
+                    if (keys.containsKey(key)) {
                         predicate = keys.get(key);
-                        if (predicate == null) throw new JsonParseException("Unknown key '" + key + "'");
+                    } else if (key == ' ') {
+                        predicate = BlockStatePredicate.NULL_PREDICATE;
+                    } else if (key == '_') {
+                        predicate = BlockStatePredicate.AIR_PREDICATE;
+                    } else {
+                        throw new JsonParseException("Unknown key '" + key + "'");
                     }
 
                     result[x][y][z] = predicate;
