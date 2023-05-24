@@ -137,6 +137,93 @@
             </flow-layout>
         </template>
 
+        <template name="smelting-recipe">
+            <flow-layout direction="horizontal">
+                <children>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                                     u="268" v="140" region-width="101" region-height="24">
+                                <blend>true</blend>
+                            </texture>
+
+                            <lavender.ingredient id="input">
+                                <positioning type="absolute">4,4</positioning>
+                            </lavender.ingredient>
+
+                            <item id="output">
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">81,4</positioning>
+                            </item>
+
+                            <item id="workstation">
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">39,15</positioning>
+                                <sizing>
+                                    <horizontal method="fixed">8</horizontal>
+                                    <vertical method="fixed">8</vertical>
+                                </sizing>
+                            </item>
+                        </children>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
+
+        <template name="smithing-recipe">
+            <flow-layout direction="horizontal">
+                <children>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                                     u="268" v="166" region-width="101" region-height="24">
+                                <blend>true</blend>
+                            </texture>
+
+                            <flow-layout direction="horizontal">
+                                <children>
+                                    <lavender.ingredient id="input-1"/>
+                                    <lavender.ingredient id="input-2"/>
+                                    <lavender.ingredient id="input-3"/>
+                                </children>
+                                <positioning type="absolute">2,4</positioning>
+                                <gap>1</gap>
+                            </flow-layout>
+
+                            <item id="output">
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">81,4</positioning>
+                            </item>
+
+                            <item>
+                                <stack>minecraft:smithing_table</stack>
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">58,15</positioning>
+                                <sizing>
+                                    <horizontal method="fixed">8</horizontal>
+                                    <vertical method="fixed">8</vertical>
+                                </sizing>
+                            </item>
+                        </children>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
+
         <template name="structure-preview-base">
             <flow-layout direction="vertical">
                 <children>

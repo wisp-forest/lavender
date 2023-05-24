@@ -1,12 +1,15 @@
 package io.wispforest.lavender.md.compiler;
 
 import com.google.common.primitives.Ints;
+import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.parsing.UIModel;
+import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.*;
@@ -35,7 +38,7 @@ public class BookCompiler extends OwoUICompiler {
 
     @Override
     public void visitHorizontalRule() {
-        this.append(this.bookComponentSource.template(Component.class, "horizontal-rule"));
+        this.append(this.bookComponentSource.builtinTemplate(Component.class, "horizontal-rule"));
     }
 
     public void visitPageBreak() {
@@ -132,10 +135,18 @@ public class BookCompiler extends OwoUICompiler {
 
     @FunctionalInterface
     public interface ComponentSource {
-        <C extends Component> C template(Class<C> expectedComponentClass, String name, Map<String, String> params);
+        <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name, Map<String, String> params);
 
-        default <C extends Component> C template(Class<C> expectedComponentClass, String name) {
-            return this.template(expectedComponentClass, name, Map.of());
+        default <C extends Component> C builtinTemplate(Class<C> expectedComponentClass, String name, Map<String, String> params) {
+            return this.template(UIModelLoader.get(Lavender.id("book_components")), expectedComponentClass, name, params);
+        }
+
+        default <C extends Component> C builtinTemplate(Class<C> expectedComponentClass, String name) {
+            return this.builtinTemplate(expectedComponentClass, name, Map.of());
+        }
+
+        default <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name) {
+            return this.template(model, expectedComponentClass, name, Map.of());
         }
     }
 }

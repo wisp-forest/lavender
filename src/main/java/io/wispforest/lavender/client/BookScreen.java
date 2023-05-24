@@ -15,7 +15,6 @@ import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
-import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
@@ -24,6 +23,8 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.recipe.Recipe;
+import net.minecraft.recipe.RecipeType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -42,25 +43,16 @@ import java.util.function.Function;
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
     private static final Identifier DEFAULT_BOOK_TEXTURE = Lavender.id("textures/gui/brown_book.png");
+    private static final Map<Identifier, Map<RecipeType<?>, RecipeExtension.RecipeHandler<?>>> RECIPE_HANDLERS = new HashMap<>();
+
     private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
-    private final BookCompiler.ComponentSource bookComponentSource = new BookCompiler.ComponentSource() {
-        @Override
-        public <C extends Component> C template(Class<C> expectedComponentClass, String name, Map<String, String> params) {
-            return BookScreen.this.template(UIModelLoader.get(Lavender.id("book_components")), expectedComponentClass, name, params);
-        }
-    };
-
-    private final MarkdownProcessor<ParentComponent> processor = new MarkdownProcessor<>(
-            () -> new BookCompiler(this.bookComponentSource),
-            new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
-            new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(this.bookComponentSource),
-            new StructureExtension(this.bookComponentSource), new KeybindExtension()
-    );
+    private final BookCompiler.ComponentSource bookComponentSource = BookScreen.this::template;
 
     public final Book book;
     public final boolean isOverlay;
 
+    private final MarkdownProcessor<ParentComponent> processor;
     private Window window;
     private int scaleFactor;
 
@@ -79,6 +71,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         super(FlowLayout.class, Lavender.id("book"));
         this.book = book;
         this.isOverlay = isOverlay;
+
+        this.processor = new MarkdownProcessor<>(
+                () -> new BookCompiler(this.bookComponentSource),
+                new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
+                new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
+                new StructureExtension(this.bookComponentSource), new KeybindExtension()
+        );
     }
 
     public BookScreen(Book book) {
@@ -419,6 +418,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         getNavTrail(book).add(0, new NavFrame.Replicator(screen -> new EntryPageSupplier(screen, entry), 0));
     }
 
+    public static <R extends Recipe<?>> void registerRecipeHandler(Identifier bookId, RecipeType<R> recipeType, RecipeExtension.RecipeHandler<R> handler) {
+        RECIPE_HANDLERS.computeIfAbsent(bookId, $ -> new HashMap<>()).put(recipeType, handler);
+    }
+
     public static abstract class PageSupplier {
 
         protected final BookScreen context;
@@ -617,7 +620,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
             indexPage.child(book.categories().isEmpty()
                     ? this.pageTitleHeader(Text.translatable("text.lavender.index"))
-                    : this.context.bookComponentSource.template(Component.class, "horizontal-rule").margins(Insets.vertical(6))
+                    : this.context.bookComponentSource.builtinTemplate(Component.class, "horizontal-rule").margins(Insets.vertical(6))
             );
 
             int entriesOnCategoryPage = book.categories().size() > 0

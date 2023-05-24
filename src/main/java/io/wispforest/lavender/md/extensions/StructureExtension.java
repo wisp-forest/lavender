@@ -83,7 +83,7 @@ public class StructureExtension implements MarkdownExtension {
         @Override
         @SuppressWarnings("DataFlowIssue")
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var structureComponent = StructureExtension.this.bookComponentSource.template(
+            var structureComponent = StructureExtension.this.bookComponentSource.builtinTemplate(
                     ParentComponent.class,
                     this.structure.ySize > 1 ? "structure-preview-with-layers" : "structure-preview",
                     Map.of("structure", this.structure.id.toString())

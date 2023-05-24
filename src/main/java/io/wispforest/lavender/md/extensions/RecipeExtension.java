@@ -6,23 +6,94 @@ import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
+import io.wispforest.lavender.pond.SmithingRecipeAccessor;
+import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.ItemComponent;
-import io.wispforest.owo.ui.core.ParentComponent;
+import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.Recipe;
-import net.minecraft.recipe.RecipeGridAligner;
+import net.minecraft.item.Items;
+import net.minecraft.recipe.*;
+import net.minecraft.registry.Registries;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RecipeExtension implements MarkdownExtension {
 
     private final BookCompiler.ComponentSource bookComponentSource;
+    private final Map<RecipeType<?>, RecipeHandler<?>> handlers;
 
-    public RecipeExtension(BookCompiler.ComponentSource bookComponentSource) {
+    private static final RecipeHandler<CraftingRecipe> CRAFTING_HANDLER = new RecipeHandler<>() {
+        @Override
+        public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, CraftingRecipe recipe) {
+            var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
+
+            this.populateIngredients(recipe, recipe.getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
+            recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+
+            return recipeComponent;
+        }
+    };
+
+    private static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipe) -> {
+        var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
+
+        recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+
+        var workstation = ItemStack.EMPTY;
+        if (recipe instanceof SmeltingRecipe) workstation = Items.FURNACE.getDefaultStack();
+        if (recipe instanceof BlastingRecipe) workstation = Items.BLAST_FURNACE.getDefaultStack();
+        if (recipe instanceof SmokingRecipe) workstation = Items.SMOKER.getDefaultStack();
+        if (recipe instanceof CampfireCookingRecipe) workstation = Items.CAMPFIRE.getDefaultStack();
+        recipeComponent.childById(ItemComponent.class, "workstation").stack(workstation);
+
+        return recipeComponent;
+    };
+
+    private static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipe) -> {
+        var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
+
+//        if (recipe instanceof LegacySmithingRecipeAccessor accessor) {
+//            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getBase());
+//            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getAddition());
+//        } else
+
+        if (recipe instanceof SmithingRecipeAccessor accessor) {
+            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
+            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getBase());
+            recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
+        }
+
+//            else if (recipe instanceof SmithingTrimRecipeAccessor accessor) {
+//            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
+//            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getBase());
+//            recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
+//        }
+
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+
+        return recipeComponent;
+    };
+
+    public RecipeExtension(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipeHandler<?>> handlers) {
         this.bookComponentSource = bookComponentSource;
+
+        this.handlers = new HashMap<>(handlers != null ? handlers : Map.of());
+        this.handlers.putIfAbsent(RecipeType.CRAFTING, CRAFTING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.SMELTING, SMELTING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.BLASTING, SMELTING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.SMOKING, SMELTING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.CAMPFIRE_COOKING, SMELTING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.SMITHING, SMITHING_HANDLER);
     }
 
     @Override
@@ -81,23 +152,44 @@ public class RecipeExtension implements MarkdownExtension {
         }
 
         @Override
-        @SuppressWarnings("DataFlowIssue")
+        @SuppressWarnings({"rawtypes", "unchecked"})
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var recipeComponent = RecipeExtension.this.bookComponentSource.template(ParentComponent.class, "crafting-recipe");
-            var inputGrid = recipeComponent.childById(ParentComponent.class, "input-grid");
-
-            ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
-                if (!(inputGrid.children().get(slot) instanceof IngredientComponent ingredient)) return;
-                ingredient.ingredient(inputs.next());
-            }).alignRecipeToGrid(3, 3, 9, this.recipe, this.recipe.getIngredients().iterator(), 0);
-
-            recipeComponent.childById(ItemComponent.class, "output").stack(this.recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
-
-            ((OwoUICompiler) compiler).visitComponent(recipeComponent);
+            var handler = (RecipeHandler) RecipeExtension.this.handlers.get(this.recipe.getType());
+            if (handler != null) {
+                ((OwoUICompiler) compiler).visitComponent(handler.buildRecipePreview(RecipeExtension.this.bookComponentSource, this.recipe));
+            } else {
+                ((OwoUICompiler) compiler).visitComponent(
+                        Containers.verticalFlow(Sizing.fill(100), Sizing.content())
+                                .child(Components.label(Text.literal("No handler registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.getType()) + "'")).horizontalSizing(Sizing.fill(100)))
+                                .padding(Insets.of(10))
+                                .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
+                );
+            }
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {}
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+        }
+    }
+
+    @FunctionalInterface
+    public interface RecipeHandler<R extends Recipe<?>> {
+        @NotNull
+        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, R recipeInstance);
+
+        default void populateIngredients(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
+            for (int i = 0; i < ingredients.size(); i++) {
+                if (!(componentContainer.children().get(i) instanceof IngredientComponent ingredient)) continue;
+                ingredient.ingredient(ingredients.get(i));
+            }
+        }
+
+        default void populateIngredients(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
+            ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
+                if (!(componentContainer.children().get(slot) instanceof IngredientComponent ingredient)) return;
+                ingredient.ingredient(inputs.next());
+            }).alignRecipeToGrid(gridWidth, gridHeight, 9, recipe, ingredients.iterator(), 0);
+        }
     }
 
     public static class IngredientComponent extends ItemComponent {
