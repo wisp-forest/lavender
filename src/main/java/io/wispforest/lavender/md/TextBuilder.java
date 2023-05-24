@@ -35,6 +35,9 @@ public class TextBuilder {
 
     public MutableText build() {
         var result = this.text;
+        if (result.getString().equals("\n")) {
+            result = Text.literal(" ");
+        }
 
         this.text = Text.empty();
         this.empty = true;
