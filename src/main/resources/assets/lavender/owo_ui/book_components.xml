@@ -33,6 +33,8 @@
             </flow-layout>
         </template>
 
+        <!-- Recipe templates: crafting,smelting,smithing,stonecutting -->
+
         <template name="crafting-recipe">
             <flow-layout direction="horizontal">
                 <children>
@@ -223,6 +225,45 @@
                 </sizing>
             </flow-layout>
         </template>
+
+        <template name="stonecutting-recipe">
+            <flow-layout direction="horizontal">
+                <children>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                                     u="268" v="192" region-width="101" region-height="24">
+                                <blend>true</blend>
+                            </texture>
+
+                            <lavender.ingredient id="input">
+                                <positioning type="absolute">4,4</positioning>
+                            </lavender.ingredient>
+
+                            <item id="output">
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">81,4</positioning>
+                            </item>
+
+                            <item>
+                                <stack>minecraft:stonecutter</stack>
+                                <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                                <positioning type="absolute">29,4</positioning>
+                            </item>
+                        </children>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
+
+        <!-- Structure previews: base element, with/without slider -->
 
         <template name="structure-preview-base">
             <flow-layout direction="vertical">

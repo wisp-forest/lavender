@@ -36,7 +36,7 @@ public class RecipeExtension implements MarkdownExtension {
         public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, CraftingRecipe recipe) {
             var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
 
-            this.populateIngredients(recipe, recipe.getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
+            this.populateIngredientsGrid(recipe, recipe.getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
             recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
 
             return recipeComponent;
@@ -62,23 +62,21 @@ public class RecipeExtension implements MarkdownExtension {
     private static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipe) -> {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
-//        if (recipe instanceof LegacySmithingRecipeAccessor accessor) {
-//            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getBase());
-//            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getAddition());
-//        } else
-
         if (recipe instanceof SmithingRecipeAccessor accessor) {
             recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
             recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getBase());
             recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
         }
 
-//            else if (recipe instanceof SmithingTrimRecipeAccessor accessor) {
-//            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
-//            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getBase());
-//            recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
-//        }
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
 
+        return recipeComponent;
+    };
+
+    private static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipe) -> {
+        var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
+
+        recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
         recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
 
         return recipeComponent;
@@ -94,6 +92,7 @@ public class RecipeExtension implements MarkdownExtension {
         this.handlers.putIfAbsent(RecipeType.SMOKING, SMELTING_HANDLER);
         this.handlers.putIfAbsent(RecipeType.CAMPFIRE_COOKING, SMELTING_HANDLER);
         this.handlers.putIfAbsent(RecipeType.SMITHING, SMITHING_HANDLER);
+        this.handlers.putIfAbsent(RecipeType.STONECUTTING, STONECUTTING_HANDLER);
     }
 
     @Override
@@ -168,8 +167,7 @@ public class RecipeExtension implements MarkdownExtension {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {
-        }
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
     @FunctionalInterface
@@ -184,7 +182,7 @@ public class RecipeExtension implements MarkdownExtension {
             }
         }
 
-        default void populateIngredients(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
+        default void populateIngredientsGrid(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
             ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
                 if (!(componentContainer.children().get(slot) instanceof IngredientComponent ingredient)) return;
                 ingredient.ingredient(inputs.next());

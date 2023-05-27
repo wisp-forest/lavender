@@ -14,4 +14,4 @@ a
 
 ---
 
-<recipe;minecraft:tide_armor_trim_smithing_template_smithing_trim>
+<recipe;minecraft:stone_bricks_from_stone_stonecutting>

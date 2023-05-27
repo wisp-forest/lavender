@@ -150,9 +150,7 @@ public class StructureOverlayRenderer {
                     if (entry.decayTime < 0) {
                         var overlayConsumer = new OverlayVertexConsumer(
                                 effectConsumers.getBuffer(ModelLoader.BLOCK_DESTRUCTION_RENDER_LAYERS.get(5 + (int) (Math.sin(System.currentTimeMillis() / 200d) * 5))),
-                                matrices.peek().getPositionMatrix(),
-                                matrices.peek().getNormalMatrix(),
-                                1.0F
+                                matrices.peek().getPositionMatrix(), matrices.peek().getNormalMatrix(), 1
                         );
 
                         matrices.push();

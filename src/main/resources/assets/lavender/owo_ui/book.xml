@@ -2,6 +2,10 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.19.4/owo-ui.xsd">
 
     <components>
+
+        <!-- The actual base component in this screen is quite empty since we instantiate it
+             as a template from code to supply the correct book texture -->
+
         <flow-layout direction="vertical">
             <children>
 
@@ -120,6 +124,8 @@
             </flow-layout>
         </template>
 
+        <!-- Base page layout templates -->
+
         <template name="empty-page-content">
             <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="163" v="180"
                      region-width="9" region-height="11">
@@ -161,6 +167,8 @@
             </flow-layout>
         </template>
 
+        <!-- Landing page -->
+
         <template name="landing-page-header">
             <flow-layout direction="vertical">
                 <children>
@@ -194,6 +202,48 @@
                 <margins>
                     <bottom>7</bottom>
                 </margins>
+            </flow-layout>
+        </template>
+
+        <!-- Index / entry lists -->
+
+        <template name="completion-bar">
+            <flow-layout direction="vertical">
+                <children>
+                    <template name="horizontal-rule@lavender:book_components"/>
+                    <flow-layout direction="vertical">
+                        <children>
+                            <label id="completion-label"/>
+                            <flow-layout direction="vertical">
+                                <children>
+                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                                             u="268" v="129" region-width="100" region-height="5">
+                                    </texture>
+                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                                             u="268" v="134" region-width="100" region-height="5">
+
+                                        <visible-area>
+                                            <width>{{progress}}</width>
+                                        </visible-area>
+
+                                        <positioning type="absolute">0,0</positioning>
+                                    </texture>
+                                </children>
+                            </flow-layout>
+                        </children>
+
+                        <margins>
+                            <top>4</top>
+                        </margins>
+                    </flow-layout>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+
+                <margins>
+                    <bottom>3</bottom>
+                </margins>
+                <positioning type="relative">50,100</positioning>
             </flow-layout>
         </template>
 
@@ -275,6 +325,8 @@
             </texture>
         </template>
 
+        <!-- Bookmark elements -->
+
         <template name="bookmark-button">
             <flow-layout direction="vertical">
                 <children>
@@ -324,46 +376,6 @@
             </template>
         </template>
 
-        <template name="completion-bar">
-            <flow-layout direction="vertical">
-                <children>
-                    <template name="horizontal-rule@lavender:book_components"/>
-                    <flow-layout direction="vertical">
-                        <children>
-                            <label id="completion-label"/>
-                            <flow-layout direction="vertical">
-                                <children>
-                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
-                                             u="268" v="129" region-width="100" region-height="5">
-                                    </texture>
-                                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
-                                             u="268" v="134" region-width="100" region-height="5">
-
-                                        <visible-area>
-                                            <width>{{progress}}</width>
-                                        </visible-area>
-
-                                        <positioning type="absolute">0,0</positioning>
-                                    </texture>
-                                </children>
-                            </flow-layout>
-                        </children>
-
-                        <margins>
-                            <top>4</top>
-                        </margins>
-                    </flow-layout>
-                </children>
-
-                <horizontal-alignment>center</horizontal-alignment>
-
-                <margins>
-                    <bottom>3</bottom>
-                </margins>
-                <positioning type="relative">50,100</positioning>
-            </flow-layout>
-        </template>
-
         <template name="reload-button">
             <button>
                 <renderer>
@@ -382,5 +394,4 @@
             </button>
         </template>
     </templates>
-
 </owo-ui>
