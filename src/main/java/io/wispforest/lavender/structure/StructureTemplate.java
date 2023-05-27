@@ -27,30 +27,40 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-public class StructureInfo {
+public class StructureTemplate {
 
     private final BlockStatePredicate[][][] predicates;
+    private final EnumMap<BlockStatePredicate.MatchCategory, MutableInt> predicateCountByType;
+
     public final int xSize, ySize, zSize;
-    public final int nonNullPredicates;
     public final Identifier id;
 
-    public StructureInfo(Identifier id, BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
+    public StructureTemplate(Identifier id, BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
         this.id = id;
         this.predicates = predicates;
         this.xSize = xSize;
         this.ySize = ySize;
         this.zSize = zSize;
 
-        var nonNullPredicates = new MutableInt();
-        this.forEachPredicate((blockPos, predicate) -> {
-            if (predicate == BlockStatePredicate.NULL_PREDICATE) return;
-            nonNullPredicates.increment();
-        });
+        this.predicateCountByType = new EnumMap<>(BlockStatePredicate.MatchCategory.class);
+        for (var type : BlockStatePredicate.MatchCategory.values()) {
+            this.forEachPredicate((blockPos, predicate) -> {
+                if (!predicate.isOf(type)) return;
+                this.predicateCountByType.computeIfAbsent(type, $ -> new MutableInt()).increment();
+            });
+        }
+    }
 
-        this.nonNullPredicates = nonNullPredicates.intValue();
+    /**
+     * @return How many predicates of this structure template fall
+     * into the given match category
+     */
+    public int predicatesOfType(BlockStatePredicate.MatchCategory type) {
+        return predicateCountByType.get(type).intValue();
     }
 
     // --- iteration ---
@@ -59,6 +69,10 @@ public class StructureInfo {
         this.forEachPredicate(action, BlockRotation.NONE);
     }
 
+    /**
+     * Execute {@code action} for every predicate in this structure template,
+     * rotated on the y-axis by {@code rotation}
+     */
     public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action, BlockRotation rotation) {
         var mutable = new BlockPos.Mutable();
 
@@ -81,26 +95,50 @@ public class StructureInfo {
 
     // --- validation ---
 
+    /**
+     * Shorthand of {@link #validate(World, BlockPos, BlockRotation)} which uses
+     * {@link BlockRotation#NONE}
+     */
     public boolean validate(World world, BlockPos anchor) {
         return this.validate(world, anchor, BlockRotation.NONE);
     }
 
+    /**
+     * @return {@code true} if this template matches the block states present
+     * in the given world at the given position
+     */
     public boolean validate(World world, BlockPos anchor, BlockRotation rotation) {
-        return this.countValidStates(world, anchor, rotation) == this.nonNullPredicates;
+        return this.countValidStates(world, anchor, rotation) == this.predicatesOfType(BlockStatePredicate.MatchCategory.NON_NULL);
     }
 
+    /**
+     * Shorthand of {@link #countValidStates(World, BlockPos, BlockRotation)} which uses
+     * {@link BlockRotation#NONE}
+     */
     public int countValidStates(World world, BlockPos anchor) {
-        return countValidStates(world, anchor, BlockRotation.NONE);
+        return countValidStates(world, anchor, BlockRotation.NONE, BlockStatePredicate.MatchCategory.NON_NULL);
     }
 
+    /**
+     * Shorthand of {@link #countValidStates(World, BlockPos, BlockRotation, BlockStatePredicate.MatchCategory)}
+     * which uses {@link io.wispforest.lavender.structure.BlockStatePredicate.MatchCategory#NON_NULL}
+     */
     public int countValidStates(World world, BlockPos anchor, BlockRotation rotation) {
+        return countValidStates(world, anchor, rotation, BlockStatePredicate.MatchCategory.NON_NULL);
+    }
+
+    /**
+     * @return The amount of predicates in this template which match the block
+     * states present in the given world at the given position
+     */
+    public int countValidStates(World world, BlockPos anchor, BlockRotation rotation, BlockStatePredicate.MatchCategory predicateFilter) {
         var validStates = new MutableInt();
         var mutable = new BlockPos.Mutable();
 
         this.forEachPredicate((pos, predicate) -> {
-            if (predicate == BlockStatePredicate.NULL_PREDICATE) return;
+            if (!predicate.isOf(predicateFilter)) return;
 
-            if (predicate.test(world.getBlockState(mutable.set(pos).move(anchor)).rotate(inverse(rotation)))) {
+            if (predicate.matches(world.getBlockState(mutable.set(pos).move(anchor)).rotate(inverse(rotation)))) {
                 validStates.increment();
             }
         }, rotation);
@@ -136,9 +174,9 @@ public class StructureInfo {
 
             @Override
             public BlockState getBlockState(BlockPos pos) {
-                if (pos.getX() < 0 || pos.getX() >= StructureInfo.this.xSize || pos.getY() < 0 || pos.getY() >= StructureInfo.this.ySize || pos.getZ() < 0 || pos.getZ() >= StructureInfo.this.zSize)
+                if (pos.getX() < 0 || pos.getX() >= StructureTemplate.this.xSize || pos.getY() < 0 || pos.getY() >= StructureTemplate.this.ySize || pos.getZ() < 0 || pos.getZ() >= StructureTemplate.this.zSize)
                     return Blocks.AIR.getDefaultState();
-                return StructureInfo.this.predicates[pos.getX()][pos.getY()][pos.getZ()].preview();
+                return StructureTemplate.this.predicates[pos.getX()][pos.getY()][pos.getZ()].preview();
             }
 
             @Override
@@ -170,7 +208,7 @@ public class StructureInfo {
     // --- parsing ---
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static StructureInfo parse(Identifier resourceId, JsonObject json) {
+    public static StructureTemplate parse(Identifier resourceId, JsonObject json) {
         var keyObject = JsonHelper.getObject(json, "keys");
         var keys = new Char2ObjectOpenHashMap<BlockStatePredicate>();
 
@@ -188,16 +226,16 @@ public class StructureInfo {
                         }
 
                         @Override
-                        public boolean test(BlockState state) {
-                            if (state.getBlock() != predicate.blockState().getBlock()) return false;
+                        public Result test(BlockState state) {
+                            if (state.getBlock() != predicate.blockState().getBlock()) return Result.NO_MATCH;
 
                             for (var propAndValue : predicate.properties().entrySet()) {
                                 if (!state.get(propAndValue.getKey()).equals(propAndValue.getValue())) {
-                                    return false;
+                                    return Result.BLOCK_MATCH;
                                 }
                             }
 
-                            return true;
+                            return Result.STATE_MATCH;
                         }
                     });
                 } else {
@@ -229,20 +267,20 @@ public class StructureInfo {
                         }
 
                         @Override
-                        public boolean test(BlockState state) {
-                            if (!state.isIn(predicate.tag())) return false;
+                        public Result test(BlockState state) {
+                            if (!state.isIn(predicate.tag())) return Result.NO_MATCH;
 
                             for (var propAndValue : predicate.vagueProperties().entrySet()) {
                                 var prop = state.getBlock().getStateManager().getProperty(propAndValue.getKey());
-                                if (prop == null) return false;
+                                if (prop == null) return Result.BLOCK_MATCH;
 
                                 var expected = prop.parse(propAndValue.getValue());
-                                if (expected.isEmpty()) return false;
+                                if (expected.isEmpty()) return Result.BLOCK_MATCH;
 
-                                if (!state.get(prop).equals(expected.get())) return false;
+                                if (!state.get(prop).equals(expected.get())) return Result.BLOCK_MATCH;
                             }
 
-                            return true;
+                            return Result.STATE_MATCH;
                         }
                     });
                 }
@@ -308,6 +346,6 @@ public class StructureInfo {
             }
         }
 
-        return new StructureInfo(resourceId, result, xSize, ySize, zSize);
+        return new StructureTemplate(resourceId, result, xSize, ySize, zSize);
     }
 }

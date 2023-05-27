@@ -25,7 +25,7 @@ import java.util.Set;
 public class LavenderStructures {
 
     private static final Map<Identifier, JsonObject> PENDING_STRUCTURES = new HashMap<>();
-    private static final Map<Identifier, StructureInfo> LOADED_STRUCTURES = new HashMap<>();
+    private static final Map<Identifier, StructureTemplate> LOADED_STRUCTURES = new HashMap<>();
 
     private static boolean tagsAvailable = false;
 
@@ -51,7 +51,7 @@ public class LavenderStructures {
      * @return The structure currently associated with the given id,
      * or {@code null} if no such structure is loaded
      */
-    public static @Nullable StructureInfo get(Identifier structureId) {
+    public static @Nullable StructureTemplate get(Identifier structureId) {
         return LOADED_STRUCTURES.get(structureId);
     }
 
@@ -59,7 +59,7 @@ public class LavenderStructures {
         LOADED_STRUCTURES.clear();
         PENDING_STRUCTURES.forEach((identifier, pending) -> {
             try {
-                LOADED_STRUCTURES.put(identifier, StructureInfo.parse(identifier, pending));
+                LOADED_STRUCTURES.put(identifier, StructureTemplate.parse(identifier, pending));
             } catch (JsonParseException e) {
                 Lavender.LOGGER.warn("Failed to load structure info {}", identifier, e);
             }

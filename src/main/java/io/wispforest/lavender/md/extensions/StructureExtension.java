@@ -9,7 +9,7 @@ import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.lavender.structure.LavenderStructures;
-import io.wispforest.lavender.structure.StructureInfo;
+import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.component.SlimSliderComponent;
 import io.wispforest.owo.ui.core.ParentComponent;
 import net.minecraft.text.Text;
@@ -64,9 +64,9 @@ public class StructureExtension implements MarkdownExtension {
 
     private static class StructureToken extends Lexer.Token {
 
-        public final StructureInfo structure;
+        public final StructureTemplate structure;
 
-        public StructureToken(String content, StructureInfo structure) {
+        public StructureToken(String content, StructureTemplate structure) {
             super(content);
             this.structure = structure;
         }
@@ -74,9 +74,9 @@ public class StructureExtension implements MarkdownExtension {
 
     private class StructureNode extends Parser.Node {
 
-        private final StructureInfo structure;
+        private final StructureTemplate structure;
 
-        public StructureNode(StructureInfo structure) {
+        public StructureNode(StructureTemplate structure) {
             this.structure = structure;
         }
 

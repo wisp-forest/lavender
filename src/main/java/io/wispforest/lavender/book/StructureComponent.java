@@ -2,7 +2,7 @@ package io.wispforest.lavender.book;
 
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.LavenderStructures;
-import io.wispforest.lavender.structure.StructureInfo;
+import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
@@ -20,10 +20,10 @@ import org.w3c.dom.Element;
 
 public class StructureComponent extends BaseComponent {
 
-    private final StructureInfo structure;
+    private final StructureTemplate structure;
     private int visibleLayer = -1;
 
-    public StructureComponent(StructureInfo structure) {
+    public StructureComponent(StructureTemplate structure) {
         this.structure = structure;
         this.cursorStyle(CursorStyle.HAND);
     }

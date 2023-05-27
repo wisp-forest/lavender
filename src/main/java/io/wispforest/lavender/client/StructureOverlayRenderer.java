@@ -5,7 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.structure.BlockStatePredicate;
 import io.wispforest.lavender.structure.LavenderStructures;
-import io.wispforest.lavender.structure.StructureInfo;
+import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -20,7 +20,9 @@ import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
+import net.minecraft.client.render.OverlayVertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.model.ModelLoader;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -130,6 +132,7 @@ public class StructureOverlayRenderer {
             matrices.translate(-context.camera().getPos().x, -context.camera().getPos().y, -context.camera().getPos().z);
 
             var client = MinecraftClient.getInstance();
+            var effectConsumers = client.getBufferBuilders().getEffectVertexConsumers();
             var testPos = new BlockPos.Mutable();
 
             hudComponent.<FlowLayout>configure(layout -> {
@@ -145,19 +148,34 @@ public class StructureOverlayRenderer {
                     var hasInvalidBlock = new MutableBoolean();
 
                     if (entry.decayTime < 0) {
+                        var overlayConsumer = new OverlayVertexConsumer(
+                                effectConsumers.getBuffer(ModelLoader.BLOCK_DESTRUCTION_RENDER_LAYERS.get(5 + (int) (Math.sin(System.currentTimeMillis() / 200d) * 5))),
+                                matrices.peek().getPositionMatrix(),
+                                matrices.peek().getNormalMatrix(),
+                                1.0F
+                        );
+
                         matrices.push();
                         matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
 
                         structure.forEachPredicate((pos, predicate) -> {
-                            var state = context.world().getBlockState(testPos.set(anchor).move(pos)).rotate(StructureInfo.inverse(entry.rotation));
-                            if (predicate.test(state)) {
+                            var state = context.world().getBlockState(testPos.set(anchor).move(pos)).rotate(StructureTemplate.inverse(entry.rotation));
+                            var result = predicate.test(state);
+
+                            if (result == BlockStatePredicate.Result.STATE_MATCH) {
                                 return;
-                            } else if (!state.isAir()) {
+                            } else if (!state.isAir() && result == BlockStatePredicate.Result.NO_MATCH) {
                                 hasInvalidBlock.setTrue();
+
+                                matrices.push();
+                                matrices.translate(pos.getX(), pos.getY(), pos.getZ());
+                                client.getBlockRenderManager().renderDamage(state, testPos, context.world(), matrices, overlayConsumer);
+                                matrices.pop();
                             }
 
                             if (entry.visibleLayer != -1 && pos.getY() != entry.visibleLayer) return;
                             renderOverlayBlock(matrices, context.consumers(), pos, predicate, entry.rotation);
+
                         }, entry.rotation);
 
                         matrices.pop();
@@ -165,13 +183,15 @@ public class StructureOverlayRenderer {
 
                     // --- hud setup ---
 
-                    var valid = structure.countValidStates(client.world, anchor, entry.rotation);
-                    var total = structure.nonNullPredicates;
+                    var valid = structure.countValidStates(client.world, anchor, entry.rotation, BlockStatePredicate.MatchCategory.NON_AIR);
+                    var total = structure.predicatesOfType(BlockStatePredicate.MatchCategory.NON_AIR);
+                    var complete = structure.validate(client.world, anchor, entry.rotation);
+
                     if (entry.decayTime >= 0) valid = total;
 
                     int barTextureOffset = 0;
                     if (hasInvalidBlock.booleanValue()) barTextureOffset = 10;
-                    if (valid == total) barTextureOffset = 20;
+                    if (complete) barTextureOffset = 20;
 
                     entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, client.getLastFrameDuration());
                     layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
@@ -184,7 +204,7 @@ public class StructureOverlayRenderer {
                             .horizontalAlignment(HorizontalAlignment.CENTER)
                             .margins(Insets.bottom((int) (Easing.CUBIC.apply((Math.max(0, entry.decayTime - 30) + client.getTickDelta()) / 20f) * -32))));
 
-                    if (entry.decayTime < 0 && valid == total) {
+                    if (entry.decayTime < 0 && complete) {
                         entry.decayTime = 0;
                         client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1f, 1f);
                     } else if (entry.decayTime >= 0) {
@@ -220,6 +240,7 @@ public class StructureOverlayRenderer {
             GL30C.glBlitFramebuffer(0, 0, framebuffer.textureWidth, framebuffer.textureHeight, 0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight, GL30C.GL_DEPTH_BUFFER_BIT, GL30C.GL_NEAREST);
 
             if (context.consumers() instanceof VertexConsumerProvider.Immediate immediate) immediate.draw();
+            effectConsumers.draw();
             client.getFramebuffer().beginWrite(false);
 
             RenderSystem.enableBlend();
@@ -250,7 +271,7 @@ public class StructureOverlayRenderer {
         });
     }
 
-    private static Vec3i getPendingOffset(StructureInfo structure) {
+    private static Vec3i getPendingOffset(StructureTemplate structure) {
         if (PENDING_OVERLAY == null) return Vec3i.ZERO;
         return PENDING_OVERLAY.rotation == BlockRotation.NONE || PENDING_OVERLAY.rotation == BlockRotation.CLOCKWISE_180
                 ? new Vec3i(-structure.xSize / 2, 0, -structure.zSize / 2)
@@ -290,7 +311,7 @@ public class StructureOverlayRenderer {
             this.rotation = rotation;
         }
 
-        public @Nullable StructureInfo fetchStructure() {
+        public @Nullable StructureTemplate fetchStructure() {
             return LavenderStructures.get(this.structureId);
         }
     }
