@@ -73,7 +73,7 @@ public class OwoUICompiler implements MarkdownCompiler<ParentComponent> {
     public void visitImage(Identifier image, String description, boolean fit) {
         if (fit) {
             this.append(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                    .child(Components.texture(image, 0, 0, 200, 200, 200, 200).blend(true).tooltip(Text.literal(description)).sizing(Sizing.fixed(100)))
+                    .child(Components.texture(image, 0, 0, 256, 256, 256, 256).blend(true).tooltip(Text.literal(description)).sizing(Sizing.fixed(100)))
                     .horizontalAlignment(HorizontalAlignment.CENTER));
         } else {
             var textureSize = LavenderClient.getTextureSize(image);
