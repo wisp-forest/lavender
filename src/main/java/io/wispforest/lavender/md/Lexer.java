@@ -375,11 +375,13 @@ public class Lexer implements MarkdownExtension.TokenRegistrar {
     public static final class ImageToken extends Token {
 
         public final String description, identifier;
+        public final boolean fit;
 
-        public ImageToken(String description, String identifier) {
+        public ImageToken(String description, String identifier, boolean fit) {
             super("![" + description + "](" + identifier + ")");
             this.description = description;
             this.identifier = identifier;
+            this.fit = fit;
         }
 
         public static boolean lex(Lexer lexer, StringReader reader, List<Token> tokens) {
@@ -391,10 +393,14 @@ public class Lexer implements MarkdownExtension.TokenRegistrar {
             reader.setCursor(reader.getCursor() + 2);
 
             var identifier = lexer.readTextUntil(reader, c -> c == ')');
-            if (!reader.canRead() || Identifier.tryParse(identifier) == null) return false;
+            if (!reader.canRead()) return false;
             reader.skip();
 
-            tokens.add(new ImageToken(description, identifier));
+            boolean fit = identifier.endsWith(",fit");
+            if (fit) identifier = identifier.substring(0, identifier.length() - 4);
+            if (Identifier.tryParse(identifier) == null) return false;
+
+            tokens.add(new ImageToken(description, identifier, fit));
             return true;
         }
     }

@@ -101,7 +101,7 @@ public class Parser implements MarkdownExtension.NodeRegistrar {
         );
 
         this.registerNode(
-                (parser, image, tokens) -> new ImageNode(image.identifier, image.description),
+                (parser, image, tokens) -> new ImageNode(image.identifier, image.description, image.fit),
                 (token, tokens) -> token instanceof ImageToken image ? image : null
         );
 
@@ -319,15 +319,17 @@ public class Parser implements MarkdownExtension.NodeRegistrar {
     public static class ImageNode extends Node {
 
         private final String identifier, description;
+        private final boolean fit;
 
-        public ImageNode(String identifier, String description) {
+        public ImageNode(String identifier, String description, boolean fit) {
             this.identifier = identifier;
             this.description = description;
+            this.fit = fit;
         }
 
         @Override
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            compiler.visitImage(new Identifier(this.identifier), this.description);
+            compiler.visitImage(new Identifier(this.identifier), this.description, this.fit);
         }
 
         @Override

@@ -79,7 +79,7 @@ public class TextCompiler implements MarkdownCompiler<Text> {
     }
 
     @Override
-    public void visitImage(Identifier image, String description) {
+    public void visitImage(Identifier image, String description, boolean fit) {
         this.builder.append(Text.literal("[" + description + "]").formatted(Formatting.YELLOW));
     }
 

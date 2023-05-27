@@ -20,7 +20,7 @@ public interface MarkdownCompiler<R> {
 
     void visitHorizontalRule();
 
-    void visitImage(Identifier image, String description);
+    void visitImage(Identifier image, String description, boolean fit);
 
     void visitListItem(OptionalInt ordinal);
 

@@ -70,14 +70,17 @@ public class OwoUICompiler implements MarkdownCompiler<ParentComponent> {
     }
 
     @Override
-    public void visitImage(Identifier image, String description) {
-        var textureSize = LavenderClient.getTextureSize(image);
-        if (textureSize == null) textureSize = Size.of(64, 64);
+    public void visitImage(Identifier image, String description, boolean fit) {
+        if (fit) {
+            this.append(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
+                    .child(Components.texture(image, 0, 0, 200, 200, 200, 200).blend(true).tooltip(Text.literal(description)).sizing(Sizing.fixed(100)))
+                    .horizontalAlignment(HorizontalAlignment.CENTER));
+        } else {
+            var textureSize = LavenderClient.getTextureSize(image);
+            if (textureSize == null) textureSize = Size.of(64, 64);
 
-//        this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
-        this.append(Containers.horizontalFlow(Sizing.fill(100), Sizing.content())
-                .child(Components.texture(image, 0, 0, 200, 200, textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)).sizing(Sizing.fixed(100)))
-                .horizontalAlignment(HorizontalAlignment.CENTER));
+            this.append(Components.texture(image, 0, 0, textureSize.width(), textureSize.height(), textureSize.width(), textureSize.height()).blend(true).tooltip(Text.literal(description)));
+        }
     }
 
     @Override
