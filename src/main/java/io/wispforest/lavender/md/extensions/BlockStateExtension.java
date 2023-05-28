@@ -7,6 +7,8 @@ import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.core.HorizontalAlignment;
 import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.command.argument.BlockArgumentParser;
 import net.minecraft.registry.Registries;
@@ -71,7 +73,11 @@ public class BlockStateExtension implements MarkdownExtension {
 
         @Override
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            ((OwoUICompiler) compiler).visitComponent(Components.block(this.state.blockState(), this.state.nbt()).sizing(Sizing.fixed(32)));
+            ((OwoUICompiler) compiler).visitComponent(
+                    Containers.stack(Sizing.fill(100), Sizing.content())
+                            .child(Components.block(this.state.blockState(), this.state.nbt()).sizing(Sizing.fixed(48)))
+                            .horizontalAlignment(HorizontalAlignment.CENTER)
+            );
         }
 
         @Override
