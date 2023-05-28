@@ -1,10 +1,10 @@
 package io.wispforest.lavender.mixin;
 
-import io.wispforest.lavender.pond.LavenderScreenExtension;
 import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.client.AssociatedEntryTooltipComponent;
 import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavender.pond.LavenderScreenExtension;
 import io.wispforest.owo.ui.util.Delta;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -53,12 +53,31 @@ public class ScreenMixin implements LavenderScreenExtension {
                 var associatedEntry = book.entryByAssociatedItem(stack.getItem());
                 if (associatedEntry == null || !associatedEntry.canPlayerView(this.client.player)) continue;
 
+                int bookIndex = -1;
+                for (int i = 0; i < 9; i++) {
+                    if (BookItem.bookOf(this.client.player.getInventory().getStack(i)) == book) {
+                        bookIndex = i;
+                        break;
+                    }
+                }
+
+                if (BookItem.bookOf(this.client.player.getOffHandStack()) == book) {
+                    bookIndex = -69;
+                }
+
+                if (bookIndex == -1) return;
+
                 components.add(new AssociatedEntryTooltipComponent(BookItem.itemOf(book), associatedEntry, entryTriggerProgress));
-                entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, MinecraftClient.getInstance().getLastFrameDuration() * .125);
+                entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, this.client.getLastFrameDuration() * .125);
 
                 if (entryTriggerProgress >= .95) {
                     BookScreen.pushEntry(book, associatedEntry);
-                    MinecraftClient.getInstance().setScreen(new BookScreen(book));
+                    this.client.setScreen(new BookScreen(book));
+
+                    if (bookIndex >= 0) {
+                        this.client.player.getInventory().selectedSlot = bookIndex;
+                    }
+
                     entryTriggerProgress = 0f;
                 }
 
@@ -66,7 +85,7 @@ public class ScreenMixin implements LavenderScreenExtension {
             }
         }
 
-        entryTriggerProgress += Delta.compute(entryTriggerProgress, 0f, MinecraftClient.getInstance().getLastFrameDuration() * .125);
+        entryTriggerProgress += Delta.compute(entryTriggerProgress, 0f, this.client.getLastFrameDuration() * .125);
     }
 
     @Override
