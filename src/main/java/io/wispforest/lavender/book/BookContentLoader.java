@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 
 public class BookContentLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
@@ -117,19 +118,23 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
     private static void forResourceOfBook(Map<String, Map<String, Resource>> resources, Book book, String resourceType, BiConsumer<Identifier, Resource> action) {
         if (!resources.containsKey(book.id().getNamespace())) return;
 
-        var bookPrefix = book.id().getPath() + "/";
-        var langPrefix = bookPrefix + MinecraftClient.getInstance().getLanguageManager().getLanguage() + "/";
+        var targetBook = book.id().getPath();
+        var activeLanguage = MinecraftClient.getInstance().getLanguageManager().getLanguage();
 
         var discoveredResources = new HashMap<Identifier, Resource>();
 
         resources.get(book.id().getNamespace()).forEach((path, resource) -> {
-            if (!path.startsWith(bookPrefix) || path.startsWith(langPrefix)) return;
-            discoveredResources.put(new Identifier(book.id().getNamespace(), path.substring(bookPrefix.length())), resource);
+            var bookResourcePath = getBookResourcePath(path, targetBook, null);
+            if (bookResourcePath == null) return;
+
+            discoveredResources.put(new Identifier(book.id().getNamespace(), bookResourcePath), resource);
         });
 
         resources.get(book.id().getNamespace()).forEach((path, resource) -> {
-            if (!path.startsWith(langPrefix)) return;
-            discoveredResources.put(new Identifier(book.id().getNamespace(), path.substring(langPrefix.length())), resource);
+            var bookResourcePath = getBookResourcePath(path, targetBook, activeLanguage);
+            if (bookResourcePath == null) return;
+
+            discoveredResources.put(new Identifier(book.id().getNamespace(), bookResourcePath), resource);
         });
 
         discoveredResources.forEach((resourceId, resource) -> {
@@ -139,6 +144,28 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 Lavender.LOGGER.warn("Could not load {} '{}'", resourceType, resourceId, e);
             }
         });
+    }
+
+    private static @Nullable String getBookResourcePath(String resourcePath, String bookName, @Nullable String activeLanguage) {
+        String book = null;
+        String language = null;
+
+        if (resourcePath.indexOf('/') != -1) {
+            book = resourcePath.substring(0, resourcePath.indexOf('/'));
+            resourcePath = resourcePath.substring(resourcePath.indexOf('/')+ 1);
+        }
+
+        if (resourcePath.indexOf('/') != -1) {
+            language = resourcePath.substring(0, resourcePath.indexOf('/'));
+            if (MinecraftClient.getInstance().getLanguageManager().getAllLanguages().keySet().contains(language)) {
+                resourcePath = resourcePath.substring(resourcePath.indexOf('/') + 1);
+            } else {
+                language = null;
+            }
+        }
+
+        if (!bookName.equals(book) || !Objects.equals(activeLanguage, language)) return null;
+        return resourcePath;
     }
 
     private static @Nullable MarkdownResource parseMarkdown(Identifier resourceId, Resource resource) {
