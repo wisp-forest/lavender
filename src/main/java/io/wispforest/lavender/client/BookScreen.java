@@ -111,7 +111,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     protected <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name, Map<String, String> parameters) {
         var params = new HashMap<String, String>();
-        params.put("book-texture", (this.book.texture() != null ? this.book.texture() : DEFAULT_BOOK_TEXTURE).toString() );
+        params.put("book-texture", (this.book.texture() != null ? this.book.texture() : DEFAULT_BOOK_TEXTURE).toString());
         params.putAll(parameters);
 
         return model.expandTemplate(expectedComponentClass, name, params);
@@ -127,8 +127,15 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.bookmarkPanel = this.component(FlowLayout.class, "bookmark-panel");
 
         (this.previousButton = this.component(ButtonComponent.class, "previous-button")).onPress(button -> this.turnPage(true));
-        (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> this.navPop());
         (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(button -> this.turnPage(false));
+        (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> {
+            if (Screen.hasShiftDown()) {
+                while (this.navStack.size() > 1) this.navStack.pop();
+                this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+            } else {
+                this.navPop();
+            }
+        });
 
         if (Owo.DEBUG && !this.isOverlay) {
             this.component(FlowLayout.class, "primary-panel").child(
@@ -257,9 +264,13 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     private void turnPage(boolean left) {
         var frame = this.currentNavFrame();
+
+        int previousPage = frame.selectedPage;
         frame.selectedPage = Math.max(0, Math.min(frame.selectedPage + (left ? -2 : 2), frame.pageSupplier.pageCount() - 1)) / 2 * 2;
 
-        this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+        if (frame.selectedPage != previousPage) {
+            this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+        }
     }
 
     public void navPush(PageSupplier supplier) {
@@ -386,7 +397,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
         mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
-        return super.mouseScrolled(mouseX, mouseY, amount);
+
+        if (super.mouseScrolled(mouseX, mouseY, amount)) return true;
+        this.turnPage(amount < 0);
+
+        return true;
     }
 
     @Override

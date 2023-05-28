@@ -40,6 +40,18 @@
   "text.lavender.index_category": "All Entries",
   "text.lavender.index_category.title": "Entries",
 
+  "text.lavender.book.next": [
+    "Next Page\n",
+    {"text": "↑ Scroll Up", "color": "gray"}
+  ],
+  "text.lavender.book.back": [
+    "Go Back\n",
+    {"text": "Shift-click to return home", "color": "gray"}
+  ],
+  "text.lavender.book.previous": [
+    "Previous Page\n",
+    {"text": "↓ Scroll Down", "color": "gray"}
+  ],
   "text.lavender.book.reload": "Reload",
 
   "text.lavender.book.unlock_progress": [

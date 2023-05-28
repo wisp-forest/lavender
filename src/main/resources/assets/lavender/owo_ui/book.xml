@@ -46,6 +46,8 @@
                     </flow-layout>
 
                     <button id="previous-button">
+                        <tooltip-text translate="true">text.lavender.book.previous</tooltip-text>
+
                         <renderer>
                             <texture texture="{{book-texture}}" u="0" v="180" texture-width="512"
                                      texture-height="256"/>
@@ -61,6 +63,8 @@
                     </button>
 
                     <button id="back-button">
+                        <tooltip-text translate="true">text.lavender.book.back</tooltip-text>
+
                         <renderer>
                             <texture texture="{{book-texture}}" u="18" v="180" texture-width="512"
                                      texture-height="256"/>
@@ -76,6 +80,8 @@
                     </button>
 
                     <button id="next-button">
+                        <tooltip-text translate="true">text.lavender.book.next</tooltip-text>
+
                         <renderer>
                             <texture texture="{{book-texture}}" u="36" v="180" texture-width="512"
                                      texture-height="256"/>
