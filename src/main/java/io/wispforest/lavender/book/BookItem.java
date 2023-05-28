@@ -39,24 +39,55 @@ public class BookItem extends Item {
         this.bookId = bookId;
     }
 
+    protected BookItem(Settings settings, @NotNull Identifier bookId) {
+        super(settings);
+        this.bookId = Preconditions.checkNotNull(bookId, "Book-specific book items must have a non-null book ID");
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    protected @NotNull Identifier bookId() {
+        return this.bookId;
+    }
+
+    /**
+     * Shorthand of {@link #registerForBook(Identifier, Identifier)} which
+     * uses {@code bookId} as the item id
+     */
     public static BookItem registerForBook(@NotNull Identifier bookId) {
         return registerForBook(bookId, bookId);
     }
 
+    /**
+     * Create, register and return a book item under {@code itemId} as the canonical
+     * item for the book referred to by the given {@code bookId}
+     */
     public static BookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId) {
-        Preconditions.checkNotNull(bookId, "Book-specific book items must have a non-null book ID");
+        return registerForBook(Registry.register(Registries.ITEM, itemId, new BookItem(bookId)));
+    }
 
-        var item = new BookItem(bookId);
-        Registry.register(Registries.ITEM, itemId, item);
-        BOOK_ITEMS.put(bookId, item);
+    /**
+     * Register and return the given book item as the canonical item
+     * for the book referred to by the item's bookId field
+     */
+    public static BookItem registerForBook(BookItem item) {
+        BOOK_ITEMS.put(item.bookId(), item);
         return item;
     }
 
-    public static Identifier bookIdOf(ItemStack bookStack) {
+    /**
+     * @return The id of the book referred to by the given item stack
+     * (either through static associating of NBT in the case the dynamic book),
+     * or {@code null} if neither a static association nor NBT exist
+     */
+    public static @Nullable Identifier bookIdOf(ItemStack bookStack) {
         if (!(bookStack.getItem() instanceof BookItem book)) return null;
         return book.bookId != null ? book.bookId : bookStack.getOr(BOOK_ID, null);
     }
 
+    /**
+     * Convenience variant of {@link #bookIdOf(ItemStack)} which attempts
+     * looking up the book referred to by the id said method returns
+     */
     public static @Nullable Book bookOf(ItemStack bookStack) {
         var bookId = bookIdOf(bookStack);
         if (bookId == null) return null;
@@ -64,6 +95,10 @@ public class BookItem extends Item {
         return BookLoader.get(bookId);
     }
 
+    /**
+     * @return An item stack representing the given book. If a canonical item
+     * was registered, it is used - otherwise a dynamic book with NBT is created
+     */
     public static ItemStack itemOf(Book book) {
         var bookItem = BOOK_ITEMS.get(book.id());
         if (bookItem != null) {
@@ -73,6 +108,9 @@ public class BookItem extends Item {
         }
     }
 
+    /**
+     * @return A dynamic book with the correct NBT to represent the given book
+     */
     public static ItemStack createDynamic(Book book) {
         var stack = DYNAMIC_BOOK.getDefaultStack();
         stack.put(BOOK_ID, book.id());
