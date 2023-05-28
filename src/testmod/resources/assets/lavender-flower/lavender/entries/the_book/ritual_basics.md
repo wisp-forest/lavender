@@ -31,3 +31,4 @@ wielding a [Conjuring Scepter](^lavender-flower:profound_page#3) of any kind
 ;;;;;
 
 ![Fire Resistance](minecraft:textures/mob_effect/fire_resistance.png)
+<|large-block-preview@lavender-flower:ritual_basics|>

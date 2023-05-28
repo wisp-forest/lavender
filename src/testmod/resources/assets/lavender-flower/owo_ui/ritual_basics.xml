@@ -1,0 +1,22 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.19.4/owo-ui.xsd">
+
+    <templates>
+        <template name="large-block-preview">
+            <stack-layout>
+                <children>
+                    <template name="fit-image-background@lavender:book_components"/>
+                    <block state="conjuring:gem_tinkerer{Items:[{Slot: 0b, id: 'affinity:anthracite_powder', Count: 1b}, {Slot: 1b, id: 'conjuring:haste_gem', Count: 1b}, {Slot: 2b, id: 'conjuring:abundance_gem', Count: 1b}]}">
+                        <sizing>
+                            <vertical method="fixed">100</vertical>
+                            <horizontal method="fixed">100</horizontal>
+                        </sizing>
+                    </block>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+            </stack-layout>
+        </template>
+    </templates>
+</owo-ui>

@@ -75,7 +75,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.processor = new MarkdownProcessor<>(
                 () -> new BookCompiler(this.bookComponentSource),
                 new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
-                new PageBreakExtension(), new OwoUITemplateExtension(), new RecipeExtension(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
+                new PageBreakExtension(), new OwoUITemplateExtension(this.bookComponentSource),
+                new RecipeExtension(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
                 new StructureExtension(this.bookComponentSource), new KeybindExtension()
         );
     }

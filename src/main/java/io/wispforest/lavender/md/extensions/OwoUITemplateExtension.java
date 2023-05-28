@@ -1,8 +1,10 @@
 package io.wispforest.lavender.md.extensions;
 
+import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.md.Lexer;
 import io.wispforest.lavender.md.MarkdownExtension;
 import io.wispforest.lavender.md.Parser;
+import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.compiler.MarkdownCompiler;
 import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.Components;
@@ -11,6 +13,7 @@ import io.wispforest.owo.ui.core.Component;
 import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
+import io.wispforest.owo.ui.parsing.IncompatibleUIModelException;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import net.minecraft.text.Text;
@@ -19,6 +22,13 @@ import net.minecraft.util.Identifier;
 import java.util.HashMap;
 
 public class OwoUITemplateExtension implements MarkdownExtension {
+
+    private final BookCompiler.ComponentSource bookComponentSource;
+
+    public OwoUITemplateExtension(BookCompiler.ComponentSource bookComponentSource) {
+        this.bookComponentSource = bookComponentSource;
+    }
+
     @Override
     public String name() {
         return "owo_ui_templates";
@@ -84,7 +94,7 @@ public class OwoUITemplateExtension implements MarkdownExtension {
         }
     }
 
-    private static class TemplateNode extends Parser.Node {
+    private class TemplateNode extends Parser.Node {
 
         private final Identifier modelId;
         private final String templateName;
@@ -105,8 +115,9 @@ public class OwoUITemplateExtension implements MarkdownExtension {
                     builtParams.put(parameter.split("=")[0], parameter.split("=")[1]);
                 }
 
-                ((OwoUICompiler) compiler).visitComponent(UIModelLoader.get(modelId).expandTemplate(Component.class, this.templateName, builtParams));
-            } catch (UIModelParsingException e) {
+                ((OwoUICompiler) compiler).visitComponent(OwoUITemplateExtension.this.bookComponentSource.template(UIModelLoader.get(modelId), Component.class, this.templateName, builtParams));
+            } catch (UIModelParsingException | IncompatibleUIModelException e) {
+                Lavender.LOGGER.warn("Failed to build owo-ui template markdown element", e);
                 ((OwoUICompiler) compiler).visitComponent(
                         Containers.verticalFlow(Sizing.fill(100), Sizing.content())
                                 .child(Components.label(Text.literal(e.getMessage())).horizontalSizing(Sizing.fill(100)))
