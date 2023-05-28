@@ -7,7 +7,9 @@
 
   "text.lavender.entry_tooltip": [
     {"text": "Hold ", "color": "dark_gray"},
-    {"text": "Alt ", "color": "gold"},
+    {"text": "Alt ", "color": "gold"}
+  ],
+  "text.lavender.entry_tooltip.progress": [
     {"text": "[", "color": "green"},
     {"index": 0, "color": "gray"},
     {"index": 1, "color": "dark_gray"},

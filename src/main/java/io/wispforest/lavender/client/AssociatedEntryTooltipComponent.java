@@ -1,7 +1,6 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.book.Entry;
-import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -27,7 +26,9 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                 .child(Components.label(Text.literal(entry.title()).formatted(Formatting.GRAY)))
-                .child(Components.label(Text.translatable("text.lavender.entry_tooltip", "|".repeat((int) (30 * progress)), "|".repeat((int) Math.ceil(30 * (1 - progress)))))));
+                .child(Components.label(progress >= .05f
+                        ? Text.translatable("text.lavender.entry_tooltip.progress", "|".repeat((int) (30 * progress)), "|".repeat((int) Math.ceil(30 * (1 - progress))))
+                        : Text.translatable("text.lavender.entry_tooltip"))));
 
         this.layout.verticalAlignment(VerticalAlignment.CENTER);
 
