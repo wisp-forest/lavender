@@ -5,8 +5,10 @@ import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.ui.component.LabelComponent;
+import io.wispforest.owo.ui.component.TextureComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
@@ -26,6 +28,8 @@ public class BookCompiler extends OwoUICompiler {
     private final FlowLayout resultContainer = Containers.verticalFlow(Sizing.content(), Sizing.content());
     private final ComponentSource bookComponentSource;
 
+    private boolean addImageBackground = false;
+
     public BookCompiler(ComponentSource bookComponentSource) {
         this.push(Containers.verticalFlow(Sizing.content(), Sizing.content()));
         this.bookComponentSource = bookComponentSource;
@@ -37,6 +41,12 @@ public class BookCompiler extends OwoUICompiler {
     }
 
     @Override
+    public void visitImage(Identifier image, String description, boolean fit) {
+        this.addImageBackground = fit;
+        super.visitImage(image, description, fit);
+    }
+
+    @Override
     public void visitHorizontalRule() {
         this.append(this.bookComponentSource.builtinTemplate(Component.class, "horizontal-rule"));
     }
@@ -45,6 +55,19 @@ public class BookCompiler extends OwoUICompiler {
         this.resultContainer.child(components.peek());
         this.pop();
         this.push(Containers.verticalFlow(Sizing.content(), Sizing.content()));
+    }
+
+    @Override
+    protected void append(Component component) {
+        if (this.addImageBackground) {
+            this.addImageBackground = false;
+            if (component instanceof StackLayout stack) {
+                stack.children().get(0).margins(Insets.of(3));
+                stack.child(0, this.bookComponentSource.builtinTemplate(TextureComponent.class, "fit-image-background"));
+            }
+        }
+
+        super.append(component);
     }
 
     @Override

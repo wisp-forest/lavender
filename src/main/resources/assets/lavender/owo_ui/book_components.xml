@@ -5,9 +5,8 @@
         <template name="horizontal-rule">
             <flow-layout direction="vertical">
                 <children>
-                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="54"
-                             v="183"
-                             region-width="109" region-height="3">
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                             u="54" v="183" region-width="109" region-height="3">
                         <blend>true</blend>
                     </texture>
                 </children>
@@ -17,6 +16,13 @@
                     <horizontal method="fill">100</horizontal>
                 </sizing>
             </flow-layout>
+        </template>
+
+        <template name="fit-image-background">
+            <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                     u="385" v="0" region-width="106" region-height="106">
+                <blend>true</blend>
+            </texture>
         </template>
 
         <template name="centered-button">
