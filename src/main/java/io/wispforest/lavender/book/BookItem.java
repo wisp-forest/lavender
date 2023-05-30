@@ -28,14 +28,14 @@ import java.util.Map;
 public class BookItem extends Item {
 
     public static final NbtKey<Identifier> BOOK_ID = new NbtKey<>("BookId", NbtKey.Type.IDENTIFIER);
-    public static final BookItem DYNAMIC_BOOK = new BookItem(null);
+    public static final BookItem DYNAMIC_BOOK = new BookItem(null, new Settings().maxCount(1));
 
     private static final Map<Identifier, BookItem> BOOK_ITEMS = new HashMap<>();
 
     private final @Nullable Identifier bookId;
 
-    private BookItem(@Nullable Identifier bookId) {
-        super(new Item.Settings().maxCount(1));
+    private BookItem(@Nullable Identifier bookId, Settings settings) {
+        super(settings);
         this.bookId = bookId;
     }
 
@@ -50,19 +50,19 @@ public class BookItem extends Item {
     }
 
     /**
-     * Shorthand of {@link #registerForBook(Identifier, Identifier)} which
+     * Shorthand of {@link #registerForBook(Identifier, Identifier, net.minecraft.item.Item.Settings)} which
      * uses {@code bookId} as the item id
      */
-    public static BookItem registerForBook(@NotNull Identifier bookId) {
-        return registerForBook(bookId, bookId);
+    public static BookItem registerForBook(@NotNull Identifier bookId, Settings settings) {
+        return registerForBook(bookId, bookId, settings);
     }
 
     /**
      * Create, register and return a book item under {@code itemId} as the canonical
      * item for the book referred to by the given {@code bookId}
      */
-    public static BookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId) {
-        return registerForBook(Registry.register(Registries.ITEM, itemId, new BookItem(bookId)));
+    public static BookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId, Settings settings) {
+        return registerForBook(Registry.register(Registries.ITEM, itemId, new BookItem(bookId, settings)));
     }
 
     /**
