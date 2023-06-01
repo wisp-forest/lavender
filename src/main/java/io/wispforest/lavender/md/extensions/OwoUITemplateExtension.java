@@ -1,5 +1,7 @@
 package io.wispforest.lavender.md.extensions;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.md.Lexer;
 import io.wispforest.lavender.md.MarkdownExtension;
@@ -109,14 +111,18 @@ public class OwoUITemplateExtension implements MarkdownExtension {
         @Override
         protected void visitStart(MarkdownCompiler<?> compiler) {
             try {
+                var paramReader = new StringReader(params);
                 var builtParams = new HashMap<String, String>();
-                for (var parameter : this.params.split(",")) {
-                    if (parameter.split("=").length != 2) continue;
-                    builtParams.put(parameter.split("=")[0], parameter.split("=")[1]);
+
+                while (paramReader.canRead()) {
+                    var paramName = paramReader.readStringUntil('=');
+                    String paramValue = readUntil(paramReader, ',');
+
+                    builtParams.put(paramName, paramValue);
                 }
 
                 ((OwoUICompiler) compiler).visitComponent(OwoUITemplateExtension.this.bookComponentSource.template(UIModelLoader.get(modelId), Component.class, this.templateName, builtParams));
-            } catch (UIModelParsingException | IncompatibleUIModelException e) {
+            } catch (UIModelParsingException | IncompatibleUIModelException | CommandSyntaxException e) {
                 Lavender.LOGGER.warn("Failed to build owo-ui template markdown element", e);
                 ((OwoUICompiler) compiler).visitComponent(
                         Containers.verticalFlow(Sizing.fill(100), Sizing.content())
@@ -129,5 +135,31 @@ public class OwoUITemplateExtension implements MarkdownExtension {
 
         @Override
         protected void visitEnd(MarkdownCompiler<?> compiler) {}
+    }
+
+    // TODO replace with properly improved StringReader implementation
+    private static String readUntil(StringReader reader, char terminator) throws CommandSyntaxException {
+        final StringBuilder result = new StringBuilder();
+        boolean escaped = false;
+        while (reader.canRead()) {
+            final char c = reader.read();
+            if (escaped) {
+                if (c == terminator || c == '\\') {
+                    result.append(c);
+                    escaped = false;
+                } else {
+                    reader.setCursor(reader.getCursor() - 1);
+                    throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.readerInvalidEscape().createWithContext(reader, String.valueOf(c));
+                }
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == terminator) {
+                return result.toString();
+            } else {
+                result.append(c);
+            }
+        }
+
+        return result.toString();
     }
 }

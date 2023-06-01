@@ -2,6 +2,70 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.19.4/owo-ui.xsd">
 
     <templates>
+        <template name="page-title">
+            <flow-layout direction="vertical">
+                <children>
+                    <label>
+                        <text>{{title}}</text>
+                        <color>dark-gray</color>
+
+                        <horizontal-text-alignment>center</horizontal-text-alignment>
+
+                        <margins>
+                            <top>2</top>
+                        </margins>
+                        <sizing>
+                            <horizontal method="fill">100</horizontal>
+                        </sizing>
+                    </label>
+
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256" u="54"
+                             v="180" region-width="109" region-height="3">
+                        <blend>true</blend>
+                        <margins>
+                            <top>5</top>
+                            <bottom>7</bottom>
+                        </margins>
+                    </texture>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </flow-layout>
+        </template>
+
+        <template name="item-spotlight">
+            <stack-layout>
+                <children>
+                    <texture texture="{{book-texture}}" texture-width="512" texture-height="256"
+                             u="386" v="109" region-width="96" region-height="24">
+                        <blend>true</blend>
+                        <margins>
+                            <top>5</top>
+                            <bottom>7</bottom>
+                        </margins>
+                    </texture>
+
+                    <item>
+                        <stack>{{item}}</stack>
+                        <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                        <margins>
+                            <bottom>5</bottom>
+                        </margins>
+                    </item>
+                </children>
+
+                <horizontal-alignment>center</horizontal-alignment>
+                <vertical-alignment>center</vertical-alignment>
+
+                <sizing>
+                    <horizontal method="fill">100</horizontal>
+                </sizing>
+            </stack-layout>
+        </template>
+
         <template name="horizontal-rule">
             <flow-layout direction="vertical">
                 <children>
