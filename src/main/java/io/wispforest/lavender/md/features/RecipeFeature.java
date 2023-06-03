@@ -1,12 +1,12 @@
-package io.wispforest.lavender.md.extensions;
+package io.wispforest.lavender.md.features;
 
-import io.wispforest.lavender.md.Lexer;
-import io.wispforest.lavender.md.MarkdownExtension;
-import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.md.compiler.MarkdownCompiler;
-import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.lavender.pond.SmithingRecipeAccessor;
+import io.wispforest.lavendermd.Lexer;
+import io.wispforest.lavendermd.MarkdownFeature;
+import io.wispforest.lavendermd.Parser;
+import io.wispforest.lavendermd.compiler.MarkdownCompiler;
+import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.container.Containers;
@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RecipeExtension implements MarkdownExtension {
+public class RecipeFeature implements MarkdownFeature {
 
     private final BookCompiler.ComponentSource bookComponentSource;
     private final Map<RecipeType<?>, RecipeHandler<?>> handlers;
@@ -82,7 +82,7 @@ public class RecipeExtension implements MarkdownExtension {
         return recipeComponent;
     };
 
-    public RecipeExtension(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipeHandler<?>> handlers) {
+    public RecipeFeature(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipeHandler<?>> handlers) {
         this.bookComponentSource = bookComponentSource;
 
         this.handlers = new HashMap<>(handlers != null ? handlers : Map.of());
@@ -107,11 +107,11 @@ public class RecipeExtension implements MarkdownExtension {
 
     @Override
     public void registerTokens(TokenRegistrar registrar) {
-        registrar.registerToken((lexer, reader, tokens) -> {
-            if (!lexer.expectString(reader, "<recipe;")) return false;
+        registrar.registerToken((nibbler, tokens) -> {
+            if (!nibbler.tryConsume("<recipe;")) return false;
 
-            var recipeIdString = lexer.readTextUntil(reader, c -> c == '>');
-            if (!reader.canRead() || reader.read() != '>') return false;
+            var recipeIdString = nibbler.consumeUntil('>');
+            if (recipeIdString == null) return false;
 
             var recipeId = Identifier.tryParse(recipeIdString);
             if (recipeId == null) return false;
@@ -153,9 +153,9 @@ public class RecipeExtension implements MarkdownExtension {
         @Override
         @SuppressWarnings({"rawtypes", "unchecked"})
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var handler = (RecipeHandler) RecipeExtension.this.handlers.get(this.recipe.getType());
+            var handler = (RecipeHandler) RecipeFeature.this.handlers.get(this.recipe.getType());
             if (handler != null) {
-                ((OwoUICompiler) compiler).visitComponent(handler.buildRecipePreview(RecipeExtension.this.bookComponentSource, this.recipe));
+                ((OwoUICompiler) compiler).visitComponent(handler.buildRecipePreview(RecipeFeature.this.bookComponentSource, this.recipe));
             } else {
                 ((OwoUICompiler) compiler).visitComponent(
                         Containers.verticalFlow(Sizing.fill(100), Sizing.content())
@@ -167,7 +167,8 @@ public class RecipeExtension implements MarkdownExtension {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {}
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+        }
     }
 
     @FunctionalInterface

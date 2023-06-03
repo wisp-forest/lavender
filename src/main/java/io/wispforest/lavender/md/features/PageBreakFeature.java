@@ -1,12 +1,12 @@
-package io.wispforest.lavender.md.extensions;
+package io.wispforest.lavender.md.features;
 
-import io.wispforest.lavender.md.Lexer;
-import io.wispforest.lavender.md.MarkdownExtension;
-import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.md.compiler.MarkdownCompiler;
+import io.wispforest.lavendermd.Lexer;
+import io.wispforest.lavendermd.MarkdownFeature;
+import io.wispforest.lavendermd.Parser;
+import io.wispforest.lavendermd.compiler.MarkdownCompiler;
 
-public class PageBreakExtension implements MarkdownExtension {
+public class PageBreakFeature implements MarkdownFeature {
 
     @Override
     public String name() {
@@ -20,9 +20,9 @@ public class PageBreakExtension implements MarkdownExtension {
 
     @Override
     public void registerTokens(TokenRegistrar registrar) {
-        registrar.registerToken((lexer, reader, tokens) -> {
-            if (reader.getCursor() - 2 < 0 || reader.peek(-1) != '\n' || reader.peek(-2) != '\n') return false;
-            if (!lexer.expectString(reader, ";;;;;\n\n")) return false;
+        registrar.registerToken((nibbler, tokens) -> {
+            if (!nibbler.expect(-1, '\n') || !nibbler.expect(-2, '\n')) return false;
+            if (!nibbler.tryConsume(";;;;;\n\n")) return false;
 
             tokens.add(new PageBreakToken());
             return true;

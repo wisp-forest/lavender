@@ -2,7 +2,6 @@ package io.wispforest.lavender;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
@@ -10,15 +9,12 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookItem;
 import io.wispforest.lavender.book.BookLoader;
-import io.wispforest.lavender.client.EditMdScreen;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
-import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.structure.LavenderStructures;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.IdentifierArgumentType;
@@ -69,16 +65,6 @@ public class LavenderCommands {
                 CommandSource.suggestMatching(LavenderStructures.loadedStructures().stream().map(Identifier::toString), builder);
 
         public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess access) {
-            dispatcher.register(ClientCommandManager.literal("parse-md").then(ClientCommandManager.argument("md", StringArgumentType.greedyString()).executes(context -> {
-                context.getSource().sendFeedback(MarkdownProcessor.TEXT.process(StringArgumentType.getString(context, "md")));
-                return 0;
-            })));
-
-            dispatcher.register(ClientCommandManager.literal("edit-md").executes(context -> {
-                MinecraftClient.getInstance().setScreen(new EditMdScreen());
-                return 0;
-            }));
-
             dispatcher.register(ClientCommandManager.literal("structure-overlay")
                     .then(ClientCommandManager.literal("clear-all").executes(context -> {
                         StructureOverlayRenderer.clearOverlays();

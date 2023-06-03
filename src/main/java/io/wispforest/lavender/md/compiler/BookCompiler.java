@@ -4,6 +4,8 @@ import com.google.common.primitives.Ints;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavendermd.compiler.OwoUICompiler;
+import io.wispforest.lavendermd.feature.OwoUITemplateFeature;
 import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.component.TextureComponent;
 import io.wispforest.owo.ui.container.Containers;
@@ -153,12 +155,18 @@ public class BookCompiler extends OwoUICompiler {
             return style;
         }
 
-        private record LinkTarget(Entry entry, int page) {}
+        private record LinkTarget(Entry entry, int page) {
+        }
     }
 
     @FunctionalInterface
-    public interface ComponentSource {
+    public interface ComponentSource extends OwoUITemplateFeature.TemplateProvider {
         <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name, Map<String, String> params);
+
+        @Override
+        default <C extends Component> C template(Identifier model, Class<C> expectedClass, String templateName, Map<String, String> templateParams) {
+            return this.template(UIModelLoader.get(model), expectedClass, templateName, templateParams);
+        }
 
         default <C extends Component> C builtinTemplate(Class<C> expectedComponentClass, String name, Map<String, String> params) {
             return this.template(UIModelLoader.get(Lavender.id("book_components")), expectedComponentClass, name, params);

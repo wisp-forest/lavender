@@ -1,15 +1,15 @@
-package io.wispforest.lavender.md.extensions;
+package io.wispforest.lavender.md.features;
 
 import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
-import io.wispforest.lavender.md.Lexer;
-import io.wispforest.lavender.md.MarkdownExtension;
-import io.wispforest.lavender.md.Parser;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.md.compiler.MarkdownCompiler;
-import io.wispforest.lavender.md.compiler.OwoUICompiler;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureTemplate;
+import io.wispforest.lavendermd.Lexer;
+import io.wispforest.lavendermd.MarkdownFeature;
+import io.wispforest.lavendermd.Parser;
+import io.wispforest.lavendermd.compiler.MarkdownCompiler;
+import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.owo.ui.component.SlimSliderComponent;
 import io.wispforest.owo.ui.core.ParentComponent;
 import net.minecraft.text.Text;
@@ -17,11 +17,11 @@ import net.minecraft.util.Identifier;
 
 import java.util.Map;
 
-public class StructureExtension implements MarkdownExtension {
+public class StructureFeature implements MarkdownFeature {
 
     private final BookCompiler.ComponentSource bookComponentSource;
 
-    public StructureExtension(BookCompiler.ComponentSource bookComponentSource) {
+    public StructureFeature(BookCompiler.ComponentSource bookComponentSource) {
         this.bookComponentSource = bookComponentSource;
     }
 
@@ -37,11 +37,11 @@ public class StructureExtension implements MarkdownExtension {
 
     @Override
     public void registerTokens(TokenRegistrar registrar) {
-        registrar.registerToken((lexer, reader, tokens) -> {
-            if (!lexer.expectString(reader, "<structure;")) return false;
+        registrar.registerToken((nibbler, tokens) -> {
+            if (!nibbler.tryConsume("<structure;")) return false;
 
-            var structureIdString = lexer.readTextUntil(reader, c -> c == '>');
-            if (!reader.canRead() || reader.read() != '>') return false;
+            var structureIdString = nibbler.consumeUntil('>');
+            if (structureIdString == null) return false;
 
             var structureId = Identifier.tryParse(structureIdString);
             if (structureId == null) return false;
@@ -83,7 +83,7 @@ public class StructureExtension implements MarkdownExtension {
         @Override
         @SuppressWarnings("DataFlowIssue")
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var structureComponent = StructureExtension.this.bookComponentSource.builtinTemplate(
+            var structureComponent = StructureFeature.this.bookComponentSource.builtinTemplate(
                     ParentComponent.class,
                     this.structure.ySize > 1 ? "structure-preview-with-layers" : "structure-preview",
                     Map.of("structure", this.structure.id.toString())
@@ -108,6 +108,7 @@ public class StructureExtension implements MarkdownExtension {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {}
+        protected void visitEnd(MarkdownCompiler<?> compiler) {
+        }
     }
 }

@@ -53,6 +53,9 @@ dependencies {
     modLocalRuntime "me.shedaniel:RoughlyEnoughItems-fabric:${project.rei_version}"
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${project.rei_version}"
 
+    modImplementation "io.wispforest.lavender-md:core:${project.lavender_md_version}"
+    modImplementation "io.wispforest.lavender-md:owo-ui:${project.lavender_md_version}"
+
     modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
 
     // --- testmod ---

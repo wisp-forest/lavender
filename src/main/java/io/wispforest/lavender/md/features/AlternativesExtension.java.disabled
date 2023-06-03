@@ -1,0 +1,66 @@
+package io.wispforest.lavender.md.features;
+
+import io.wispforest.lavendermd.Lexer;
+import io.wispforest.lavendermd.compiler.MarkdownCompiler;
+import io.wispforest.lavendermd.compiler.OwoUICompiler;
+
+public class AlternativesExtension implements MarkdownExtension {
+    @Override
+    public String name() {
+        return "alternatives";
+    }
+
+    @Override
+    public boolean supportsCompiler(MarkdownCompiler<?> compiler) {
+        return compiler instanceof OwoUICompiler;
+    }
+
+    @Override
+    public void registerTokens(TokenRegistrar registrar) {
+        registrar.registerToken((lexer, reader, tokens) -> {
+            if (!lexer.expectString(reader, "<alternatives>")) return false;
+
+            tokens.add(new OpenAlternativesToken());
+            return true;
+        }, '<');
+
+        registrar.registerToken((lexer, reader, tokens) -> {
+            if (!lexer.expectString(reader, "</>")) return false;
+
+            tokens.add(new NextAlternativeToken());
+            return true;
+        }, '<');
+
+        registrar.registerToken((lexer, reader, tokens) -> {
+            if (!lexer.expectString(reader, "</alternatives>")) return false;
+
+            tokens.add(new CloseAlternativesToken());
+            return true;
+        }, '<');
+    }
+
+    @Override
+    public void registerNodes(NodeRegistrar registrar) {
+//        registrar.registerNode((parser, trigger, tokens) -> {
+//
+//        });
+    }
+
+    private static class OpenAlternativesToken extends Lexer.Token {
+        public OpenAlternativesToken() {
+            super("<alternatives>");
+        }
+    }
+
+    private static class NextAlternativeToken extends Lexer.Token {
+        public NextAlternativeToken() {
+            super("</>");
+        }
+    }
+
+    private static class CloseAlternativesToken extends Lexer.Token {
+        public CloseAlternativesToken() {
+            super("</alternatives>");
+        }
+    }
+}

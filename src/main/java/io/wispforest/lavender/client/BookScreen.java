@@ -4,9 +4,12 @@ import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
-import io.wispforest.lavender.md.MarkdownProcessor;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.md.extensions.*;
+import io.wispforest.lavender.md.features.PageBreakFeature;
+import io.wispforest.lavender.md.features.RecipeFeature;
+import io.wispforest.lavender.md.features.StructureFeature;
+import io.wispforest.lavendermd.MarkdownProcessor;
+import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.Owo;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.*;
@@ -43,7 +46,7 @@ import java.util.function.Function;
 public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
     private static final Identifier DEFAULT_BOOK_TEXTURE = Lavender.id("textures/gui/brown_book.png");
-    private static final Map<Identifier, Map<RecipeType<?>, RecipeExtension.RecipeHandler<?>>> RECIPE_HANDLERS = new HashMap<>();
+    private static final Map<Identifier, Map<RecipeType<?>, RecipeFeature.RecipeHandler<?>>> RECIPE_HANDLERS = new HashMap<>();
 
     private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
@@ -72,13 +75,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         this.book = book;
         this.isOverlay = isOverlay;
 
-        this.processor = new MarkdownProcessor<>(
-                () -> new BookCompiler(this.bookComponentSource),
-                new BlockStateExtension(), new ItemStackExtension(), new EntityExtension(),
-                new PageBreakExtension(), new OwoUITemplateExtension(this.bookComponentSource),
-                new RecipeExtension(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
-                new StructureExtension(this.bookComponentSource), new KeybindExtension()
-        );
+        this.processor = MarkdownProcessor.richText(0)
+                .copyWith(() -> new BookCompiler(this.bookComponentSource))
+                .copyWith(
+                        new ImageFeature(), new BlockStateFeature(), new ItemStackFeature(), new EntityFeature(),
+                        new PageBreakFeature(), new OwoUITemplateFeature(this.bookComponentSource),
+                        new RecipeFeature(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
+                        new StructureFeature(this.bookComponentSource), new KeybindFeature()
+                );
     }
 
     public BookScreen(Book book) {
@@ -434,7 +438,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         getNavTrail(book).add(0, new NavFrame.Replicator(screen -> new EntryPageSupplier(screen, entry), 0));
     }
 
-    public static <R extends Recipe<?>> void registerRecipeHandler(Identifier bookId, RecipeType<R> recipeType, RecipeExtension.RecipeHandler<R> handler) {
+    public static <R extends Recipe<?>> void registerRecipeHandler(Identifier bookId, RecipeType<R> recipeType, RecipeFeature.RecipeHandler<R> handler) {
         RECIPE_HANDLERS.computeIfAbsent(bookId, $ -> new HashMap<>()).put(recipeType, handler);
     }
 
