@@ -24,6 +24,13 @@ loom {
             name "Testmod Client"
             source sourceSets.testmod
         }
+
+        testmodServer {
+            server()
+            ideConfigGenerated true
+            name "Testmod Server"
+            source sourceSets.testmod
+        }
     }
 }
 

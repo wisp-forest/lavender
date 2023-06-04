@@ -5,6 +5,8 @@ import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookScreen;
 import io.wispforest.owo.nbt.NbtKey;
 import io.wispforest.owo.ops.TextOps;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
@@ -131,9 +133,14 @@ public class BookItem extends Item {
         }
 
         if (!world.isClient) return TypedActionResult.success(playerStack);
-        MinecraftClient.getInstance().setScreen(new BookScreen(book));
+        openBookScreen(book);
 
         return TypedActionResult.success(playerStack);
+    }
+
+    @Environment(EnvType.CLIENT)
+    private static void openBookScreen(Book book) {
+        MinecraftClient.getInstance().setScreen(new BookScreen(book));
     }
 
     @Override
