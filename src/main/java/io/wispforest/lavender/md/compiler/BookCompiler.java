@@ -14,7 +14,6 @@ import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
-import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.*;
 import net.minecraft.util.Identifier;
@@ -103,7 +102,7 @@ public class BookCompiler extends OwoUICompiler {
                         return false;
                     }
                 } else {
-                    return Drawer.utilityScreen().handleTextClick(style);
+                    return OwoUIDrawContext.utilityScreen().handleTextClick(style);
                 }
             });
         }

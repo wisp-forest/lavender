@@ -6,14 +6,22 @@ import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL30C;
+
+import java.lang.ref.WeakReference;
 
 public class AssociatedEntryTooltipComponent implements TooltipComponent {
+
+    public static @Nullable WeakReference<ItemStack> tooltipStack = null;
 
     private final FlowLayout layout;
 
@@ -37,9 +45,15 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
     }
 
     @Override
-    public void drawItems(TextRenderer textRenderer, int x, int y, MatrixStack matrices, ItemRenderer itemRenderer) {
+    public void drawItems(TextRenderer textRenderer, int x, int y, DrawContext context) {
+        context = OwoUIDrawContext.of(context);
+        context.getMatrices().push();
+        context.getMatrices().translate(0, 0, 1000);
+
         this.layout.moveTo(x, y);
-        this.layout.draw(matrices, 0, 0, 0, 0);
+        this.layout.draw((OwoUIDrawContext) context, 0, 0, 0, 0);
+
+        context.getMatrices().pop();
     }
 
     @Override

@@ -4,13 +4,15 @@ import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
-import io.wispforest.owo.ui.util.Drawer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.gl.SimpleFramebuffer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Arm;
 import net.minecraft.util.math.RotationAxis;
+import org.joml.Matrix4f;
 
 import java.util.function.Supplier;
 
@@ -67,7 +69,7 @@ public class OffhandBookRenderer {
         framebuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
         framebuffer.beginWrite(false);
 
-        screen.render(new MatrixStack(), -69, -69, 0);
+        screen.render(new DrawContext(client, client.getBufferBuilders().getEntityVertexConsumers()), -69, -69, 0);
         RenderSystem.disableDepthTest();
 
         client.getFramebuffer().beginWrite(false);
@@ -84,13 +86,22 @@ public class OffhandBookRenderer {
         matrices.scale(1.3f * (framebuffer.textureWidth / (float) framebuffer.textureHeight), 1.35f, 1.35f);
         matrices.translate(-.5f, -.4f, -.5f);
 
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderTexture(0, framebuffer.getColorAttachment());
-        Drawer.drawTexture(matrices, 0, 1, 1, -1, 0, framebuffer.textureHeight, framebuffer.textureWidth, -framebuffer.textureHeight, framebuffer.textureWidth, framebuffer.textureHeight);
+
+        var matrix = matrices.peek().getPositionMatrix();
+        var buffer = Tessellator.getInstance().getBuffer();
+        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+        buffer.vertex(matrix, 0, 1, 0).texture(0, 1).next();
+        buffer.vertex(matrix, 0, 0, 0).texture(0, 0).next();
+        buffer.vertex(matrix, 1, 0, 0).texture(1, 0).next();
+        buffer.vertex(matrix, 1, 1, 0).texture(1, 1).next();
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
 
         matrices.pop();
     }
 
-    public static void endFrame(){
+    public static void endFrame() {
         if (cacheExpired) cachedScreen = null;
     }
 }

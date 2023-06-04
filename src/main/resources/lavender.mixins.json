@@ -5,13 +5,13 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "ClientAdvancementManagerAccessor",
-    "access.LegacySmithingRecipeAccessor",
     "LifecycledResourceManagerMixin",
     "SimpleResourceReloadMixin",
     "access.SmithingTransformRecipeAccessor",
     "access.SmithingTrimRecipeAccessor"
   ],
   "client": [
+    "DrawContextMixin",
     "CreativeInventoryScreenMixin",
     "HeldItemRendererMixin",
     "MinecraftClientMixin",

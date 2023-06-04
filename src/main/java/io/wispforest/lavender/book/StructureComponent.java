@@ -5,6 +5,7 @@ import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.CursorStyle;
+import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
@@ -29,13 +30,15 @@ public class StructureComponent extends BaseComponent {
     }
 
     @Override
-    public void draw(MatrixStack matrices, int mouseX, int mouseY, float partialTicks, float delta) {
+    public void draw(OwoUIDrawContext context, int mouseX, int mouseY, float partialTicks, float delta) {
         var client = MinecraftClient.getInstance();
         var entityBuffers = client.getBufferBuilders().getEntityVertexConsumers();
 
         float scale = Math.min(this.width, this.height);
         scale /= Math.max(structure.xSize, Math.max(structure.ySize, structure.zSize));
         scale /= 1.625f;
+
+        var matrices = context.getMatrices();
 
         matrices.push();
         matrices.translate(this.x + this.width / 2f, this.y + this.height / 2f, 100);
@@ -67,7 +70,7 @@ public class StructureComponent extends BaseComponent {
         DiffuseLighting.enableGuiDepthLighting();
 
         if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
-            client.textRenderer.draw(matrices, Text.translatable("text.lavender.structure_component.active_overlay_hint"), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0);
+            context.drawText(client.textRenderer, Text.translatable("text.lavender.structure_component.active_overlay_hint"), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0, false);
             this.tooltip(Text.translatable("text.lavender.structure_component.hide_hint"));
         } else {
             this.tooltip(Text.translatable("text.lavender.structure_component.place_hint"));

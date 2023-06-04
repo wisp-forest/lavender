@@ -4,7 +4,7 @@ plugins {
     id 'io.github.juuxel.loom-quiltflower' version '1.7.3'
 }
 
-version = project.mod_version
+version = "${project.mod_version}+${project.minecraft_base_version}"
 group = project.maven_group
 
 sourceSets {

@@ -2,6 +2,7 @@ package io.wispforest.lavender.client;
 
 import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.VertexSorter;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.compiler.BookCompiler;
@@ -22,10 +23,10 @@ import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.sound.SoundEvent;
@@ -308,7 +309,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
     }
 
     @Override
-    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
         mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
 
@@ -322,10 +323,11 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 this.window.getFramebufferHeight() / (float) this.scaleFactor,
                 0,
                 1000,
-                3000
-        ));
+                21000
+        ), VertexSorter.BY_Z);
 
-        super.render(matrices, mouseX, mouseY, delta);
+        super.render(context, mouseX, mouseY, delta);
+        context.draw();
 
         RenderSystem.restoreProjectionMatrix();
         this.window.setScaleFactor(gameScale);
