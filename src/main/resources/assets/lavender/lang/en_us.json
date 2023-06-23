@@ -42,6 +42,8 @@
   "text.lavender.index_category": "All Entries",
   "text.lavender.index_category.title": "Entries",
 
+  "text.lavender.book.click_to_open": {"text": "Click to open: ", "color": "dark_gray"},
+
   "text.lavender.book.next": [
     "Next Page\n",
     {"text": "↑ Scroll Up", "color": "gray"}

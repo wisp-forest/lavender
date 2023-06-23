@@ -12,6 +12,7 @@ import io.wispforest.lavender.md.features.StructureFeature;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.Owo;
+import io.wispforest.owo.ops.TextOps;
 import io.wispforest.owo.ui.base.BaseUIModelScreen;
 import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
@@ -25,6 +26,7 @@ import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.Window;
 import net.minecraft.recipe.Recipe;
@@ -486,6 +488,25 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             component.forEachDescendant(descendant -> {
                 if (descendant instanceof BookCompiler.BookLabelComponent label) {
                     label.setOwner(this.context);
+                }
+
+                if (descendant instanceof ItemComponent item) {
+                    var entry = this.context.book.entryByAssociatedItem(item.stack().getItem());
+                    if (entry == null) return;
+
+                    var newTooltip = new ArrayList<>(item.tooltip());
+                    newTooltip.add(TooltipComponent.of(Text.empty().asOrderedText()));
+                    newTooltip.add(TooltipComponent.of(Text.translatable("text.lavender.book.click_to_open").asOrderedText()));
+                    newTooltip.add(TooltipComponent.of(TextOps.withFormatting(entry.title(), Formatting.GRAY).asOrderedText()));
+                    item.tooltip(newTooltip);
+
+                    item.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                        this.context.navPush(new EntryPageSupplier(this.context, entry));
+
+                        UISounds.playInteractionSound();
+                        return true;
+                    });
                 }
             });
 
