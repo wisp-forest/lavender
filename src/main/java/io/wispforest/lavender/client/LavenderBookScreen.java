@@ -46,14 +46,14 @@ import org.lwjgl.glfw.GLFW;
 import java.util.*;
 import java.util.function.Function;
 
-public class BookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
+public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
     private static final Identifier DEFAULT_BOOK_TEXTURE = Lavender.id("textures/gui/brown_book.png");
     private static final Map<Identifier, Map<RecipeType<?>, RecipeFeature.RecipeHandler<?>>> RECIPE_HANDLERS = new HashMap<>();
 
     private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
-    private final BookCompiler.ComponentSource bookComponentSource = BookScreen.this::template;
+    private final BookCompiler.ComponentSource bookComponentSource = LavenderBookScreen.this::template;
 
     public final Book book;
     public final boolean isOverlay;
@@ -73,7 +73,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     private final Deque<NavFrame> navStack = new ArrayDeque<>();
 
-    public BookScreen(Book book, boolean isOverlay) {
+    public LavenderBookScreen(Book book, boolean isOverlay) {
         super(FlowLayout.class, Lavender.id("book"));
         this.book = book;
         this.isOverlay = isOverlay;
@@ -88,7 +88,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                 );
     }
 
-    public BookScreen(Book book) {
+    public LavenderBookScreen(Book book) {
         this(book, false);
     }
 
@@ -152,7 +152,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
                         var newBook = BookLoader.get(this.book.id());
                         if (newBook != null) {
-                            this.client.setScreen(new BookScreen(newBook));
+                            this.client.setScreen(new LavenderBookScreen(newBook));
                         } else {
                             this.client.setScreen(null);
                         }
@@ -448,10 +448,10 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     public static abstract class PageSupplier {
 
-        protected final BookScreen context;
+        protected final LavenderBookScreen context;
         protected final List<Component> pages = new ArrayList<>();
 
-        protected PageSupplier(BookScreen context) {
+        protected PageSupplier(LavenderBookScreen context) {
             this.context = context;
         }
 
@@ -469,7 +469,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         abstract boolean canMerge(PageSupplier other);
 
-        abstract Function<BookScreen, @Nullable PageSupplier> replicator();
+        abstract Function<LavenderBookScreen, @Nullable PageSupplier> replicator();
 
         // --- prebuilt utility ---
 
@@ -583,7 +583,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
     public static class LandingPageSupplier extends PageSupplier {
 
-        public LandingPageSupplier(BookScreen context) {
+        public LandingPageSupplier(LavenderBookScreen context) {
             super(context);
 
             var book = this.context.book;
@@ -643,7 +643,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
                     }
                 });
 
-                categoryContainer.child(Components.item(BookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
+                categoryContainer.child(Components.item(LavenderBookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
                     categoryButton
                             .tooltip(Text.translatable("text.lavender.index_category"))
                             .margins(Insets.of(4))
@@ -686,14 +686,14 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
-        public Function<BookScreen, @Nullable PageSupplier> replicator() {
+        public Function<LavenderBookScreen, @Nullable PageSupplier> replicator() {
             return LandingPageSupplier::new;
         }
     }
 
     public static class IndexPageSupplier extends PageSupplier {
 
-        public IndexPageSupplier(BookScreen context) {
+        public IndexPageSupplier(LavenderBookScreen context) {
             super(context);
 
             var entries = this.buildEntryIndex(this.context.book.entries(), 10);
@@ -712,7 +712,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
-        Function<BookScreen, @Nullable PageSupplier> replicator() {
+        Function<LavenderBookScreen, @Nullable PageSupplier> replicator() {
             return IndexPageSupplier::new;
         }
     }
@@ -721,7 +721,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         private static String editorTextCache = "";
 
-        protected EditorPageSupplier(BookScreen context) {
+        protected EditorPageSupplier(LavenderBookScreen context) {
             super(context);
             var editorComponent = Components.textArea(Sizing.fill(100), Sizing.fill(100)).<TextAreaComponent>configure(editor -> {
                 editor.onChanged().subscribe(value -> {
@@ -772,7 +772,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
-        Function<BookScreen, @Nullable PageSupplier> replicator() {
+        Function<LavenderBookScreen, @Nullable PageSupplier> replicator() {
             return EditorPageSupplier::new;
         }
     }
@@ -781,7 +781,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         private final Category category;
 
-        public CategoryPageSupplier(BookScreen context, Category category) {
+        public CategoryPageSupplier(LavenderBookScreen context, Category category) {
             super(context);
             this.category = category;
 
@@ -840,7 +840,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
-        public Function<BookScreen, @Nullable PageSupplier> replicator() {
+        public Function<LavenderBookScreen, @Nullable PageSupplier> replicator() {
             var categoryId = this.category.id();
             return context -> {
                 var category = context.book.categoryById(categoryId);
@@ -858,7 +858,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
 
         private final Entry entry;
 
-        public EntryPageSupplier(BookScreen context, Entry entry) {
+        public EntryPageSupplier(LavenderBookScreen context, Entry entry) {
             super(context);
             this.entry = entry;
 
@@ -884,7 +884,7 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
         }
 
         @Override
-        public Function<BookScreen, @Nullable PageSupplier> replicator() {
+        public Function<LavenderBookScreen, @Nullable PageSupplier> replicator() {
             var entryId = this.entry.id();
             return context -> {
                 var entry = context.book.entryById(entryId);
@@ -911,8 +911,8 @@ public class BookScreen extends BaseUIModelScreen<FlowLayout> implements Command
             return new Replicator(this.pageSupplier.replicator(), this.selectedPage);
         }
 
-        public record Replicator(Function<BookScreen, @Nullable PageSupplier> pageSupplier, int selectedPage) {
-            public @Nullable NavFrame createFrame(BookScreen screen) {
+        public record Replicator(Function<LavenderBookScreen, @Nullable PageSupplier> pageSupplier, int selectedPage) {
+            public @Nullable NavFrame createFrame(LavenderBookScreen screen) {
                 var supplier = this.pageSupplier.apply(screen);
                 if (supplier == null) return null;
 

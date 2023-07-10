@@ -1,7 +1,7 @@
 package io.wispforest.lavender.client;
 
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.book.BookItem;
+import io.wispforest.lavender.book.LavenderBookItem;
 import net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.model.BakedModel;
@@ -29,7 +29,7 @@ public class BookBakedModel extends ForwardingBakedModel {
         @Nullable
         @Override
         public BakedModel apply(BakedModel model, ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed) {
-            var book = BookItem.bookOf(stack);
+            var book = LavenderBookItem.bookOf(stack);
             if (book == null || book.dynamicBookModel() == null) return model;
 
             var bookModel = MinecraftClient.getInstance().getBakedModelManager().getModel(new ModelIdentifier(book.dynamicBookModel(), "inventory"));

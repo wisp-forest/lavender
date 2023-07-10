@@ -1,7 +1,7 @@
 package io.wispforest.lavender;
 
 import com.mojang.logging.LogUtils;
-import io.wispforest.lavender.book.BookItem;
+import io.wispforest.lavender.book.LavenderBookItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -27,7 +27,7 @@ public class Lavender implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        Registry.register(Registries.ITEM, id("dynamic_book"), BookItem.DYNAMIC_BOOK);
+        Registry.register(Registries.ITEM, id("dynamic_book"), LavenderBookItem.DYNAMIC_BOOK);
         Registry.register(Registries.SOUND_EVENT, ITEM_BOOK_OPEN.getId(), ITEM_BOOK_OPEN);
 
         CommandRegistrationCallback.EVENT.register(LavenderCommands::register);

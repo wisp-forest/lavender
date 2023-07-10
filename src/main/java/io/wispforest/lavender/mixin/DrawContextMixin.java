@@ -1,9 +1,9 @@
 package io.wispforest.lavender.mixin;
 
-import io.wispforest.lavender.book.BookItem;
+import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.client.AssociatedEntryTooltipComponent;
-import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.owo.ui.util.Delta;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -39,24 +39,24 @@ public class DrawContextMixin {
 
                 int bookIndex = -1;
                 for (int i = 0; i < 9; i++) {
-                    if (BookItem.bookOf(client.player.getInventory().getStack(i)) == book) {
+                    if (LavenderBookItem.bookOf(client.player.getInventory().getStack(i)) == book) {
                         bookIndex = i;
                         break;
                     }
                 }
 
-                if (BookItem.bookOf(client.player.getOffHandStack()) == book) {
+                if (LavenderBookItem.bookOf(client.player.getOffHandStack()) == book) {
                     bookIndex = -69;
                 }
 
                 if (bookIndex == -1) return;
 
-                components.add(new AssociatedEntryTooltipComponent(BookItem.itemOf(book), associatedEntry, entryTriggerProgress));
+                components.add(new AssociatedEntryTooltipComponent(LavenderBookItem.itemOf(book), associatedEntry, entryTriggerProgress));
                 entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, client.getLastFrameDuration() * .125);
 
                 if (entryTriggerProgress >= .95) {
-                    BookScreen.pushEntry(book, associatedEntry);
-                    client.setScreen(new BookScreen(book));
+                    LavenderBookScreen.pushEntry(book, associatedEntry);
+                    client.setScreen(new LavenderBookScreen(book));
 
                     if (bookIndex >= 0) {
                         client.player.getInventory().selectedSlot = bookIndex;

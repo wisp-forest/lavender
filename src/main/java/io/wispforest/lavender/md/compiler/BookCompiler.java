@@ -3,7 +3,7 @@ package io.wispforest.lavender.md.compiler;
 import com.google.common.primitives.Ints;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Entry;
-import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.OwoUITemplateFeature;
 import io.wispforest.owo.ui.component.LabelComponent;
@@ -84,7 +84,7 @@ public class BookCompiler extends OwoUICompiler {
 
     public static class BookLabelComponent extends LabelComponent {
 
-        private @Nullable BookScreen owner;
+        private @Nullable LavenderBookScreen owner;
 
         protected BookLabelComponent(Text text) {
             super(text);
@@ -96,7 +96,7 @@ public class BookCompiler extends OwoUICompiler {
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                     var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
                     if (linkTarget != null && linkTarget.entry != null) {
-                        this.owner.navPush(new BookScreen.NavFrame(new BookScreen.EntryPageSupplier(this.owner, linkTarget.entry), linkTarget.page));
+                        this.owner.navPush(new LavenderBookScreen.NavFrame(new LavenderBookScreen.EntryPageSupplier(this.owner, linkTarget.entry), linkTarget.page));
                         return true;
                     } else {
                         return false;
@@ -107,7 +107,7 @@ public class BookCompiler extends OwoUICompiler {
             });
         }
 
-        public void setOwner(@NotNull BookScreen screen) {
+        public void setOwner(@NotNull LavenderBookScreen screen) {
             this.owner = screen;
         }
 

@@ -8,8 +8,7 @@
     "l": "minecraft:smooth_stone_slab",
     "b": "minecraft:stone_bricks",
     "w": "minecraft:stone_brick_wall",
-    "a": "minecraft:lantern",
-    "v": "minecraft:lantern"
+    "a": "minecraft:lantern"
   },
   "layers": [
     [

@@ -1,7 +1,7 @@
 package io.wispforest.lavender.mixin;
 
-import io.wispforest.lavender.book.BookItem;
-import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavender.book.LavenderBookItem;
+import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavender.client.OffhandBookRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -30,7 +30,7 @@ public abstract class HeldItemRendererMixin {
 
     @ModifyVariable(method = "renderFirstPersonItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;isEmpty()Z", ordinal = 0), argsOnly = true)
     private ItemStack injectMap(ItemStack stack, AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand) {
-        if (!(stack.getItem() instanceof BookItem) || BookItem.bookOf(stack) == null || hand == Hand.MAIN_HAND || MinecraftClient.getInstance().currentScreen instanceof BookScreen) {
+        if (!(stack.getItem() instanceof LavenderBookItem) || LavenderBookItem.bookOf(stack) == null || hand == Hand.MAIN_HAND || MinecraftClient.getInstance().currentScreen instanceof LavenderBookScreen) {
             return stack;
         }
 
@@ -48,10 +48,10 @@ public abstract class HeldItemRendererMixin {
 
     @Inject(method = "renderFirstPersonMap", at = @At("HEAD"), cancellable = true)
     private void injectBook(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int swingProgress, ItemStack stack, CallbackInfo ci) {
-        if (!(stack.getItem() instanceof BookItem)) return;
+        if (!(stack.getItem() instanceof LavenderBookItem)) return;
         ci.cancel();
 
-        OffhandBookRenderer.render(matrices, BookItem.bookOf(stack));
+        OffhandBookRenderer.render(matrices, LavenderBookItem.bookOf(stack));
     }
 
 }

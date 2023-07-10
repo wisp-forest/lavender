@@ -2,7 +2,7 @@ package io.wispforest.lavender.book;
 
 import com.google.common.base.Preconditions;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.client.BookScreen;
+import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.owo.nbt.NbtKey;
 import io.wispforest.owo.ops.TextOps;
 import net.fabricmc.api.EnvType;
@@ -27,21 +27,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BookItem extends Item {
+public class LavenderBookItem extends Item {
 
     public static final NbtKey<Identifier> BOOK_ID = new NbtKey<>("BookId", NbtKey.Type.IDENTIFIER);
-    public static final BookItem DYNAMIC_BOOK = new BookItem(null, new Settings().maxCount(1));
+    public static final LavenderBookItem DYNAMIC_BOOK = new LavenderBookItem(null, new Settings().maxCount(1));
 
-    private static final Map<Identifier, BookItem> BOOK_ITEMS = new HashMap<>();
+    private static final Map<Identifier, LavenderBookItem> BOOK_ITEMS = new HashMap<>();
 
     private final @Nullable Identifier bookId;
 
-    private BookItem(@Nullable Identifier bookId, Settings settings) {
+    private LavenderBookItem(@Nullable Identifier bookId, Settings settings) {
         super(settings);
         this.bookId = bookId;
     }
 
-    protected BookItem(Settings settings, @NotNull Identifier bookId) {
+    protected LavenderBookItem(Settings settings, @NotNull Identifier bookId) {
         super(settings);
         this.bookId = Preconditions.checkNotNull(bookId, "Book-specific book items must have a non-null book ID");
     }
@@ -55,7 +55,7 @@ public class BookItem extends Item {
      * Shorthand of {@link #registerForBook(Identifier, Identifier, net.minecraft.item.Item.Settings)} which
      * uses {@code bookId} as the item id
      */
-    public static BookItem registerForBook(@NotNull Identifier bookId, Settings settings) {
+    public static LavenderBookItem registerForBook(@NotNull Identifier bookId, Settings settings) {
         return registerForBook(bookId, bookId, settings);
     }
 
@@ -63,15 +63,15 @@ public class BookItem extends Item {
      * Create, register and return a book item under {@code itemId} as the canonical
      * item for the book referred to by the given {@code bookId}
      */
-    public static BookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId, Settings settings) {
-        return registerForBook(Registry.register(Registries.ITEM, itemId, new BookItem(bookId, settings)));
+    public static LavenderBookItem registerForBook(@NotNull Identifier bookId, @NotNull Identifier itemId, Settings settings) {
+        return registerForBook(Registry.register(Registries.ITEM, itemId, new LavenderBookItem(bookId, settings)));
     }
 
     /**
      * Register and return the given book item as the canonical item
      * for the book referred to by the item's bookId field
      */
-    public static BookItem registerForBook(BookItem item) {
+    public static LavenderBookItem registerForBook(LavenderBookItem item) {
         BOOK_ITEMS.put(item.bookId(), item);
         return item;
     }
@@ -82,7 +82,7 @@ public class BookItem extends Item {
      * or {@code null} if neither a static association nor NBT exist
      */
     public static @Nullable Identifier bookIdOf(ItemStack bookStack) {
-        if (!(bookStack.getItem() instanceof BookItem book)) return null;
+        if (!(bookStack.getItem() instanceof LavenderBookItem book)) return null;
         return book.bookId != null ? book.bookId : bookStack.getOr(BOOK_ID, null);
     }
 
@@ -140,7 +140,7 @@ public class BookItem extends Item {
 
     @Environment(EnvType.CLIENT)
     private static void openBookScreen(Book book) {
-        MinecraftClient.getInstance().setScreen(new BookScreen(book));
+        MinecraftClient.getInstance().setScreen(new LavenderBookScreen(book));
     }
 
     @Override

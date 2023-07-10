@@ -7,7 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.Book;
-import io.wispforest.lavender.book.BookItem;
+import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.LavenderStructures;
@@ -50,8 +50,8 @@ public class LavenderCommands {
         }
 
         context.getSource().getPlayer().getInventory().offerOrDrop(forceDynamicBook
-                ? BookItem.createDynamic(book)
-                : BookItem.itemOf(book)
+                ? LavenderBookItem.createDynamic(book)
+                : LavenderBookItem.itemOf(book)
         );
 
         return 0;

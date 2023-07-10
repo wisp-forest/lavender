@@ -12,7 +12,6 @@ import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Arm;
 import net.minecraft.util.math.RotationAxis;
-import org.joml.Matrix4f;
 
 import java.util.function.Supplier;
 
@@ -26,7 +25,7 @@ public class OffhandBookRenderer {
         return framebuffer;
     });
 
-    private static BookScreen cachedScreen = null;
+    private static LavenderBookScreen cachedScreen = null;
     private static boolean cacheExpired = true;
 
     public static void initialize() {
@@ -50,7 +49,7 @@ public class OffhandBookRenderer {
 
         var screen = cachedScreen;
         if (screen == null || screen.book != book) {
-            cachedScreen = screen = new BookScreen(book, true);
+            cachedScreen = screen = new LavenderBookScreen(book, true);
             screen.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
 
             // we dispose the ui adapter here to
