@@ -19,6 +19,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.BlockRenderView;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.ColorResolver;
@@ -37,14 +38,19 @@ public class StructureTemplate {
     private final EnumMap<BlockStatePredicate.MatchCategory, MutableInt> predicateCountByType;
 
     public final int xSize, ySize, zSize;
+    public final Vec3i anchor;
     public final Identifier id;
 
-    public StructureTemplate(Identifier id, BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize) {
+    public StructureTemplate(Identifier id, BlockStatePredicate[][][] predicates, int xSize, int ySize, int zSize, @Nullable Vec3i anchor) {
         this.id = id;
         this.predicates = predicates;
         this.xSize = xSize;
         this.ySize = ySize;
         this.zSize = zSize;
+
+        this.anchor = anchor != null
+            ? anchor
+            : new Vec3i(this.xSize / 2, 0, this.ySize / 2);
 
         this.predicateCountByType = new EnumMap<>(BlockStatePredicate.MatchCategory.class);
         for (var type : BlockStatePredicate.MatchCategory.values()) {
@@ -60,7 +66,15 @@ public class StructureTemplate {
      * into the given match category
      */
     public int predicatesOfType(BlockStatePredicate.MatchCategory type) {
-        return predicateCountByType.get(type).intValue();
+        return this.predicateCountByType.get(type).intValue();
+    }
+
+    /**
+     * @return The anchor position of this template,
+     * to be used when placing in the world
+     */
+    public Vec3i anchor() {
+        return this.anchor;
     }
 
     // --- iteration ---
@@ -211,15 +225,28 @@ public class StructureTemplate {
     public static StructureTemplate parse(Identifier resourceId, JsonObject json) {
         var keyObject = JsonHelper.getObject(json, "keys");
         var keys = new Char2ObjectOpenHashMap<BlockStatePredicate>();
+        Vec3i anchor = null;
 
         for (var entry : keyObject.entrySet()) {
-            if (entry.getKey().length() != 1) continue;
+            char key;
+            if (entry.getKey().length() == 1) {
+                key = entry.getKey().charAt(0);
+                if (key == '#') {
+                    throw new JsonParseException("Key '#' is reserved for 'anchor' declarations");
+                }
+
+            } else if (entry.getKey().equals("anchor")) {
+                key = '#';
+            } else {
+                continue;
+            }
+
             try {
                 var result = BlockArgumentParser.blockOrTag(Registries.BLOCK.getReadOnlyWrapper(), entry.getValue().getAsString(), false);
                 if (result.left().isPresent()) {
                     var predicate = result.left().get();
 
-                    keys.put(entry.getKey().charAt(0), new BlockStatePredicate() {
+                    keys.put(key, new BlockStatePredicate() {
                         @Override
                         public BlockState preview() {
                             return predicate.blockState();
@@ -259,7 +286,7 @@ public class StructureTemplate {
                         previewStates.add(state);
                     });
 
-                    keys.put(entry.getKey().charAt(0), new BlockStatePredicate() {
+                    keys.put(key, new BlockStatePredicate() {
                         @Override
                         public BlockState preview() {
                             if (previewStates.isEmpty()) return Blocks.AIR.getDefaultState();
@@ -333,6 +360,14 @@ public class StructureTemplate {
                     BlockStatePredicate predicate;
                     if (keys.containsKey(key)) {
                         predicate = keys.get(key);
+
+                        if (key == '#') {
+                            if (anchor != null) {
+                                throw new JsonParseException("Anchor key '#' cannot be used twice within the same structure");
+                            }
+
+                            anchor = new Vec3i(x, y, z);
+                        }
                     } else if (key == ' ') {
                         predicate = BlockStatePredicate.NULL_PREDICATE;
                     } else if (key == '_') {
@@ -346,6 +381,6 @@ public class StructureTemplate {
             }
         }
 
-        return new StructureTemplate(resourceId, result, xSize, ySize, zSize);
+        return new StructureTemplate(resourceId, result, xSize, ySize, zSize, anchor);
     }
 }

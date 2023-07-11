@@ -1,7 +1,9 @@
 {
   "keys": {
     "o": "minecraft:obsidian",
-    "n": "minecraft:nether_portal"
+    "n": "minecraft:nether_portal",
+    "e": "minecraft:emerald_block",
+    "anchor": "minecraft:diamond_block"
   },
   "layers": [
     [
@@ -23,7 +25,7 @@
       "onnnnno"
     ],
     [
-      "ooooooo"
+      "eoo#ooo"
     ]
   ]
 }
