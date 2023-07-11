@@ -346,7 +346,7 @@
                                 <positioning type="absolute">0,0</positioning>
                             </texture>
 
-                            <lavender.structure structure-id="{{structure}}" id="structure">
+                            <lavender.structure structure-id="{{structure}}" id="structure" display-angle="{{angle}}">
                                 <sizing>
                                     <horizontal method="fixed">100</horizontal>
                                     <vertical method="fixed">100</vertical>

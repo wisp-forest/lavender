@@ -12,7 +12,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
@@ -22,10 +21,12 @@ import org.w3c.dom.Element;
 public class StructureComponent extends BaseComponent {
 
     private final StructureTemplate structure;
+    private final int displayAngle;
     private int visibleLayer = -1;
 
-    public StructureComponent(StructureTemplate structure) {
+    public StructureComponent(StructureTemplate structure, int displayAngle) {
         this.structure = structure;
+        this.displayAngle = displayAngle;
         this.cursorStyle(CursorStyle.HAND);
     }
 
@@ -44,7 +45,7 @@ public class StructureComponent extends BaseComponent {
         matrices.translate(this.x + this.width / 2f, this.y + this.height / 2f, 100);
         matrices.scale(scale, -scale, scale);
 
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(35f));
+        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(this.displayAngle));
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 75d % 360d)));
         matrices.translate(this.structure.xSize / -2f, this.structure.ySize / -2f, this.structure.zSize / -2f);
 
@@ -112,6 +113,11 @@ public class StructureComponent extends BaseComponent {
         var structure = LavenderStructures.get(structureId);
         if (structure == null) throw new UIModelParsingException("Unknown structure '" + structureId + "'");
 
-        return new StructureComponent(structure);
+        int displayAngle = 35;
+        if (element.hasAttribute("display-angle")) {
+            displayAngle = UIParsing.parseSignedInt(element.getAttributeNode("display-angle"));
+        }
+
+        return new StructureComponent(structure, displayAngle);
     }
 }

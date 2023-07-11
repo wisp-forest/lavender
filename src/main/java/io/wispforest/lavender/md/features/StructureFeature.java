@@ -1,5 +1,6 @@
 package io.wispforest.lavender.md.features;
 
+import com.google.common.primitives.Ints;
 import io.wispforest.lavender.book.StructureComponent;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.md.compiler.BookCompiler;
@@ -43,13 +44,22 @@ public class StructureFeature implements MarkdownFeature {
             var structureIdString = nibbler.consumeUntil('>');
             if (structureIdString == null) return false;
 
+            int angle = 35;
+            if (structureIdString.matches("-?\\d+;.+")) {
+                var parsedAngle = Ints.tryParse(structureIdString.substring(0, structureIdString.indexOf(';')));
+                if (parsedAngle == null) return false;
+
+                angle = parsedAngle;
+                structureIdString = structureIdString.substring(structureIdString.indexOf(';') + 1);
+            }
+
             var structureId = Identifier.tryParse(structureIdString);
             if (structureId == null) return false;
 
             var structure = LavenderStructures.get(structureId);
             if (structure == null) return false;
 
-            tokens.add(new StructureToken(structureIdString, structure));
+            tokens.add(new StructureToken(structureIdString, structure, angle));
             return true;
         }, '<');
     }
@@ -57,7 +67,7 @@ public class StructureFeature implements MarkdownFeature {
     @Override
     public void registerNodes(NodeRegistrar registrar) {
         registrar.registerNode(
-                (parser, structureToken, tokens) -> new StructureNode(structureToken.structure),
+                (parser, structureToken, tokens) -> new StructureNode(structureToken.structure, structureToken.angle),
                 (token, tokens) -> token instanceof StructureToken structure ? structure : null
         );
     }
@@ -65,19 +75,23 @@ public class StructureFeature implements MarkdownFeature {
     private static class StructureToken extends Lexer.Token {
 
         public final StructureTemplate structure;
+        public final int angle;
 
-        public StructureToken(String content, StructureTemplate structure) {
+        public StructureToken(String content, StructureTemplate structure, int angle) {
             super(content);
             this.structure = structure;
+            this.angle = angle;
         }
     }
 
     private class StructureNode extends Parser.Node {
 
         private final StructureTemplate structure;
+        private final int angle;
 
-        public StructureNode(StructureTemplate structure) {
+        public StructureNode(StructureTemplate structure, int angle) {
             this.structure = structure;
+            this.angle = angle;
         }
 
         @Override
@@ -86,7 +100,7 @@ public class StructureFeature implements MarkdownFeature {
             var structureComponent = StructureFeature.this.bookComponentSource.builtinTemplate(
                     ParentComponent.class,
                     this.structure.ySize > 1 ? "structure-preview-with-layers" : "structure-preview",
-                    Map.of("structure", this.structure.id.toString())
+                    Map.of("structure", this.structure.id.toString(), "angle", String.valueOf(this.angle))
             );
 
             var structurePreview = structureComponent.childById(StructureComponent.class, "structure");
