@@ -90,9 +90,9 @@ public class StructureTemplate {
     public void forEachPredicate(BiConsumer<BlockPos, BlockStatePredicate> action, BlockRotation rotation) {
         var mutable = new BlockPos.Mutable();
 
-        for (int x = 0; x < predicates.length; x++) {
-            for (int y = 0; y < predicates[x].length; y++) {
-                for (int z = 0; z < predicates[x][y].length; z++) {
+        for (int x = 0; x < this.predicates.length; x++) {
+            for (int y = 0; y < this.predicates[x].length; y++) {
+                for (int z = 0; z < this.predicates[x][y].length; z++) {
 
                     switch (rotation) {
                         case CLOCKWISE_90 -> mutable.set(this.zSize - z - 1, y, x);
@@ -101,7 +101,7 @@ public class StructureTemplate {
                         default -> mutable.set(x, y, z);
                     }
 
-                    action.accept(mutable, predicates[x][y][z]);
+                    action.accept(mutable, this.predicates[x][y][z]);
                 }
             }
         }

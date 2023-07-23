@@ -102,7 +102,7 @@ public class BookCompiler extends OwoUICompiler {
                         return false;
                     }
                 } else {
-                    return OwoUIDrawContext.utilityScreen().handleTextClick(style);
+                    return this.owner.handleTextClick(style);
                 }
             });
         }

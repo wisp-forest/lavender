@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookBakedModel;
-import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.minecraft.client.util.ModelIdentifier;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -28,11 +28,11 @@ public class BookLoader {
     private static final Map<Identifier, Book> VISIBLE_BOOKS = new HashMap<>();
 
     public static void initialize() {
-        ModelLoadingRegistry.INSTANCE.registerModelProvider(($, out) -> {
-            out.accept(BookBakedModel.Unbaked.BROWN_BOOK_ID);
+        ModelLoadingPlugin.register(context -> {
+            context.addModels(BookBakedModel.Unbaked.BROWN_BOOK_ID);
             for (var book : VISIBLE_BOOKS.values()) {
                 if (book.dynamicBookModel() == null) return;
-                out.accept(new ModelIdentifier(book.dynamicBookModel(), "inventory"));
+                context.addModels(new ModelIdentifier(book.dynamicBookModel(), "inventory"));
             }
         });
     }

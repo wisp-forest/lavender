@@ -4,8 +4,8 @@ import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.LavenderCommands;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookContentLoader;
-import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.book.BookLoader;
+import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
@@ -22,7 +22,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
@@ -48,9 +48,11 @@ public class LavenderClient implements ClientModInitializer {
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register(LavenderCommands.Client::register);
 
-        ModelLoadingRegistry.INSTANCE.registerResourceProvider(manager -> (resourceId, context) -> {
-            if (!resourceId.equals(Lavender.id("item/dynamic_book"))) return null;
-            return new BookBakedModel.Unbaked();
+        ModelLoadingPlugin.register(pluginContext -> {
+            pluginContext.resolveModel().register(context -> {
+                if (!context.id().equals(Lavender.id("item/dynamic_book"))) return null;
+                return new BookBakedModel.Unbaked();
+            });
         });
 
         StructureOverlayRenderer.initialize();
