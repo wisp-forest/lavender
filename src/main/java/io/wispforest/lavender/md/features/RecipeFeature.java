@@ -31,7 +31,7 @@ public class RecipeFeature implements MarkdownFeature {
     private final BookCompiler.ComponentSource bookComponentSource;
     private final Map<RecipeType<?>, RecipeHandler<?>> handlers;
 
-    private static final RecipeHandler<CraftingRecipe> CRAFTING_HANDLER = new RecipeHandler<>() {
+    public static final RecipeHandler<CraftingRecipe> CRAFTING_HANDLER = new RecipeHandler<>() {
         @Override
         public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, CraftingRecipe recipe) {
             var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
@@ -43,7 +43,7 @@ public class RecipeFeature implements MarkdownFeature {
         }
     };
 
-    private static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipe) -> {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
 
         recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
@@ -59,7 +59,7 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    private static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipe) -> {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
         if (recipe instanceof SmithingRecipeAccessor accessor) {
@@ -73,7 +73,7 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    private static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipe) -> {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
 
         recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
