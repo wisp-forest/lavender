@@ -184,7 +184,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 content = content.substring(frontmatterEnd + 3).stripLeading();
 
                 return ResourceConditions.objectMatchesConditions(meta)
-                        ? new MarkdownResource(meta, content)
+                        ? new MarkdownResource(meta, content.replaceAll("\\r\\n?", "\n"))
                         : null;
             } else {
                 throw new RuntimeException("Missing markdown meta");
