@@ -1,5 +1,10 @@
 package io.wispforest.lavender.book;
 
+import com.google.gson.JsonParseException;
+import io.wispforest.lavender.Lavender;
+import io.wispforest.lavendermd.util.StringNibbler;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
@@ -7,13 +12,21 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Book {
+
+    private static final Pattern MACRO_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9_-]+");
+    private static final Pattern MACRO_ARG_PATTERN = Pattern.compile("\\$\\d+");
 
     private final Identifier id;
     private final @Nullable Identifier texture;
     private final @Nullable Identifier dynamicBookModel;
     private final boolean displayCompletion;
+    private final Map<String, String> zeroArgMacros = new HashMap<>();
+    private final Map<Pattern, Macro> macros = new HashMap<>();
 
     private final @Nullable Identifier extend;
     private @Nullable Book resolvedExtend = null;
@@ -32,12 +45,43 @@ public final class Book {
 
     private @Nullable Entry landingPage = null;
 
-    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, boolean displayCompletion) {
+    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, boolean displayCompletion, Map<String, String> macros) {
         this.id = id;
         this.extend = extend;
         this.texture = texture;
         this.dynamicBookModel = dynamicBookModel;
         this.displayCompletion = displayCompletion;
+
+        macros.forEach((macro, replacement) -> {
+            int argCount = (int) MACRO_ARG_PATTERN.matcher(replacement).results().count();
+            if (argCount > 0) {
+                if (!MACRO_NAME_PATTERN.asPredicate().test(macro)) {
+                    throw new JsonParseException("Parametrized macro '" + macro + "' contains invalid characters. Parametrized macro names must only contain '[a-zA-Z0-9_-]'");
+                }
+
+                var parts = new ArrayList<String>();
+                var argIndices = new IntArrayList();
+
+                var result = new StringBuilder(replacement);
+                var argMatcher = MACRO_ARG_PATTERN.matcher(result);
+
+                while (argMatcher.find()) {
+                    parts.add(replacement.substring(0, argMatcher.start()));
+                    argIndices.add(Integer.parseInt(argMatcher.group().substring(1)) - 1);
+
+                    result.delete(0, argMatcher.end());
+                    argMatcher.reset();
+                }
+
+                parts.add(result.toString());
+                this.macros.put(
+                        Pattern.compile(Pattern.quote(macro) + "\\(" + Stream.generate(() -> "\\S").limit(argCount).collect(Collectors.joining(",")) + "\\)"),
+                        new Macro(parts, argIndices)
+                );
+            } else {
+                this.zeroArgMacros.put(macro, replacement);
+            }
+        });
     }
 
     public Identifier id() {
@@ -115,6 +159,62 @@ public final class Book {
 
     // --- construction-related methods ---
 
+    String expandMacros(Identifier entry, String input) {
+        var builder = new StringBuilder(input);
+        this.zeroArgMacros.forEach((pattern, replacement) -> {
+            int replaceIndex = builder.indexOf(pattern);
+            while (replaceIndex != -1) {
+                builder.replace(replaceIndex, replaceIndex + pattern.length(), replacement);
+                replaceIndex = builder.indexOf(pattern, replaceIndex + replacement.length());
+            }
+        });
+
+        int scans = 0;
+        boolean anyExpansions = true;
+        while (scans < 1000 && anyExpansions) {
+            anyExpansions = false;
+
+            for (var pattern : this.macros.keySet()) {
+                var replacement = this.macros.get(pattern);
+                var matcher = pattern.matcher(builder);
+
+                while (scans < 1000 && matcher.find()) {
+                    scans++;
+                    anyExpansions = true;
+
+                    var match = matcher.group();
+                    var argsNibbler = new StringNibbler(match.substring(match.indexOf('(') + 1, match.length() - 1));
+
+                    var args = new ArrayList<String>();
+                    while (argsNibbler.hasNext()) {
+                        args.add(argsNibbler.consumeEscapedString(',', true));
+                    }
+
+                    builder.replace(matcher.start(), matcher.end(), replacement.apply(args));
+                    matcher.reset();
+                }
+            }
+        }
+
+        if (scans >= 1000) {
+            Lavender.LOGGER.warn(
+                    "Preprocessing of entry {} in book {} failed: Macro expansion proceeded for over 1000 scans, a circular macro invocation is likely",
+                    entry,
+                    this.id
+            );
+
+            return """
+                    {red}**Entry processing failed:**{}
+                                        
+                                        
+                    Macro expansion proceeded for over 1000 scans without reaching
+                    a result - this is almost definitely due to a circular macro invocation
+                    """;
+        } else {
+            return builder.toString();
+        }
+    }
+
     void setLandingPage(@NotNull Entry landingPage) {
         this.landingPage = landingPage;
     }
@@ -160,5 +260,20 @@ public final class Book {
     public interface BookmarkableElement {
         String title();
         Item icon();
+    }
+
+    public record Macro(List<String> parts, IntList argIndices) {
+        String apply(List<String> args) {
+            var result = new StringBuilder();
+            for (int i = 0; i < this.argIndices.size(); i++) {
+                result.append(this.parts.get(i));
+
+                var argIndex = this.argIndices.getInt(i);
+                result.append(argIndex - 1 < args.size() ? args.get(i) : "");
+            }
+
+            result.append(this.parts.get(this.parts.size() - 1));
+            return result.toString();
+        }
     }
 }

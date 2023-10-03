@@ -19,6 +19,8 @@ and a [link](https://wispforest.io)
 
 now, after we're {gold}done{} there let's have a list
 
+macro_moment(a)
+
 ;;;;;
 
 - list item 1

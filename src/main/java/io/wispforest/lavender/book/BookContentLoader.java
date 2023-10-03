@@ -50,7 +50,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
         for (var book : BookLoader.allBooks()) {
             forResourceOfBook(categories, book, "category", (identifier, resource) -> {
-                var markdown = parseMarkdown(identifier, resource);
+                var markdown = parseMarkdown(book, identifier, resource);
                 if (markdown == null) return;
 
                 book.addCategory(new Category(
@@ -65,7 +65,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
         for (var book : BookLoader.allBooks()) {
             forResourceOfBook(entries, book, "entry", (identifier, resource) -> {
-                var markdown = parseMarkdown(identifier, resource);
+                var markdown = parseMarkdown(book, identifier, resource);
                 if (markdown == null) return;
 
                 var category = JsonHelper.getString(markdown.meta, "category", null);
@@ -168,7 +168,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         return resourcePath;
     }
 
-    private static @Nullable MarkdownResource parseMarkdown(Identifier resourceId, Resource resource) {
+    private static @Nullable MarkdownResource parseMarkdown(Book book, Identifier resourceId, Resource resource) {
         try {
             var content = IOUtils.toString(resource.getInputStream(), StandardCharsets.UTF_8).strip();
             JsonObject meta;
@@ -184,7 +184,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 content = content.substring(frontmatterEnd + 3).stripLeading();
 
                 return ResourceConditions.objectMatchesConditions(meta)
-                        ? new MarkdownResource(meta, content.replaceAll("\\r\\n?", "\n"))
+                        ? new MarkdownResource(meta, book.expandMacros(resourceId, content.replaceAll("\\r\\n?", "\n")))
                         : null;
             } else {
                 throw new RuntimeException("Missing markdown meta");

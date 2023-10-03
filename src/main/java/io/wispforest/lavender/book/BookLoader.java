@@ -3,6 +3,8 @@ package io.wispforest.lavender.book;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookBakedModel;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class BookLoader {
 
     private static final Gson GSON = new GsonBuilder().setLenient().disableHtmlEscaping().create();
+    private static final TypeToken<Map<String, String>> MACROS_TOKEN = new TypeToken<>() {};
     private static final ResourceFinder BOOK_FINDER = ResourceFinder.json("lavender/books");
 
     private static final Map<Identifier, Book> LOADED_BOOKS = new HashMap<>();
@@ -74,8 +77,9 @@ public class BookLoader {
             var dynamicBookModelId = dynamicBookModel != null ? Identifier.tryParse(dynamicBookModel) : null;
 
             var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
+            var macros = GSON.fromJson(JsonHelper.getObject(bookObject, "macros", new JsonObject()), MACROS_TOKEN);
 
-            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, displayCompletion);
+            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, displayCompletion, macros);
             LOADED_BOOKS.put(resourceId, book);
             if (extendId == null) VISIBLE_BOOKS.put(resourceId, book);
         });

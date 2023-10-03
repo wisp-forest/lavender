@@ -1,4 +1,8 @@
 {
   "display_completion": true,
-  "texture": "lavender:textures/gui/red_book.png"
+  "texture": "lavender:textures/gui/red_book.png",
+  "macros": {
+    "nested_macro": "ah yes: $1",
+    "macro_moment": "that's pretty nested_macro($1)"
+  }
 }

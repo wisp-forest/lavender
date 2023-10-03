@@ -13,6 +13,7 @@ import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.*;
@@ -22,6 +23,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,6 +198,7 @@ public class RecipeFeature implements MarkdownFeature {
         private @Nullable Ingredient ingredient = null;
 
         private float time = 0f;
+        private List<TooltipComponent> extraTooltipSection = List.of();
         private int matchingStackIndex;
 
         public IngredientComponent() {
@@ -212,6 +215,17 @@ public class RecipeFeature implements MarkdownFeature {
                 this.time -= 20;
                 this.updateForIngredient();
             }
+        }
+
+        @Override
+        public Component tooltip(List<TooltipComponent> tooltip) {
+            if (tooltip == null) return super.tooltip((List<TooltipComponent>) null);
+
+            tooltip = new ArrayList<>(tooltip);
+            tooltip.addAll(this.extraTooltipSection);
+
+            this.tooltip = tooltip;
+            return this;
         }
 
         private void updateForIngredient() {
@@ -233,6 +247,11 @@ public class RecipeFeature implements MarkdownFeature {
 
         public @Nullable Ingredient ingredient() {
             return ingredient;
+        }
+
+        public void extraTooltipSection(List<TooltipComponent> section) {
+            this.extraTooltipSection = section;
+            this.updateTooltipForStack();
         }
     }
 

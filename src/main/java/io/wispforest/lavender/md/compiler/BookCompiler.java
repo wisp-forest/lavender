@@ -154,8 +154,7 @@ public class BookCompiler extends OwoUICompiler {
             return style;
         }
 
-        private record LinkTarget(Entry entry, int page) {
-        }
+        protected record LinkTarget(Entry entry, int page) {}
     }
 
     @FunctionalInterface

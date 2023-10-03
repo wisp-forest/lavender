@@ -492,13 +492,21 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
                 if (descendant instanceof ItemComponent item) {
                     var entry = this.context.book.entryByAssociatedItem(item.stack().getItem());
-                    if (entry == null) return;
+                    if (entry == null || (this instanceof EntryPageSupplier entrySupplier && entry == entrySupplier.entry)) {
+                        return;
+                    }
 
-                    var newTooltip = new ArrayList<>(item.tooltip());
+                    var newTooltip = new ArrayList<TooltipComponent>();
                     newTooltip.add(TooltipComponent.of(Text.empty().asOrderedText()));
                     newTooltip.add(TooltipComponent.of(Text.translatable("text.lavender.book.click_to_open").asOrderedText()));
                     newTooltip.add(TooltipComponent.of(TextOps.withFormatting(entry.title(), Formatting.GRAY).asOrderedText()));
-                    item.tooltip(newTooltip);
+
+                    if (item instanceof RecipeFeature.IngredientComponent ingredient) {
+                        ingredient.extraTooltipSection(newTooltip);
+                    } else {
+                        newTooltip.addAll(0, item.tooltip());
+                        item.tooltip(newTooltip);
+                    }
 
                     item.mouseDown().subscribe((mouseX, mouseY, button) -> {
                         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
