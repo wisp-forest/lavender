@@ -56,7 +56,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 book.addCategory(new Category(
                         identifier,
                         JsonHelper.getString(markdown.meta, "title"),
-                        JsonHelper.getItem(markdown.meta, "icon"),
+                        JsonHelper.getItem(markdown.meta, "icon").value(),
                         JsonHelper.getBoolean(markdown.meta, "secret", false),
                         markdown.content
                 ));
@@ -74,12 +74,12 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                         : null;
 
                 var title = JsonHelper.getString(markdown.meta, "title");
-                var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR);
+                var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR.getRegistryEntry()).value();
                 var secret = JsonHelper.getBoolean(markdown.meta, "secret", false);
 
                 var associatedItems = new ImmutableSet.Builder<Item>();
                 for (var itemElement : JsonHelper.getArray(markdown.meta, "associated_items", new JsonArray())) {
-                    associatedItems.add(JsonHelper.asItem(itemElement, "associated_items entry"));
+                    associatedItems.add(JsonHelper.asItem(itemElement, "associated_items entry").value());
                 }
 
                 var requiredAdvancements = new ImmutableSet.Builder<Identifier>();

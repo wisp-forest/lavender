@@ -402,12 +402,12 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
         mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
         mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
 
-        if (super.mouseScrolled(mouseX, mouseY, amount)) return true;
-        this.turnPage(amount < 0);
+        if (super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
+        this.turnPage(verticalAmount < 0);
 
         return true;
     }

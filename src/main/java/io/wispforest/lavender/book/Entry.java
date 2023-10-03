@@ -17,7 +17,7 @@ public record Entry(Identifier id, @Nullable Identifier category, String title, 
             var advancement = advancementHandler.getManager().get(advancementId);
             if (advancement == null) return false;
 
-            var progress = ((ClientAdvancementManagerAccessor) advancementHandler).lavender$getAdvancementProgresses().get(advancement);
+            var progress = ((ClientAdvancementManagerAccessor) advancementHandler).lavender$getAdvancementProgresses().get(advancement.getAdvancementEntry());
             if (progress == null || !progress.isDone()) return false;
         }
 

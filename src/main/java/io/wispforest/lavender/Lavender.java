@@ -6,6 +6,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.datafixer.DataFixTypes;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.registry.Registries;
@@ -34,11 +35,7 @@ public class Lavender implements ModInitializer {
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             var data = PacketByteBufs.create();
-            data.writeUuid(server.getOverworld().getPersistentStateManager().getOrCreate(WorldUUIDState::read, () -> {
-                var state = new WorldUUIDState(UUID.randomUUID());
-                state.markDirty();
-                return state;
-            }, "lavender_world_id").id);
+            data.writeUuid(server.getOverworld().getPersistentStateManager().getOrCreate(WorldUUIDState.TYPE, "lavender_world_id").id);
 
             sender.sendPacket(WORLD_ID_CHANNEL, data);
         });
@@ -49,6 +46,12 @@ public class Lavender implements ModInitializer {
     }
 
     public static class WorldUUIDState extends PersistentState {
+
+        public static final PersistentState.Type<WorldUUIDState> TYPE = new Type<>(() -> {
+            var state = new WorldUUIDState(UUID.randomUUID());
+            state.markDirty();
+            return state;
+        }, WorldUUIDState::read, DataFixTypes.LEVEL);
 
         public final UUID id;
 

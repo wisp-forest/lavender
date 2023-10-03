@@ -35,21 +35,22 @@ public class RecipeFeature implements MarkdownFeature {
 
     public static final RecipeHandler<CraftingRecipe> CRAFTING_HANDLER = new RecipeHandler<>() {
         @Override
-        public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, CraftingRecipe recipe) {
+        public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<CraftingRecipe> recipeEntry) {
             var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
 
-            this.populateIngredientsGrid(recipe, recipe.getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
-            recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+            this.populateIngredientsGrid(recipeEntry, recipeEntry.value().getIngredients(), recipeComponent.childById(ParentComponent.class, "input-grid"), 3, 3);
+            recipeComponent.childById(ItemComponent.class, "output").stack(recipeEntry.value().getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
             return recipeComponent;
         }
     };
 
-    public static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipeEntry) -> {
+        var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
 
         recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
         var workstation = ItemStack.EMPTY;
         if (recipe instanceof SmeltingRecipe) workstation = Items.FURNACE.getDefaultStack();
@@ -61,7 +62,8 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    public static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipeEntry) -> {
+        var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
         if (recipe instanceof SmithingRecipeAccessor accessor) {
@@ -70,16 +72,17 @@ public class RecipeFeature implements MarkdownFeature {
             recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
         }
 
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
         return recipeComponent;
     };
 
-    public static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipe) -> {
+    public static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipeEntry) -> {
+        var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
 
         recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
-        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getOutput(MinecraftClient.getInstance().world.getRegistryManager()));
+        recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
         return recipeComponent;
     };
@@ -121,7 +124,8 @@ public class RecipeFeature implements MarkdownFeature {
             var recipe = MinecraftClient.getInstance().world.getRecipeManager().get(recipeId);
             if (recipe.isEmpty()) return false;
 
-            tokens.add(new RecipeToken(recipeIdString, recipe.get()));
+            //noinspection unchecked
+            tokens.add(new RecipeToken(recipeIdString, (RecipeEntry<Recipe<?>>) recipe.get()));
             return true;
         }, '<');
     }
@@ -136,9 +140,9 @@ public class RecipeFeature implements MarkdownFeature {
 
     private static class RecipeToken extends Lexer.Token {
 
-        public final Recipe<?> recipe;
+        public final RecipeEntry<Recipe<?>> recipe;
 
-        public RecipeToken(String content, Recipe<?> recipe) {
+        public RecipeToken(String content, RecipeEntry<Recipe<?>> recipe) {
             super(content);
             this.recipe = recipe;
         }
@@ -146,22 +150,22 @@ public class RecipeFeature implements MarkdownFeature {
 
     private class RecipeNode extends Parser.Node {
 
-        private final Recipe<?> recipe;
+        private final RecipeEntry<Recipe<?>> recipe;
 
-        public RecipeNode(Recipe<?> recipe) {
+        public RecipeNode(RecipeEntry<Recipe<?>> recipe) {
             this.recipe = recipe;
         }
 
         @Override
         @SuppressWarnings({"rawtypes", "unchecked"})
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var handler = (RecipeHandler) RecipeFeature.this.handlers.get(this.recipe.getType());
+            var handler = (RecipeHandler) RecipeFeature.this.handlers.get(this.recipe.value().getType());
             if (handler != null) {
                 ((OwoUICompiler) compiler).visitComponent(handler.buildRecipePreview(RecipeFeature.this.bookComponentSource, this.recipe));
             } else {
                 ((OwoUICompiler) compiler).visitComponent(
                         Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                                .child(Components.label(Text.literal("No handler registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.getType()) + "'")).horizontalSizing(Sizing.fill(100)))
+                                .child(Components.label(Text.literal("No handler registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.value().getType()) + "'")).horizontalSizing(Sizing.fill(100)))
                                 .padding(Insets.of(10))
                                 .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
                 );
@@ -176,16 +180,16 @@ public class RecipeFeature implements MarkdownFeature {
     @FunctionalInterface
     public interface RecipeHandler<R extends Recipe<?>> {
         @NotNull
-        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, R recipeInstance);
+        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<R> recipeInstance);
 
-        default void populateIngredients(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
+        default void populateIngredients(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
             for (int i = 0; i < ingredients.size(); i++) {
                 if (!(componentContainer.children().get(i) instanceof IngredientComponent ingredient)) continue;
                 ingredient.ingredient(ingredients.get(i));
             }
         }
 
-        default void populateIngredientsGrid(R recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
+        default void populateIngredientsGrid(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
             ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
                 if (!(componentContainer.children().get(slot) instanceof IngredientComponent ingredient)) return;
                 ingredient.ingredient(inputs.next());

@@ -57,7 +57,7 @@ public class StructureOverlayRenderer {
     private static @Nullable OverlayEntry PENDING_OVERLAY = null;
 
     private static final Identifier HUD_COMPONENT_ID = Lavender.id("structure_overlay");
-    private static final Identifier BARS_TEXTURE = new Identifier("textures/gui/bars.png");
+    private static final Identifier BARS_TEXTURE = Lavender.id("textures/gui/structure_overlay_bars.png");
 
     public static void addPendingOverlay(Identifier structure) {
         PENDING_OVERLAY = new OverlayEntry(structure, BlockRotation.NONE);
@@ -188,16 +188,16 @@ public class StructureOverlayRenderer {
                     if (entry.decayTime >= 0) valid = total;
 
                     int barTextureOffset = 0;
-                    if (hasInvalidBlock.booleanValue()) barTextureOffset = 10;
-                    if (complete) barTextureOffset = 20;
+                    if (hasInvalidBlock.booleanValue()) barTextureOffset = 20;
+                    if (complete) barTextureOffset = 10;
 
                     entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, client.getLastFrameDuration());
                     layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                             .child(Components.label(Text.translatable("text.lavender.structure_hud.completion", Text.translatable(Util.createTranslationKey("structure", entry.structureId)), valid, total)).shadow(true))
                             .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                                    .child(Components.texture(BARS_TEXTURE, 0, 10 + barTextureOffset, 182, 5))
-                                    .child(Components.texture(BARS_TEXTURE, 0, 15 + barTextureOffset, Math.round(182 * entry.visualCompleteness), 5).positioning(Positioning.absolute(0, 0)))
-                                    .child(Components.texture(BARS_TEXTURE, 0, 115, 182, 5).blend(true).positioning(Positioning.absolute(0, 0))))
+                                    .child(Components.texture(BARS_TEXTURE, 0, barTextureOffset, 182, 5, 256, 48))
+                                    .child(Components.texture(BARS_TEXTURE, 0, barTextureOffset + 5, Math.round(182 * entry.visualCompleteness), 5, 256, 48).positioning(Positioning.absolute(0, 0)))
+                                    .child(Components.texture(BARS_TEXTURE, 0, 30, 182, 5, 256, 48).blend(true).positioning(Positioning.absolute(0, 0))))
                             .gap(2)
                             .horizontalAlignment(HorizontalAlignment.CENTER)
                             .margins(Insets.bottom((int) (Easing.CUBIC.apply((Math.max(0, entry.decayTime - 30) + client.getTickDelta()) / 20f) * -32))));
