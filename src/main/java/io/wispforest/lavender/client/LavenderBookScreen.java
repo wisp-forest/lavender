@@ -9,6 +9,7 @@ import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.md.features.PageBreakFeature;
 import io.wispforest.lavender.md.features.RecipeFeature;
 import io.wispforest.lavender.md.features.StructureFeature;
+import io.wispforest.lavendermd.MarkdownFeature;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.feature.*;
 import io.wispforest.owo.Owo;
@@ -49,7 +50,9 @@ import java.util.function.Function;
 public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
     private static final Identifier DEFAULT_BOOK_TEXTURE = Lavender.id("textures/gui/brown_book.png");
-    private static final Map<Identifier, Map<RecipeType<?>, RecipeFeature.RecipeHandler<?>>> RECIPE_HANDLERS = new HashMap<>();
+
+    private static final Map<Identifier, Map<RecipeType<?>, RecipeFeature.RecipePreviewBuilder<?>>> RECIPE_HANDLERS = new HashMap<>();
+    private static final Map<Identifier, FeatureProvider> FEATURE_PROVIDERS = new HashMap<>();
 
     private static final Map<Identifier, List<NavFrame.Replicator>> NAV_TRAILS = new HashMap<>();
 
@@ -78,7 +81,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         this.book = book;
         this.isOverlay = isOverlay;
 
-        this.processor = MarkdownProcessor.richText(0)
+        var processor = MarkdownProcessor.richText(0)
                 .copyWith(() -> new BookCompiler(this.bookComponentSource))
                 .copyWith(
                         new ImageFeature(), new BlockStateFeature(), new ItemStackFeature(), new EntityFeature(),
@@ -86,6 +89,12 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         new RecipeFeature(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
                         new StructureFeature(this.bookComponentSource), new KeybindFeature()
                 );
+
+        if (FEATURE_PROVIDERS.get(book.id()) != null) {
+            processor = processor.copyWith(FEATURE_PROVIDERS.get(book.id()).createFeatures(this.bookComponentSource).toArray(MarkdownFeature[]::new));
+        }
+
+        this.processor = processor;
     }
 
     public LavenderBookScreen(Book book) {
@@ -122,6 +131,12 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         params.putAll(parameters);
 
         return model.expandTemplate(expectedComponentClass, name, params);
+    }
+
+    @Override
+    protected <C extends Component> @NotNull C component(Class<C> expectedClass, String id) {
+        //noinspection DataFlowIssue
+        return super.component(expectedClass, id);
     }
 
     @Override
@@ -438,12 +453,43 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         ));
     }
 
+    /**
+     * Push {@code entry} onto the navigation stack of {@code book}, making it the active
+     * entry the next time the player opens this book
+     */
     public static void pushEntry(Book book, Entry entry) {
         getNavTrail(book).add(0, new NavFrame.Replicator(screen -> new EntryPageSupplier(screen, entry), 0));
     }
 
+    /**
+     * Use {@link #registerRecipePreviewBuilder(Identifier, RecipeType, RecipeFeature.RecipePreviewBuilder)} instead
+     */
+    @Deprecated(forRemoval = true)
     public static <R extends Recipe<?>> void registerRecipeHandler(Identifier bookId, RecipeType<R> recipeType, RecipeFeature.RecipeHandler<R> handler) {
-        RECIPE_HANDLERS.computeIfAbsent(bookId, $ -> new HashMap<>()).put(recipeType, handler);
+        registerRecipePreviewBuilder(bookId, recipeType, handler);
+    }
+
+    /**
+     * Register {@code builder} as the preview builder for recipes of {@code recipeType}. This is necessary
+     * to support custom recipe types and only applies to entries defined in the book {@code bookId}.
+     * <p>
+     * If you have multiple books that all display some of your custom recipes, you need to register the
+     * same builder for all of them individually
+     */
+    public static <R extends Recipe<?>> void registerRecipePreviewBuilder(Identifier bookId, RecipeType<R> recipeType, RecipeFeature.RecipePreviewBuilder<R> builder) {
+        RECIPE_HANDLERS.computeIfAbsent(bookId, $ -> new HashMap<>()).put(recipeType, builder);
+    }
+
+    /**
+     * Register {@code provider} as the additional feature provider for the book
+     * {@code bookId}.
+     * <p>
+     * Use this only if you need to build entirely custom markdown components
+     * that cannot be otherwise implemented through owo-ui templates using the
+     * {@code <|template:here|param=value|>} template instantiation syntax
+     */
+    public static void registerFeatureFactory(Identifier bookId, FeatureProvider provider) {
+        FEATURE_PROVIDERS.put(bookId, provider);
     }
 
     public static abstract class PageSupplier {
@@ -929,8 +975,19 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         }
     }
 
+    @FunctionalInterface
+    public interface FeatureProvider {
+        /**
+         * Create a new set of additional features to insert into the Markdown
+         * processor used for compiling entries of your book. {@code bookComponentSource}
+         * should be used to create components from templates as it has a set of Lavender-specific
+         * template parameters pre-filled
+         */
+        List<MarkdownFeature> createFeatures(BookCompiler.ComponentSource componentSource);
+    }
+
     static {
-        UIParsing.registerFactory("lavender.structure", StructureComponent::parse);
+        UIParsing.registerFactory(Lavender.id("structure"), StructureComponent::parse);
     }
 }
 

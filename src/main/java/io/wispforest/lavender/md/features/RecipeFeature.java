@@ -31,9 +31,9 @@ import java.util.Map;
 public class RecipeFeature implements MarkdownFeature {
 
     private final BookCompiler.ComponentSource bookComponentSource;
-    private final Map<RecipeType<?>, RecipeHandler<?>> handlers;
+    private final Map<RecipeType<?>, RecipePreviewBuilder<?>> previewBuilders;
 
-    public static final RecipeHandler<CraftingRecipe> CRAFTING_HANDLER = new RecipeHandler<>() {
+    public static final RecipePreviewBuilder<CraftingRecipe> CRAFTING_PREVIEW_BUILDER = new RecipePreviewBuilder<>() {
         @Override
         public @NotNull Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<CraftingRecipe> recipeEntry) {
             var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "crafting-recipe");
@@ -45,7 +45,7 @@ public class RecipeFeature implements MarkdownFeature {
         }
     };
 
-    public static final RecipeHandler<AbstractCookingRecipe> SMELTING_HANDLER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<AbstractCookingRecipe> SMELTING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
 
@@ -62,7 +62,7 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    public static final RecipeHandler<SmithingRecipe> SMITHING_HANDLER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<SmithingRecipe> SMITHING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
@@ -77,7 +77,7 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    public static final RecipeHandler<StonecuttingRecipe> STONECUTTING_HANDLER = (componentSource, recipeEntry) -> {
+    public static final RecipePreviewBuilder<StonecuttingRecipe> STONECUTTING_PREVIEW_BUILDER = (componentSource, recipeEntry) -> {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
 
@@ -87,17 +87,26 @@ public class RecipeFeature implements MarkdownFeature {
         return recipeComponent;
     };
 
-    public RecipeFeature(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipeHandler<?>> handlers) {
+    @Deprecated(forRemoval = true)
+    public static final RecipePreviewBuilder<CraftingRecipe> CRAFTING_HANDLER = CRAFTING_PREVIEW_BUILDER;
+    @Deprecated(forRemoval = true)
+    public static final RecipePreviewBuilder<AbstractCookingRecipe> SMELTING_HANDLER = SMELTING_PREVIEW_BUILDER;
+    @Deprecated(forRemoval = true)
+    public static final RecipePreviewBuilder<SmithingRecipe> SMITHING_HANDLER = SMITHING_PREVIEW_BUILDER;
+    @Deprecated(forRemoval = true)
+    public static final RecipePreviewBuilder<StonecuttingRecipe> STONECUTTING_HANDLER = STONECUTTING_PREVIEW_BUILDER;
+
+    public RecipeFeature(BookCompiler.ComponentSource bookComponentSource, @Nullable Map<RecipeType<?>, RecipePreviewBuilder<?>> previewBuilders) {
         this.bookComponentSource = bookComponentSource;
 
-        this.handlers = new HashMap<>(handlers != null ? handlers : Map.of());
-        this.handlers.putIfAbsent(RecipeType.CRAFTING, CRAFTING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.SMELTING, SMELTING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.BLASTING, SMELTING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.SMOKING, SMELTING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.CAMPFIRE_COOKING, SMELTING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.SMITHING, SMITHING_HANDLER);
-        this.handlers.putIfAbsent(RecipeType.STONECUTTING, STONECUTTING_HANDLER);
+        this.previewBuilders = new HashMap<>(previewBuilders != null ? previewBuilders : Map.of());
+        this.previewBuilders.putIfAbsent(RecipeType.CRAFTING, CRAFTING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.SMELTING, SMELTING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.BLASTING, SMELTING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.SMOKING, SMELTING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.CAMPFIRE_COOKING, SMELTING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.SMITHING, SMITHING_PREVIEW_BUILDER);
+        this.previewBuilders.putIfAbsent(RecipeType.STONECUTTING, STONECUTTING_PREVIEW_BUILDER);
     }
 
     @Override
@@ -159,13 +168,13 @@ public class RecipeFeature implements MarkdownFeature {
         @Override
         @SuppressWarnings({"rawtypes", "unchecked"})
         protected void visitStart(MarkdownCompiler<?> compiler) {
-            var handler = (RecipeHandler) RecipeFeature.this.handlers.get(this.recipe.value().getType());
-            if (handler != null) {
-                ((OwoUICompiler) compiler).visitComponent(handler.buildRecipePreview(RecipeFeature.this.bookComponentSource, this.recipe));
+            var previewBuilder = (RecipePreviewBuilder) RecipeFeature.this.previewBuilders.get(this.recipe.value().getType());
+            if (previewBuilder != null) {
+                ((OwoUICompiler) compiler).visitComponent(previewBuilder.buildRecipePreview(RecipeFeature.this.bookComponentSource, this.recipe));
             } else {
                 ((OwoUICompiler) compiler).visitComponent(
                         Containers.verticalFlow(Sizing.fill(100), Sizing.content())
-                                .child(Components.label(Text.literal("No handler registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.value().getType()) + "'")).horizontalSizing(Sizing.fill(100)))
+                                .child(Components.label(Text.literal("No preview builder registered for recipe type '" + Registries.RECIPE_TYPE.getId(this.recipe.value().getType()) + "'")).horizontalSizing(Sizing.fill(100)))
                                 .padding(Insets.of(10))
                                 .surface(Surface.flat(0x77A00000).and(Surface.outline(0x77FF0000)))
                 );
@@ -173,14 +182,13 @@ public class RecipeFeature implements MarkdownFeature {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {
-        }
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 
     @FunctionalInterface
-    public interface RecipeHandler<R extends Recipe<?>> {
+    public interface RecipePreviewBuilder<R extends Recipe<?>> {
         @NotNull
-        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<R> recipeInstance);
+        Component buildRecipePreview(BookCompiler.ComponentSource componentSource, RecipeEntry<R> recipeEntry);
 
         default void populateIngredients(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
             for (int i = 0; i < ingredients.size(); i++) {
@@ -196,6 +204,12 @@ public class RecipeFeature implements MarkdownFeature {
             }).alignRecipeToGrid(gridWidth, gridHeight, 9, recipe, ingredients.iterator(), 0);
         }
     }
+
+    /**
+     * @deprecated Use {@link RecipePreviewBuilder} instead
+     */
+    @Deprecated(forRemoval = true)
+    public interface RecipeHandler<R extends Recipe<?>> extends RecipePreviewBuilder<R> {}
 
     public static class IngredientComponent extends ItemComponent {
 
