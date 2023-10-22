@@ -14,7 +14,7 @@ a
 
 ---
 
-<recipe;minecraft:stone_bricks_from_stone_stonecutting>
+<recipe;minecraft:weathered_cut_copper_slab_from_weathered_cut_copper_stonecutting>
 
 ;;;;;
 
