@@ -24,6 +24,7 @@ public final class Book {
     private final Identifier id;
     private final @Nullable Identifier texture;
     private final @Nullable Identifier dynamicBookModel;
+    private final @Nullable Identifier introEntry;
     private final boolean displayCompletion;
     private final Map<String, String> zeroArgMacros = new HashMap<>();
     private final Map<Pattern, Macro> macros = new HashMap<>();
@@ -45,11 +46,12 @@ public final class Book {
 
     private @Nullable Entry landingPage = null;
 
-    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, boolean displayCompletion, Map<String, String> macros) {
+    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, @Nullable Identifier introEntry, boolean displayCompletion, Map<String, String> macros) {
         this.id = id;
         this.extend = extend;
         this.texture = texture;
         this.dynamicBookModel = dynamicBookModel;
+        this.introEntry = introEntry;
         this.displayCompletion = displayCompletion;
 
         macros.forEach((macro, replacement) -> {
@@ -98,6 +100,12 @@ public final class Book {
 
     public Collection<Entry> orphanedEntries() {
         return this.orphanedEntriesView;
+    }
+
+    public @Nullable Entry introEntry() {
+        return this.introEntry != null
+                ? this.entryById(this.introEntry)
+                : null;
     }
 
     public @Nullable Entry entryById(Identifier entryId) {

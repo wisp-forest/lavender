@@ -194,7 +194,11 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             this.navPush(frame, true);
         }
 
-        if (this.navStack.isEmpty()) this.navPush(new NavFrame(new LandingPageSupplier(this), 0), true);
+        if (this.book.introEntry() != null && !LavenderClientStorage.wasBookOpened(this.book.id())) {
+            this.navPush(new NavFrame(new EntryPageSupplier(this, this.book.introEntry()), 0), true);
+        }
+
+        LavenderClientStorage.markBookOpened(this.book.id());
         this.rebuildContent(!this.isOverlay ? Lavender.ITEM_BOOK_OPEN : null);
     }
 
@@ -233,7 +237,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         this.bookmarkPanel.<FlowLayout>configure(bookmarkContainer -> {
             bookmarkContainer.clearChildren();
 
-            var bookmarks = LavenderBookmarks.getBookmarks(this.book);
+            var bookmarks = LavenderClientStorage.getBookmarks(this.book);
             for (var bookmark : bookmarks) {
                 var element = bookmark.tryResolve(this.book);
                 if (element == null) continue;
@@ -244,7 +248,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                     bookmarkButton.tooltip(List.of(Text.literal(element.title()), Text.translatable("text.lavender.book.bookmark.remove_hint")));
                     bookmarkButton.onPress($ -> {
                         if (Screen.hasShiftDown()) {
-                            LavenderBookmarks.removeBookmark(this.book, bookmark);
+                            LavenderClientStorage.removeBookmark(this.book, bookmark);
                             this.rebuildContent(null);
                         } else if (element instanceof Entry entry) {
                             this.navPush(new EntryPageSupplier(this, entry));
@@ -908,7 +912,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
         @Override
         public void addBookmark() {
-            LavenderBookmarks.addBookmark(this.context.book, this.category);
+            LavenderClientStorage.addBookmark(this.context.book, this.category);
         }
     }
 
@@ -952,7 +956,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
         @Override
         public void addBookmark() {
-            LavenderBookmarks.addBookmark(this.context.book, this.entry);
+            LavenderClientStorage.addBookmark(this.context.book, this.entry);
         }
     }
 
