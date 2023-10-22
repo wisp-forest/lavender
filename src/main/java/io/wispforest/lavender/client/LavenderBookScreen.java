@@ -533,6 +533,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
             entries.stream()
                     .sorted((o1, o2) -> AlphanumComparator.compare(o1.title(), o2.title()))
+                    .sorted(Comparator.comparingInt(Entry::ordinal))
                     .sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player)))
                     .forEach(entry -> {
                         boolean entryVisible = entry.canPlayerView(this.context.client.player);
@@ -630,26 +631,29 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 var categoryContainer = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content()).gap(4);
                 categories.child(categoryContainer);
 
-                book.categories().stream().sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player))).forEach(category -> {
-                    if (book.shouldDisplayCategory(category, this.context.client.player)) {
-                        categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
-                            categoryButton
-                                    .tooltip(Text.literal(category.title()))
-                                    .margins(Insets.of(4))
-                                    .cursorStyle(CursorStyle.HAND);
+                book.categories().stream()
+                        .sorted(Comparator.comparingInt(Category::ordinal))
+                        .sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player)))
+                        .forEach(category -> {
+                            if (book.shouldDisplayCategory(category, this.context.client.player)) {
+                                categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
+                                    categoryButton
+                                            .tooltip(Text.literal(category.title()))
+                                            .margins(Insets.of(4))
+                                            .cursorStyle(CursorStyle.HAND);
 
-                            categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                                if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                                    categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
-                                this.context.navPush(new CategoryPageSupplier(this.context, category));
-                                UISounds.playInteractionSound();
-                                return true;
-                            });
-                        }));
-                    } else if (!category.secret()) {
-                        categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
-                    }
-                });
+                                        this.context.navPush(new CategoryPageSupplier(this.context, category));
+                                        UISounds.playInteractionSound();
+                                        return true;
+                                    });
+                                }));
+                            } else if (!category.secret()) {
+                                categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
+                            }
+                        });
 
                 categoryContainer.child(Components.item(LavenderBookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
                     categoryButton

@@ -3,6 +3,7 @@
   "title": "Entry from Another World",
   "icon": "minecraft:oak_log",
   "category": "lavender-flower:epic_category",
+  "ordinal": -1,
   "associated_items": [
     "minecraft:diamond"
   ],
