@@ -2,6 +2,7 @@ package io.wispforest.lavender.book;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.LavenderClient;
@@ -14,18 +15,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class LavenderBookmarks {
+public class LavenderClientStorage {
 
     private static final TypeToken<Map<UUID, Map<Identifier, List<Bookmark>>>> BOOKMARKS_TYPE = new TypeToken<>() {};
     private static Map<UUID, Map<Identifier, List<Bookmark>>> bookmarks;
+
+    private static final TypeToken<Map<UUID, Set<Identifier>>> OPENED_BOOKS_TYPE = new TypeToken<>() {};
+    private static Map<UUID, Set<Identifier>> openedBooks;
 
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Identifier.class, new Identifier.Serializer()).setPrettyPrinting().create();
 
     static {
         try {
-            bookmarks = GSON.fromJson(Files.readString(bookmarksFile()), BOOKMARKS_TYPE);
+            var data = GSON.fromJson(Files.readString(storageFile()), JsonObject.class);
+
+            bookmarks = GSON.fromJson(data.get("bookmarks"), BOOKMARKS_TYPE);
+            openedBooks = GSON.fromJson(data.get("opened_books"), OPENED_BOOKS_TYPE);
         } catch (Exception e) {
             bookmarks = new HashMap<>();
+            openedBooks = new HashMap<>();
             save();
         }
     }
@@ -57,16 +65,33 @@ public class LavenderBookmarks {
         return bookmarks.computeIfAbsent(LavenderClient.currentWorldId(), $ -> new HashMap<>()).computeIfAbsent(book.id(), $ -> new ArrayList<>());
     }
 
+    public static boolean wasBookOpened(Identifier book) {
+        return getOpenedBooksSet().contains(book);
+    }
+
+    public static void markBookOpened(Identifier book) {
+        getOpenedBooksSet().add(book);
+        save();
+    }
+
+    private static Set<Identifier> getOpenedBooksSet() {
+        return openedBooks.computeIfAbsent(LavenderClient.currentWorldId(), $ -> new HashSet<>());
+    }
+
     private static void save() {
         try {
-            Files.writeString(bookmarksFile(), GSON.toJson(bookmarks, BOOKMARKS_TYPE.getType()));
+            var data = new JsonObject();
+            data.add("bookmarks", GSON.toJsonTree(bookmarks, BOOKMARKS_TYPE.getType()));
+            data.add("opened_books", GSON.toJsonTree(openedBooks, OPENED_BOOKS_TYPE.getType()));
+
+            Files.writeString(storageFile(), GSON.toJson(data));
         } catch (IOException e) {
             Lavender.LOGGER.warn("Failed to save bookmarks", e);
         }
     }
 
-    private static Path bookmarksFile() {
-        return FabricLoader.getInstance().getConfigDir().resolve("lavender_bookmarks.json");
+    private static Path storageFile() {
+        return FabricLoader.getInstance().getConfigDir().resolve("lavender_client_storage.json");
     }
 
     public record Bookmark(Type type, Identifier id) {
