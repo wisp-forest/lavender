@@ -1,17 +1,19 @@
 package io.wispforest.lavender.book;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wispforest.lavender.Lavender;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.command.argument.ItemStringReader;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.resource.*;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
@@ -56,7 +58,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 book.addCategory(new Category(
                         identifier,
                         JsonHelper.getString(markdown.meta, "title"),
-                        JsonHelper.getItem(markdown.meta, "icon"),
+                        getIcon(markdown.meta, null),
                         JsonHelper.getBoolean(markdown.meta, "secret", false),
                         JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE),
                         markdown.content
@@ -75,7 +77,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                         : null;
 
                 var title = JsonHelper.getString(markdown.meta, "title");
-                var icon = JsonHelper.getItem(markdown.meta, "icon", Items.AIR);
+                var icon = getIcon(markdown.meta, ItemStack.EMPTY);
                 var secret = JsonHelper.getBoolean(markdown.meta, "secret", false);
                 var ordinal = JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE);
 
@@ -198,4 +200,20 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
     }
 
     private record MarkdownResource(JsonObject meta, String content) {}
+
+    private static ItemStack getIcon(JsonObject meta, @Nullable ItemStack orElse) {
+        if (!meta.has("icon") && orElse != null) return orElse;
+        var stackString = JsonHelper.getString(meta, "icon");
+
+        try {
+            var parsed = ItemStringReader.item(Registries.ITEM.getReadOnlyWrapper(), new StringReader(stackString));
+
+            var stack = parsed.item().value().getDefaultStack();
+            if (parsed.nbt() != null) stack.setNbt(parsed.nbt());
+
+            return stack;
+        } catch (CommandSyntaxException e) {
+            throw new JsonSyntaxException("Invalid icon string: '" + stackString +  "'", e);
+        }
+    }
 }

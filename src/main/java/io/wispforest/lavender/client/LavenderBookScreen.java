@@ -228,7 +228,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 if (element == null) continue;
 
                 var bookmarkComponent = this.createBookmarkButton("bookmark");
-                bookmarkComponent.childById(ItemComponent.class, "bookmark-preview").stack(element.icon().getDefaultStack());
+                bookmarkComponent.childById(ItemComponent.class, "bookmark-preview").stack(element.icon());
                 bookmarkComponent.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
                     bookmarkButton.tooltip(List.of(Text.literal(element.title()), Text.translatable("text.lavender.book.bookmark.remove_hint")));
                     bookmarkButton.onPress($ -> {
@@ -557,7 +557,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         ParentComponent indexItem;
                         if (entryVisible) {
                             indexItem = this.context.template(ParentComponent.class, "index-item");
-                            indexItem.childById(ItemComponent.class, "icon").stack(entry.icon().getDefaultStack());
+                            indexItem.childById(ItemComponent.class, "icon").stack(entry.icon());
 
                             var label = indexItem.childById(LabelComponent.class, "index-label");
 
@@ -640,7 +640,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         .sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player)))
                         .forEach(category -> {
                             if (book.shouldDisplayCategory(category, this.context.client.player)) {
-                                categoryContainer.child(Components.item(category.icon().getDefaultStack()).<ItemComponent>configure(categoryButton -> {
+                                categoryContainer.child(Components.item(category.icon()).<ItemComponent>configure(categoryButton -> {
                                     categoryButton
                                             .tooltip(Text.literal(category.title()))
                                             .margins(Insets.of(4))

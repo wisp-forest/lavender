@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -267,7 +268,7 @@ public final class Book {
 
     public interface BookmarkableElement {
         String title();
-        Item icon();
+        ItemStack icon();
     }
 
     public record Macro(List<String> parts, IntList argIndices) {

@@ -1,7 +1,7 @@
 ```json
 {
   "title": "A Profound Page With a Long Name",
-  "icon": "minecraft:melon_slice",
+  "icon": "minecraft:melon_slice{Enchantments:[{id:'minecraft:unbreaking', lvl:1}]}",
   "category": "a_category",
   "required_advancements": [
     "minecraft:story/lava_bucket"
