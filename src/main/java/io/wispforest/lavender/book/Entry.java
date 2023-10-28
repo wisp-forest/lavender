@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import io.wispforest.lavender.mixin.ClientAdvancementManagerAccessor;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +12,7 @@ public record Entry(
         Identifier id,
         @Nullable Identifier category,
         String title,
-        Item icon,
+        ItemStack icon,
         boolean secret,
         int ordinal,
         ImmutableSet<Identifier> requiredAdvancements,

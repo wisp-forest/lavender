@@ -1,6 +1,6 @@
 ```json
 {
-  "icon": "minecraft:nether_star",
+  "icon": "minecraft:splash_potion{Potion:'minecraft:strength'}",
   "title": "Epic Category"
 }
 ```

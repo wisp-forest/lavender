@@ -29,7 +29,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
         this.layout = Containers.horizontalFlow(Sizing.content(), Sizing.content()).gap(2);
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .child(Components.item(entry.icon().getDefaultStack()).margins(Insets.of(2)))
+                .child(Components.item(entry.icon()).margins(Insets.of(2)))
                 .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11)).zIndex(50)));
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
