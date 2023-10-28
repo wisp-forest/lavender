@@ -5,7 +5,8 @@
   "category": "lavender-flower:epic_category",
   "ordinal": -1,
   "associated_items": [
-    "minecraft:diamond"
+    "minecraft:diamond",
+    "minecraft:enchanted_book{StoredEnchantments:[{id:'minecraft:sharpness', lvl:2s}]}"
   ],
   "required_advancements": [
     "minecraft:story/iron_tools"

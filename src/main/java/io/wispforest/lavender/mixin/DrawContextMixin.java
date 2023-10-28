@@ -34,7 +34,7 @@ public class DrawContextMixin {
             AssociatedEntryTooltipComponent.tooltipStack = null;
 
             for (var book : BookLoader.loadedBooks()) {
-                var associatedEntry = book.entryByAssociatedItem(stack.getItem());
+                var associatedEntry = book.entryByAssociatedItem(stack);
                 if (associatedEntry == null || !associatedEntry.canPlayerView(client.player)) continue;
 
                 int bookIndex = -1;

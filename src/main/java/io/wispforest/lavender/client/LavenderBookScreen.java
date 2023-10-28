@@ -541,7 +541,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 }
 
                 if (descendant instanceof ItemComponent item) {
-                    var entry = this.context.book.entryByAssociatedItem(item.stack().getItem());
+                    var entry = this.context.book.entryByAssociatedItem(item.stack());
                     if (entry == null || (this instanceof EntryPageSupplier entrySupplier && entry == entrySupplier.entry)) {
                         return;
                     }

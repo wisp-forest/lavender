@@ -80,9 +80,9 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 var secret = JsonHelper.getBoolean(markdown.meta, "secret", false);
                 var ordinal = JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE);
 
-                var associatedItems = new ImmutableSet.Builder<Item>();
+                var associatedItems = new ImmutableSet.Builder<ItemStack>();
                 for (var itemElement : JsonHelper.getArray(markdown.meta, "associated_items", new JsonArray())) {
-                    associatedItems.add(JsonHelper.asItem(itemElement, "associated_items entry").value());
+                    associatedItems.add(itemStackFromString(itemElement.getAsString()));
                 }
 
                 var requiredAdvancements = new ImmutableSet.Builder<Identifier>();
@@ -204,6 +204,10 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         if (!meta.has("icon") && orElse != null) return orElse;
         var stackString = JsonHelper.getString(meta, "icon");
 
+        return itemStackFromString(stackString);
+    }
+
+    private static ItemStack itemStackFromString(String stackString) {
         try {
             var parsed = ItemStringReader.item(Registries.ITEM.getReadOnlyWrapper(), new StringReader(stackString));
 
@@ -212,7 +216,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
             return stack;
         } catch (CommandSyntaxException e) {
-            throw new JsonSyntaxException("Invalid icon string: '" + stackString +  "'", e);
+            throw new JsonSyntaxException("Invalid item stack: '" + stackString +  "'", e);
         }
     }
 }

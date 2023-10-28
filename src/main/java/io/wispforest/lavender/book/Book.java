@@ -1,5 +1,7 @@
 package io.wispforest.lavender.book;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavendermd.util.StringNibbler;
@@ -8,6 +10,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +43,7 @@ public final class Book {
     private final Collection<Entry> entriesView = Collections.unmodifiableCollection(this.entriesById.values());
 
     private final Map<Category, List<Entry>> entriesByCategory = new HashMap<>();
-    private final Map<Item, Entry> entriesByAssociatedItem = new HashMap<>();
+    private final Multimap<Item, Entry> entriesByAssociatedItem = HashMultimap.create();
 
     private final List<Entry> orphanedEntries = new ArrayList<>();
     private final Collection<Entry> orphanedEntriesView = Collections.unmodifiableCollection(this.orphanedEntries);
@@ -113,8 +116,19 @@ public final class Book {
         return this.entriesById.get(entryId);
     }
 
-    public @Nullable Entry entryByAssociatedItem(Item associatedItem) {
-        return this.entriesByAssociatedItem.get(associatedItem);
+    public @Nullable Entry entryByAssociatedItem(ItemStack associatedStack) {
+        var candidates = this.entriesByAssociatedItem.get(associatedStack.getItem());
+        for (var candidateEntry : candidates) {
+            for (var candidateAssociatedStack : candidateEntry.associatedItems()) {
+                if (candidateAssociatedStack.getItem() != associatedStack.getItem()) continue;
+
+                if (NbtHelper.matches(candidateAssociatedStack.getNbt(), associatedStack.getNbt(), true)) {
+                    return candidateEntry;
+                }
+            }
+        }
+
+         return null;
     }
 
     public @Nullable Collection<Entry> entriesByCategory(Category category) {
@@ -233,7 +247,7 @@ public final class Book {
             this.resolvedExtend.addEntry(entry);
         } else {
             this.entriesById.put(entry.id(), entry);
-            entry.associatedItems().forEach(item -> this.entriesByAssociatedItem.put(item, entry));
+            entry.associatedItems().forEach(stack -> this.entriesByAssociatedItem.put(stack.getItem(), entry));
 
             if (this.categories.containsKey(entry.category())) {
                 this.entriesByCategory

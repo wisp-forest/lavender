@@ -3,6 +3,9 @@
   "title": "A Profound Page With a Long Name",
   "icon": "minecraft:melon_slice{Enchantments:[{id:'minecraft:unbreaking', lvl:1}]}",
   "category": "a_category",
+  "associated_items": [
+    "minecraft:enchanted_book{StoredEnchantments:[{id:'minecraft:unbreaking', lvl:3s}]}"
+  ],
   "required_advancements": [
     "minecraft:story/lava_bucket"
   ]

@@ -77,7 +77,7 @@ public class LavenderClient implements ClientModInitializer {
                 var item = client.world.getBlockState(hitResult.getBlockPos()).getBlock().asItem();
                 if (item == Items.AIR) return;
 
-                var associatedEntry = book.entryByAssociatedItem(item);
+                var associatedEntry = book.entryByAssociatedItem(item.getDefaultStack());
                 if (associatedEntry == null || !associatedEntry.canPlayerView(client.player)) return;
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
@@ -99,7 +99,7 @@ public class LavenderClient implements ClientModInitializer {
             var item = world.getBlockState(hitResult.getBlockPos()).getBlock().asItem();
             if (item == Items.AIR) return ActionResult.PASS;
 
-            var associatedEntry = book.entryByAssociatedItem(item);
+            var associatedEntry = book.entryByAssociatedItem(item.getDefaultStack());
             if (associatedEntry == null || !associatedEntry.canPlayerView((ClientPlayerEntity) player)) {
                 return ActionResult.PASS;
             }

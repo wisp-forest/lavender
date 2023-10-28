@@ -16,7 +16,7 @@ public record Entry(
         boolean secret,
         int ordinal,
         ImmutableSet<Identifier> requiredAdvancements,
-        ImmutableSet<Item> associatedItems,
+        ImmutableSet<ItemStack> associatedItems,
         String content
 ) implements Book.BookmarkableElement {
 
