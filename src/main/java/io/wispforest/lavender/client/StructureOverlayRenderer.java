@@ -244,9 +244,11 @@ public class StructureOverlayRenderer {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
+            RenderSystem.backupProjectionMatrix();
             client.gameRenderer.blitScreenProgram.colorModulator.set(new float[]{1, 1, 1, .5f});
             framebuffer.draw(framebuffer.textureWidth, framebuffer.textureHeight, false);
             client.gameRenderer.blitScreenProgram.colorModulator.set(new float[]{1, 1, 1, 1});
+            RenderSystem.restoreProjectionMatrix();
         });
 
         WindowResizeCallback.EVENT.register((client, window) -> {
