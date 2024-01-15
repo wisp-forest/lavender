@@ -13,6 +13,9 @@ import net.minecraft.command.argument.ItemStringReader;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.resource.*;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
@@ -20,9 +23,7 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public class BookContentLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
@@ -82,7 +83,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
                 var associatedItems = new ImmutableSet.Builder<ItemStack>();
                 for (var itemElement : JsonHelper.getArray(markdown.meta, "associated_items", new JsonArray())) {
-                    associatedItems.add(itemStackFromString(itemElement.getAsString()));
+                    associatedItems.addAll(itemsFromString(itemElement.getAsString()));
                 }
 
                 var requiredAdvancements = new ImmutableSet.Builder<Identifier>();
@@ -205,6 +206,24 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
         var stackString = JsonHelper.getString(meta, "icon");
 
         return itemStackFromString(stackString);
+    }
+
+    private static Collection<ItemStack> itemsFromString(String itemsString) {
+        if (!itemsString.startsWith("#")) return List.of(itemStackFromString(itemsString));
+
+        var tagId = Identifier.tryParse(itemsString.substring(1));
+        if (tagId == null) {
+            Lavender.LOGGER.warn("Could not parse tag ID '" + itemsString + "'");
+            return List.of();
+        }
+
+        var entryList = Registries.ITEM.getEntryList(TagKey.of(RegistryKeys.ITEM, tagId));
+        if (entryList.isEmpty()) {
+            Lavender.LOGGER.warn("Unknown item tag: '" + itemsString + "'");
+            return List.of();
+        }
+
+        return entryList.get().stream().map(RegistryEntry::value).map(Item::getDefaultStack).toList();
     }
 
     private static ItemStack itemStackFromString(String stackString) {
