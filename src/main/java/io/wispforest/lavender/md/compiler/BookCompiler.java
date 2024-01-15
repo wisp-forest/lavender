@@ -2,7 +2,6 @@ package io.wispforest.lavender.md.compiler;
 
 import com.google.common.primitives.Ints;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.book.Entry;
 import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavendermd.compiler.OwoUICompiler;
 import io.wispforest.lavendermd.feature.OwoUITemplateFeature;
@@ -21,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class BookCompiler extends OwoUICompiler {
 
@@ -95,8 +95,8 @@ public class BookCompiler extends OwoUICompiler {
                 var clickEvent = style.getClickEvent();
                 if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
                     var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
-                    if (linkTarget != null && linkTarget.entry != null) {
-                        this.owner.navPush(new LavenderBookScreen.NavFrame(new LavenderBookScreen.EntryPageSupplier(this.owner, linkTarget.entry), linkTarget.page));
+                    if (linkTarget != null && linkTarget.supplier != null) {
+                        this.owner.navPush(linkTarget.supplier.get());
                         return true;
                     } else {
                         return false;
@@ -115,7 +115,7 @@ public class BookCompiler extends OwoUICompiler {
             if (this.owner == null) return null;
 
             var rawLinkText = link.substring(1);
-            int targetPage = 0;
+            int targetPage;
 
             int pageSeparatorIndex = rawLinkText.indexOf('#');
             if (pageSeparatorIndex > 0) {
@@ -124,15 +124,34 @@ public class BookCompiler extends OwoUICompiler {
 
                 targetPage = Math.max(0, (parsed - 1) / 2 * 2);
                 rawLinkText = rawLinkText.substring(0, pageSeparatorIndex);
+            } else {
+                targetPage = 0; // effectively final my ass
             }
 
             var entryId = Identifier.tryParse(rawLinkText);
             if (entryId == null) return null;
 
             var entry = this.owner.book.entryById(entryId);
-            if (entry == null) return null;
+            if (entry != null) {
+                return new LinkTarget(
+                        Text.literal(entry.title()),
+                        entry.canPlayerView(MinecraftClient.getInstance().player)
+                                ? () -> new LavenderBookScreen.NavFrame(new LavenderBookScreen.EntryPageSupplier(this.owner, entry), targetPage)
+                                : null
+                );
+            }
 
-            return new LinkTarget(entry.canPlayerView(MinecraftClient.getInstance().player) ? entry : null, targetPage);
+            var category = this.owner.book.categoryById(entryId);
+            if (category != null) {
+                return new LinkTarget(
+                        Text.literal(category.title()),
+                        this.owner.book.shouldDisplayCategory(category, MinecraftClient.getInstance().player)
+                                ? () -> new LavenderBookScreen.NavFrame(new LavenderBookScreen.CategoryPageSupplier(this.owner, category), targetPage)
+                                : null
+                );
+            }
+
+            return null;
         }
 
         @Override
@@ -146,7 +165,7 @@ public class BookCompiler extends OwoUICompiler {
                 var linkTarget = this.resolveLinkTarget(rawLink);
 
                 style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
-                        ? linkTarget.entry != null ? Text.literal(linkTarget.entry.title()) : Text.translatable("text.lavender.locked_internal_link")
+                        ? linkTarget.supplier != null ? linkTarget.title : Text.translatable("text.lavender.locked_internal_link")
                         : Text.translatable("text.lavender.invalid_internal_link", rawLink)
                 ));
             }
@@ -154,7 +173,7 @@ public class BookCompiler extends OwoUICompiler {
             return style;
         }
 
-        protected record LinkTarget(Entry entry, int page) {}
+        protected record LinkTarget(Text title, @Nullable Supplier<LavenderBookScreen.NavFrame> supplier) {}
     }
 
     @FunctionalInterface
