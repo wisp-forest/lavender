@@ -4,7 +4,8 @@
   "icon": "minecraft:melon_slice{Enchantments:[{id:'minecraft:unbreaking', lvl:1}]}",
   "category": "a_category",
   "associated_items": [
-    "minecraft:enchanted_book{StoredEnchantments:[{id:'minecraft:unbreaking', lvl:3s}]}"
+    "minecraft:enchanted_book{StoredEnchantments:[{id:'minecraft:unbreaking', lvl:3s}]}",
+    "#minecraft:candles"
   ],
   "required_advancements": [
     "minecraft:story/lava_bucket"
@@ -82,6 +83,43 @@ For when a less concentrated material is required, simply {gold}sneak-right-clic
 smashes it into 4 pieces of {light_purple}Lesser Conjuration Essence{}
 
 *~a fine predicament*
+
+
+[a category link](^lavender-flower:a_category)
+
+```xml owo-ui
+<flow-layout direction="horizontal">
+    <children>
+        <flow-layout direction="horizontal">
+            <children>
+                <item>
+                    <stack>minecraft:diamond</stack>
+                    <set-tooltip-from-stack>true</set-tooltip-from-stack>
+                </item>
+
+                <label>
+                    <text translate="true">item.minecraft.diamond</text>
+                    <shadow>true</shadow>
+                </label>
+            </children>
+
+            <gap>5</gap>
+            <vertical-alignment>center</vertical-alignment>
+            <padding>
+                <all>5</all>
+            </padding>
+            <surface>
+                <panel dark="true"/>
+            </surface>
+
+        </flow-layout>
+    </children>
+    <sizing>
+        <horizontal method="fill">100</horizontal>
+    </sizing>
+    <horizontal-alignment>center</horizontal-alignment>
+</flow-layout>
+```
 
 ;;;;;
 
