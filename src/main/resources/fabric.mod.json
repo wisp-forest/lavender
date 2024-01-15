@@ -3,10 +3,15 @@
   "id": "lavender",
   "version": "${version}",
   "name": "Lavender",
-  "description": "",
-  "authors": [],
+  "description": "Apparently Lavender and Patchouli are really similar-looking flowers. Oh yeah, also this is a Guidebook API",
+  "authors": [
+    "glisco"
+  ],
   "contact": {
-    "repo": "https://github.com/wisp-forest/lavender"
+    "repo": "https://github.com/wisp-forest/lavender",
+    "homepage": "https://modrinth.com/project/lavender",
+    "sources": "https://github.com/wisp-forest/lavender",
+    "issues": "https://github.com/wisp-forest/lavender/issues"
   },
   "license": "MIT",
   "icon": "assets/lavender/icon.png",
@@ -24,7 +29,7 @@
     "lavender.mixins.json"
   ],
   "depends": {
-    "fabricloader": "*",
+    "fabricloader": ">=0.15.0",
     "fabric": "*",
     "minecraft": ">=1.20.3",
     "owo-lib": ">=0.12.0",
