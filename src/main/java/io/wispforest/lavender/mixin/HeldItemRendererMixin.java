@@ -1,5 +1,6 @@
 package io.wispforest.lavender.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import io.wispforest.lavender.book.LavenderBookItem;
 import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavender.client.OffhandBookRenderer;
@@ -9,41 +10,22 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.item.HeldItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HeldItemRenderer.class)
 public abstract class HeldItemRendererMixin {
 
-    @Unique
-    private static final ItemStack FILLED_MAP = new ItemStack(Items.FILLED_MAP);
-
-    @Unique
-    private ItemStack cachedItem = null;
-
-    @ModifyVariable(method = "renderFirstPersonItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;isEmpty()Z", ordinal = 0), argsOnly = true)
-    private ItemStack injectMap(ItemStack stack, AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand) {
+    @ModifyExpressionValue(method = "renderFirstPersonItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;isOf(Lnet/minecraft/item/Item;)Z", ordinal = 0))
+    private boolean injectMap(boolean original, AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand, float swingProgress, ItemStack stack) {
         if (!(stack.getItem() instanceof LavenderBookItem) || LavenderBookItem.bookOf(stack) == null || hand == Hand.MAIN_HAND || MinecraftClient.getInstance().currentScreen instanceof LavenderBookScreen) {
-            return stack;
+            return original;
         }
 
-        this.cachedItem = stack;
-        return FILLED_MAP;
-    }
-
-    @ModifyVariable(method = "renderFirstPersonItem", at = @At(value = "JUMP", opcode = Opcodes.IFEQ, ordinal = 4), argsOnly = true)
-    private ItemStack restoreMap(ItemStack value) {
-        if (this.cachedItem == null) return value;
-        var item = this.cachedItem;
-        this.cachedItem = null;
-        return item;
+        return true;
     }
 
     @Inject(method = "renderFirstPersonMap", at = @At("HEAD"), cancellable = true)
