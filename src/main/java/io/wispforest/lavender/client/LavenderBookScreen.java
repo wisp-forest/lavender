@@ -33,7 +33,6 @@ import net.minecraft.client.util.Window;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -153,7 +152,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> {
             if (Screen.hasShiftDown()) {
                 while (this.navStack.size() > 1) this.navStack.pop();
-                this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+                this.rebuildContent(this.book.flippingSound());
             } else {
                 this.navPop();
             }
@@ -199,7 +198,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         }
 
         LavenderClientStorage.markBookOpened(this.book.id());
-        this.rebuildContent(!this.isOverlay ? Lavender.ITEM_BOOK_OPEN : null);
+        this.rebuildContent(!this.isOverlay ? this.book.openSound() : null);
     }
 
     private void rebuildContent(@Nullable SoundEvent sound) {
@@ -295,7 +294,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         frame.selectedPage = Math.max(0, Math.min(frame.selectedPage + (left ? -2 : 2), frame.pageSupplier.pageCount() - 1)) / 2 * 2;
 
         if (frame.selectedPage != previousPage) {
-            this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+            this.rebuildContent(this.book.flippingSound());
         }
     }
 
@@ -319,14 +318,14 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             this.navStack.push(frame);
         }
 
-        if (!suppressUpdate) this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+        if (!suppressUpdate) this.rebuildContent(this.book.flippingSound());
     }
 
     public void navPop() {
         if (this.navStack.size() <= 1) return;
 
         this.navStack.pop();
-        this.rebuildContent(SoundEvents.ITEM_BOOK_PAGE_TURN);
+        this.rebuildContent(this.book.flippingSound());
     }
 
     @Override

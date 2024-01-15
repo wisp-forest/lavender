@@ -2,6 +2,7 @@
   "display_completion": true,
   "texture": "lavender:textures/gui/red_book.png",
   "intro_entry": "lavender-flower:profound_page",
+  "open_sound": "minecraft:block.anvil.destroy",
   "macros": {
     "nested_macro": "ah yes: $1",
     "macro_moment": "that's pretty nested_macro($1)"

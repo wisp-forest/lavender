@@ -11,6 +11,8 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtHelper;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +30,7 @@ public final class Book {
     private final Identifier id;
     private final @Nullable Identifier texture;
     private final @Nullable Identifier dynamicBookModel;
+    private final SoundEvent openSound, flippingSound;
     private final @Nullable Identifier introEntry;
     private final boolean displayCompletion;
     private final Map<String, String> zeroArgMacros = new HashMap<>();
@@ -50,11 +53,23 @@ public final class Book {
 
     private @Nullable Entry landingPage = null;
 
-    public Book(Identifier id, @Nullable Identifier extend, @Nullable Identifier texture, @Nullable Identifier dynamicBookModel, @Nullable Identifier introEntry, boolean displayCompletion, Map<String, String> macros) {
+    public Book(
+            Identifier id,
+            @Nullable Identifier extend,
+            @Nullable Identifier texture,
+            @Nullable Identifier dynamicBookModel,
+            @Nullable SoundEvent openSound,
+            @Nullable SoundEvent flippingSound,
+            @Nullable Identifier introEntry,
+            boolean displayCompletion,
+            Map<String, String> macros
+    ) {
         this.id = id;
         this.extend = extend;
         this.texture = texture;
         this.dynamicBookModel = dynamicBookModel;
+        this.openSound = openSound != null ? openSound : Lavender.ITEM_BOOK_OPEN;
+        this.flippingSound = flippingSound != null ? flippingSound : SoundEvents.ITEM_BOOK_PAGE_TURN;
         this.introEntry = introEntry;
         this.displayCompletion = displayCompletion;
 
@@ -128,7 +143,7 @@ public final class Book {
             }
         }
 
-         return null;
+        return null;
     }
 
     public @Nullable Collection<Entry> entriesByCategory(Category category) {
@@ -168,6 +183,14 @@ public final class Book {
 
     public @Nullable Identifier dynamicBookModel() {
         return this.dynamicBookModel;
+    }
+
+    public SoundEvent openSound() {
+        return this.openSound;
+    }
+
+    public SoundEvent flippingSound() {
+        return this.flippingSound;
     }
 
     public int countVisibleEntries(ClientPlayerEntity player) {

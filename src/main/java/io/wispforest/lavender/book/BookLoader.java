@@ -9,6 +9,7 @@ import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.BookBakedModel;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.minecraft.client.util.ModelIdentifier;
+import net.minecraft.registry.Registries;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
@@ -67,22 +68,21 @@ public class BookLoader {
             var bookObject = jsonElement.getAsJsonObject();
             var resourceId = BOOK_FINDER.toResourceId(identifier);
 
-            var texture = JsonHelper.getString(bookObject, "texture", null);
-            var textureId = texture != null ? Identifier.tryParse(texture) : null;
+            var textureId = tryGetId(bookObject, "texture");
+            var extendId = tryGetId(bookObject, "extend");
+            var dynamicBookModelId = tryGetId(bookObject, "dynamic_book_model");
 
-            var extend = JsonHelper.getString(bookObject, "extend", null);
-            var extendId = extend != null ? Identifier.tryParse(extend) : null;
+            var openSoundId = tryGetId(bookObject, "open_sound");
+            var openSoundEvent = openSoundId != null ? Registries.SOUND_EVENT.get(openSoundId) : null;
+            var flippingSoundId = tryGetId(bookObject, "flipping_sound");
+            var flippingSoundEvent = flippingSoundId != null ? Registries.SOUND_EVENT.get(flippingSoundId) : null;
 
-            var dynamicBookModel = JsonHelper.getString(bookObject, "dynamic_book_model", null);
-            var dynamicBookModelId = dynamicBookModel != null ? Identifier.tryParse(dynamicBookModel) : null;
-
-            var introEntry = JsonHelper.getString(bookObject, "intro_entry", null);
-            var introEntryId = introEntry != null ? Identifier.tryParse(introEntry) : null;
+            var introEntryId = tryGetId(bookObject, "intro_entry");
 
             var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
             var macros = GSON.fromJson(JsonHelper.getObject(bookObject, "macros", new JsonObject()), MACROS_TOKEN);
 
-            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, introEntryId, displayCompletion, macros);
+            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, openSoundEvent, flippingSoundEvent, introEntryId, displayCompletion, macros);
             LOADED_BOOKS.put(resourceId, book);
             if (extendId == null) VISIBLE_BOOKS.put(resourceId, book);
         });
@@ -93,5 +93,12 @@ public class BookLoader {
             Lavender.LOGGER.warn("Book '" + book.id() + "' (an extension) failed to load because its target was not found");
             return true;
         });
+    }
+
+    private static @Nullable Identifier tryGetId(JsonObject json, String key) {
+        var jsonString = JsonHelper.getString(json, key, null);
+        if (jsonString == null) return null;
+
+        return Identifier.tryParse(jsonString);
     }
 }
