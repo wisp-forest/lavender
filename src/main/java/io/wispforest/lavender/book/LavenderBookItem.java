@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.serialization.Endec;
 import io.wispforest.owo.serialization.endec.BuiltInEndecs;
 import io.wispforest.owo.serialization.endec.KeyedEndec;
 import net.fabricmc.api.EnvType;

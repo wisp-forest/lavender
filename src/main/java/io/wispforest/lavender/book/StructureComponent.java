@@ -5,29 +5,50 @@ import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureTemplate;
 import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.CursorStyle;
+import io.wispforest.owo.ui.core.Easing;
 import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.RotationAxis;
 import org.lwjgl.glfw.GLFW;
 import org.w3c.dom.Element;
+
+import java.util.List;
 
 public class StructureComponent extends BaseComponent {
 
     private final StructureTemplate structure;
     private final int displayAngle;
+
+    private float rotation = -45;
+    private long lastInteractionTime = 0L;
+
+    private boolean placeable = true;
     private int visibleLayer = -1;
 
     public StructureComponent(StructureTemplate structure, int displayAngle) {
         this.structure = structure;
         this.displayAngle = displayAngle;
         this.cursorStyle(CursorStyle.HAND);
+    }
+
+    @Override
+    public void update(float delta, int mouseX, int mouseY) {
+        super.update(delta, mouseX, mouseY);
+
+        var diff = Util.getMeasuringTimeMs() - this.lastInteractionTime;
+        if (diff < 5000L) return;
+
+        this.rotation += delta * Easing.SINE.apply(Math.min(1f, (diff - 5000) / 1500f));
     }
 
     @Override
@@ -46,7 +67,7 @@ public class StructureComponent extends BaseComponent {
         matrices.scale(scale, -scale, scale);
 
         matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(this.displayAngle));
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 75d % 360d)));
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(this.rotation));
         matrices.translate(this.structure.xSize / -2f, this.structure.ySize / -2f, this.structure.zSize / -2f);
 
         structure.forEachPredicate((blockPos, predicate) -> {
@@ -70,18 +91,20 @@ public class StructureComponent extends BaseComponent {
         entityBuffers.draw();
         DiffuseLighting.enableGuiDepthLighting();
 
-        if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
-            context.drawText(client.textRenderer, Text.translatable("text.lavender.structure_component.active_overlay_hint"), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0, false);
-            this.tooltip(Text.translatable("text.lavender.structure_component.hide_hint"));
-        } else {
-            this.tooltip(Text.translatable("text.lavender.structure_component.place_hint"));
+        if (this.placeable) {
+            if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
+                context.drawText(client.textRenderer, Text.translatable("text.lavender.structure_component.active_overlay_hint"), this.x + this.width - 5 - client.textRenderer.getWidth("⚓"), this.y + this.height - 9 - 5, 0, false);
+                this.tooltip(Text.translatable("text.lavender.structure_component.hide_hint"));
+            } else {
+                this.tooltip(Text.translatable("text.lavender.structure_component.place_hint"));
+            }
         }
     }
 
     @Override
     public boolean onMouseDown(double mouseX, double mouseY, int button) {
         var result = super.onMouseDown(mouseX, mouseY, button);
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return result;
+        if (!this.placeable || button != GLFW.GLFW_MOUSE_BUTTON_LEFT || !Screen.hasShiftDown()) return result;
 
         if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
             StructureOverlayRenderer.removeAllOverlays(this.structure.id);
@@ -95,11 +118,42 @@ public class StructureComponent extends BaseComponent {
         return true;
     }
 
+    @Override
+    public boolean onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) {
+        var result = super.onMouseDrag(mouseX, mouseY, deltaX, deltaY, button);
+        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return result;
+
+        this.rotation += (float) deltaX;
+        this.lastInteractionTime = Util.getMeasuringTimeMs();
+
+        return true;
+    }
+
+    @Override
+    public boolean canFocus(FocusSource source) {
+        return source == FocusSource.MOUSE_CLICK;
+    }
+
     public StructureComponent visibleLayer(int visibleLayer) {
         StructureOverlayRenderer.restrictVisibleLayer(this.structure.id, visibleLayer);
 
         this.visibleLayer = visibleLayer;
         return this;
+    }
+
+    public StructureComponent placeable(boolean placeable) {
+        if (!placeable) {
+            this.tooltip((List<TooltipComponent>) null);
+        }
+
+        this.cursorStyle(placeable ? CursorStyle.HAND : CursorStyle.POINTER);
+
+        this.placeable = placeable;
+        return this;
+    }
+
+    public boolean placeable() {
+        return this.placeable;
     }
 
     public static StructureComponent parse(Element element) {

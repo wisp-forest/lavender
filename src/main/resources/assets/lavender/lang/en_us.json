@@ -16,8 +16,8 @@
     {"text": "]", "color": "green"}
   ],
 
-  "text.lavender.structure_component.hide_hint": "❌ Click to hide",
-  "text.lavender.structure_component.place_hint": "⚓ Click to place",
+  "text.lavender.structure_component.hide_hint": "❌ Shift-click to hide",
+  "text.lavender.structure_component.place_hint": "⚓ Shift-click to place",
   "text.lavender.structure_component.active_overlay_hint": {"text": "⚓", "color": "gray"},
   "text.lavender.structure_component.layer_tooltip": "Layer: %d",
   "text.lavender.structure_component.all_layers_tooltip": "All layers",

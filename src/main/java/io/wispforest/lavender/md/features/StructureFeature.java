@@ -38,8 +38,14 @@ public class StructureFeature implements MarkdownFeature {
 
     @Override
     public void registerTokens(TokenRegistrar registrar) {
-        registrar.registerToken((nibbler, tokens) -> {
-            if (!nibbler.tryConsume("<structure;")) return false;
+        registrar.registerToken(structureLexer("structure", true), '<');
+        registrar.registerToken(structureLexer("structure-visualizer", false), '<');
+    }
+
+    private Lexer.LexFunction structureLexer(String token, boolean placeable) {
+        var marker = "<" + token + ";";
+        return (nibbler, tokens) -> {
+            if (!nibbler.tryConsume(marker)) return false;
 
             var structureIdString = nibbler.consumeUntil('>');
             if (structureIdString == null) return false;
@@ -59,15 +65,15 @@ public class StructureFeature implements MarkdownFeature {
             var structure = LavenderStructures.get(structureId);
             if (structure == null) return false;
 
-            tokens.add(new StructureToken(structureIdString, structure, angle));
+            tokens.add(new StructureToken(structureIdString, structure, angle, placeable));
             return true;
-        }, '<');
+        };
     }
 
     @Override
     public void registerNodes(NodeRegistrar registrar) {
         registrar.registerNode(
-                (parser, structureToken, tokens) -> new StructureNode(structureToken.structure, structureToken.angle),
+                (parser, structureToken, tokens) -> new StructureNode(structureToken.structure, structureToken.angle, structureToken.placeable),
                 (token, tokens) -> token instanceof StructureToken structure ? structure : null
         );
     }
@@ -76,11 +82,13 @@ public class StructureFeature implements MarkdownFeature {
 
         public final StructureTemplate structure;
         public final int angle;
+        public final boolean placeable;
 
-        public StructureToken(String content, StructureTemplate structure, int angle) {
+        public StructureToken(String content, StructureTemplate structure, int angle, boolean placeable) {
             super(content);
             this.structure = structure;
             this.angle = angle;
+            this.placeable = placeable;
         }
     }
 
@@ -88,14 +96,15 @@ public class StructureFeature implements MarkdownFeature {
 
         private final StructureTemplate structure;
         private final int angle;
+        private final boolean placeable;
 
-        public StructureNode(StructureTemplate structure, int angle) {
+        public StructureNode(StructureTemplate structure, int angle, boolean placeable) {
             this.structure = structure;
             this.angle = angle;
+            this.placeable = placeable;
         }
 
         @Override
-        @SuppressWarnings("DataFlowIssue")
         protected void visitStart(MarkdownCompiler<?> compiler) {
             var structureComponent = StructureFeature.this.bookComponentSource.builtinTemplate(
                     ParentComponent.class,
@@ -103,7 +112,7 @@ public class StructureFeature implements MarkdownFeature {
                     Map.of("structure", this.structure.id.toString(), "angle", String.valueOf(this.angle))
             );
 
-            var structurePreview = structureComponent.childById(StructureComponent.class, "structure");
+            var structurePreview = structureComponent.childById(StructureComponent.class, "structure").placeable(this.placeable);
             var layerSlider = structureComponent.childById(SlimSliderComponent.class, "layer-slider");
 
             if (layerSlider != null) {
@@ -122,7 +131,6 @@ public class StructureFeature implements MarkdownFeature {
         }
 
         @Override
-        protected void visitEnd(MarkdownCompiler<?> compiler) {
-        }
+        protected void visitEnd(MarkdownCompiler<?> compiler) {}
     }
 }
