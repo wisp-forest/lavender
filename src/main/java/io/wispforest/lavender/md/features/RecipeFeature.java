@@ -1,5 +1,6 @@
 package io.wispforest.lavender.md.features;
 
+import io.wispforest.lavender.md.ItemListComponent;
 import io.wispforest.lavender.md.compiler.BookCompiler;
 import io.wispforest.lavender.pond.SmithingRecipeAccessor;
 import io.wispforest.lavendermd.Lexer;
@@ -11,9 +12,7 @@ import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.core.*;
-import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.*;
@@ -23,7 +22,6 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +47,7 @@ public class RecipeFeature implements MarkdownFeature {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smelting-recipe");
 
-        recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
+        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.getIngredients().get(0));
         recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
         var workstation = ItemStack.EMPTY;
@@ -67,9 +65,9 @@ public class RecipeFeature implements MarkdownFeature {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
         if (recipe instanceof SmithingRecipeAccessor accessor) {
-            recipeComponent.childById(IngredientComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
-            recipeComponent.childById(IngredientComponent.class, "input-2").ingredient(accessor.lavender$getBase());
-            recipeComponent.childById(IngredientComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
+            recipeComponent.childById(ItemListComponent.class, "input-1").ingredient(accessor.lavender$getTemplate());
+            recipeComponent.childById(ItemListComponent.class, "input-2").ingredient(accessor.lavender$getBase());
+            recipeComponent.childById(ItemListComponent.class, "input-3").ingredient(accessor.lavender$getAddition());
         }
 
         recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
@@ -81,7 +79,7 @@ public class RecipeFeature implements MarkdownFeature {
         var recipe = recipeEntry.value();
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "stonecutting-recipe");
 
-        recipeComponent.childById(IngredientComponent.class, "input").ingredient(recipe.getIngredients().get(0));
+        recipeComponent.childById(ItemListComponent.class, "input").ingredient(recipe.getIngredients().get(0));
         recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));
 
         return recipeComponent;
@@ -192,14 +190,14 @@ public class RecipeFeature implements MarkdownFeature {
 
         default void populateIngredients(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer) {
             for (int i = 0; i < ingredients.size(); i++) {
-                if (!(componentContainer.children().get(i) instanceof IngredientComponent ingredient)) continue;
+                if (!(componentContainer.children().get(i) instanceof ItemListComponent ingredient)) continue;
                 ingredient.ingredient(ingredients.get(i));
             }
         }
 
         default void populateIngredientsGrid(RecipeEntry<R> recipe, List<Ingredient> ingredients, ParentComponent componentContainer, int gridWidth, int gridHeight) {
             ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
-                if (!(componentContainer.children().get(slot) instanceof IngredientComponent ingredient)) return;
+                if (!(componentContainer.children().get(slot) instanceof ItemListComponent ingredient)) return;
                 ingredient.ingredient(inputs.next());
             }).alignRecipeToGrid(gridWidth, gridHeight, 9, recipe, ingredients.iterator(), 0);
         }
@@ -210,70 +208,4 @@ public class RecipeFeature implements MarkdownFeature {
      */
     @Deprecated(forRemoval = true)
     public interface RecipeHandler<R extends Recipe<?>> extends RecipePreviewBuilder<R> {}
-
-    public static class IngredientComponent extends ItemComponent {
-
-        private @Nullable Ingredient ingredient = null;
-
-        private float time = 0f;
-        private List<TooltipComponent> extraTooltipSection = List.of();
-        private int matchingStackIndex;
-
-        public IngredientComponent() {
-            super(ItemStack.EMPTY);
-            this.setTooltipFromStack(true);
-        }
-
-        @Override
-        public void update(float delta, int mouseX, int mouseY) {
-            super.update(delta, mouseX, mouseY);
-
-            this.time += delta;
-            if (this.time >= 20) {
-                this.time -= 20;
-                this.updateForIngredient();
-            }
-        }
-
-        @Override
-        public Component tooltip(List<TooltipComponent> tooltip) {
-            if (tooltip == null) return super.tooltip((List<TooltipComponent>) null);
-
-            tooltip = new ArrayList<>(tooltip);
-            tooltip.addAll(this.extraTooltipSection);
-
-            this.tooltip = tooltip;
-            return this;
-        }
-
-        private void updateForIngredient() {
-            if (this.ingredient != null && this.ingredient.getMatchingStacks().length != 0) {
-                this.matchingStackIndex = (this.matchingStackIndex + 1) % this.ingredient.getMatchingStacks().length;
-                this.stack(this.ingredient.getMatchingStacks()[this.matchingStackIndex]);
-            } else {
-                this.matchingStackIndex = 0;
-                this.stack(ItemStack.EMPTY);
-            }
-        }
-
-        public IngredientComponent ingredient(@Nullable Ingredient ingredient) {
-            this.ingredient = ingredient;
-            this.updateForIngredient();
-
-            return this;
-        }
-
-        public @Nullable Ingredient ingredient() {
-            return ingredient;
-        }
-
-        public void extraTooltipSection(List<TooltipComponent> section) {
-            this.extraTooltipSection = section;
-            this.updateTooltipForStack();
-        }
-    }
-
-    static {
-        UIParsing.registerFactory("lavender.ingredient", element -> new IngredientComponent());
-    }
 }

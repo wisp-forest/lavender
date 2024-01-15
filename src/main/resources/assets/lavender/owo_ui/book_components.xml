@@ -1,6 +1,5 @@
 <owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.20/owo-ui.xsd">
-
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.20.3/owo-ui.xsd">
     <templates>
         <template name="page-title">
             <flow-layout direction="vertical">
@@ -117,60 +116,60 @@
 
                             <grid-layout rows="3" columns="3" id="input-grid">
                                 <children>
-                                    <lavender.ingredient row="0" column="0">
+                                    <lavender.item-list row="0" column="0">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="0" column="1">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="0" column="1">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="0" column="2">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="0" column="2">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="1" column="0">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="1" column="0">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="1" column="1">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="1" column="1">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="1" column="2">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="1" column="2">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="2" column="0">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="2" column="0">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="2" column="1">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="2" column="1">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
-                                    <lavender.ingredient row="2" column="2">
+                                    </lavender.item-list>
+                                    <lavender.item-list row="2" column="2">
                                         <margins>
                                             <top>1</top>
                                             <left>1</left>
                                         </margins>
-                                    </lavender.ingredient>
+                                    </lavender.item-list>
                                 </children>
 
                                 <padding>
@@ -220,9 +219,9 @@
                                 <blend>true</blend>
                             </texture>
 
-                            <lavender.ingredient id="input">
+                            <lavender.item-list id="input">
                                 <positioning type="absolute">4,4</positioning>
-                            </lavender.ingredient>
+                            </lavender.item-list>
 
                             <item id="output">
                                 <set-tooltip-from-stack>true</set-tooltip-from-stack>
@@ -263,9 +262,9 @@
 
                             <flow-layout direction="horizontal">
                                 <children>
-                                    <lavender.ingredient id="input-1"/>
-                                    <lavender.ingredient id="input-2"/>
-                                    <lavender.ingredient id="input-3"/>
+                                    <lavender.item-list id="input-1"/>
+                                    <lavender.item-list id="input-2"/>
+                                    <lavender.item-list id="input-3"/>
                                 </children>
                                 <positioning type="absolute">2,4</positioning>
                                 <gap>1</gap>
@@ -309,9 +308,9 @@
                                 <blend>true</blend>
                             </texture>
 
-                            <lavender.ingredient id="input">
+                            <lavender.item-list id="input">
                                 <positioning type="absolute">4,4</positioning>
-                            </lavender.ingredient>
+                            </lavender.item-list>
 
                             <item id="output">
                                 <set-tooltip-from-stack>true</set-tooltip-from-stack>

@@ -6,6 +6,7 @@ import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookContentLoader;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.book.LavenderBookItem;
+import io.wispforest.lavender.md.ItemListComponent;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.owo.ui.component.Components;
 import io.wispforest.owo.ui.container.Containers;
@@ -15,6 +16,7 @@ import io.wispforest.owo.ui.core.Positioning;
 import io.wispforest.owo.ui.core.Size;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.hud.Hud;
+import io.wispforest.owo.ui.parsing.UIParsing;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
@@ -114,6 +116,13 @@ public class LavenderClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(Lavender.WORLD_ID_CHANNEL, (client, handler, buf, responseSender) -> {
             currentWorldId = buf.readUuid();
         });
+
+        UIParsing.registerFactory(Lavender.id("ingredient"), element -> {
+            Lavender.LOGGER.warn("Deprecated <ingredient> element used, migrate to <item-list> instead");
+            return new ItemListComponent();
+        });
+
+        UIParsing.registerFactory(Lavender.id("item-list"), element -> new ItemListComponent());
     }
 
     public static UUID currentWorldId() {

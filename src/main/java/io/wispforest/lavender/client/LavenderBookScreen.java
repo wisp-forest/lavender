@@ -5,10 +5,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.systems.VertexSorter;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
+import io.wispforest.lavender.md.ItemListComponent;
 import io.wispforest.lavender.md.compiler.BookCompiler;
-import io.wispforest.lavender.md.features.PageBreakFeature;
-import io.wispforest.lavender.md.features.RecipeFeature;
-import io.wispforest.lavender.md.features.StructureFeature;
+import io.wispforest.lavender.md.features.*;
 import io.wispforest.lavendermd.MarkdownFeature;
 import io.wispforest.lavendermd.MarkdownProcessor;
 import io.wispforest.lavendermd.feature.*;
@@ -86,7 +85,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         new ImageFeature(), new BlockStateFeature(), new ItemStackFeature(), new EntityFeature(),
                         new PageBreakFeature(), new OwoUITemplateFeature(this.bookComponentSource),
                         new RecipeFeature(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
-                        new StructureFeature(this.bookComponentSource), new KeybindFeature()
+                        new StructureFeature(this.bookComponentSource), new KeybindFeature(),
+                        new ItemTagFeature()
                 );
 
         if (FEATURE_PROVIDERS.get(book.id()) != null) {
@@ -550,7 +550,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                     newTooltip.add(TooltipComponent.of(Text.translatable("text.lavender.book.click_to_open").asOrderedText()));
                     newTooltip.add(TooltipComponent.of(TextOps.withFormatting(entry.title(), Formatting.GRAY).asOrderedText()));
 
-                    if (item instanceof RecipeFeature.IngredientComponent ingredient) {
+                    if (item instanceof ItemListComponent ingredient) {
                         ingredient.extraTooltipSection(newTooltip);
                     } else {
                         newTooltip.addAll(0, item.tooltip());
