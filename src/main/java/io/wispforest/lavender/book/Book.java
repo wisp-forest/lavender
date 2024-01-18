@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavendermd.util.StringNibbler;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -87,7 +86,7 @@ public final class Book {
                 var argMatcher = MACRO_ARG_PATTERN.matcher(result);
 
                 while (argMatcher.find()) {
-                    parts.add(replacement.substring(0, argMatcher.start()));
+                    parts.add(result.substring(0, argMatcher.start()));
                     argIndices.add(Integer.parseInt(argMatcher.group().substring(1)) - 1);
 
                     result.delete(0, argMatcher.end());
@@ -96,7 +95,7 @@ public final class Book {
 
                 parts.add(result.toString());
                 this.macros.put(
-                        Pattern.compile(Pattern.quote(macro) + "\\(" + Stream.generate(() -> "\\S").limit(argCount).collect(Collectors.joining(",")) + "\\)"),
+                        Pattern.compile(Pattern.quote(macro) + "\\(" + Stream.generate(() -> "(.*)").limit(argCount).collect(Collectors.joining(",")) + "\\)"),
                         new Macro(parts, argIndices)
                 );
             } else {
@@ -207,18 +206,22 @@ public final class Book {
 
     String expandMacros(Identifier entry, String input) {
         var builder = new StringBuilder(input);
-        this.zeroArgMacros.forEach((pattern, replacement) -> {
-            int replaceIndex = builder.indexOf(pattern);
-            while (replaceIndex != -1) {
-                builder.replace(replaceIndex, replaceIndex + pattern.length(), replacement);
-                replaceIndex = builder.indexOf(pattern, replaceIndex + replacement.length());
-            }
-        });
 
         int scans = 0;
         boolean anyExpansions = true;
-        while (scans < 1000 && anyExpansions) {
+        while (scans < 1000  && anyExpansions) {
             anyExpansions = false;
+
+            for (var pattern : this.zeroArgMacros.keySet()) {
+                int replaceIndex = builder.indexOf(pattern);
+                while (replaceIndex != -1) {
+                    var replacement = this.zeroArgMacros.get(pattern);
+                    anyExpansions = true;
+
+                    builder.replace(replaceIndex, replaceIndex + pattern.length(), replacement);
+                    replaceIndex = builder.indexOf(pattern, replaceIndex + replacement.length());
+                }
+            }
 
             for (var pattern : this.macros.keySet()) {
                 var replacement = this.macros.get(pattern);
@@ -228,12 +231,9 @@ public final class Book {
                     scans++;
                     anyExpansions = true;
 
-                    var match = matcher.group();
-                    var argsNibbler = new StringNibbler(match.substring(match.indexOf('(') + 1, match.length() - 1));
-
                     var args = new ArrayList<String>();
-                    while (argsNibbler.hasNext()) {
-                        args.add(argsNibbler.consumeEscapedString(',', true));
+                    for (int i = 1; i <= matcher.groupCount(); i++) {
+                        args.add(matcher.group(i));
                     }
 
                     builder.replace(matcher.start(), matcher.end(), replacement.apply(args));

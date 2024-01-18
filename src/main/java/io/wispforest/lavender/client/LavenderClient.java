@@ -25,6 +25,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
@@ -63,6 +64,11 @@ public class LavenderClient implements ClientModInitializer {
         LavenderStructures.initialize();
         BookLoader.initialize();
         BookContentLoader.initialize();
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            BookLoader.reload(MinecraftClient.getInstance().getResourceManager());
+            BookContentLoader.reloadContents(MinecraftClient.getInstance().getResourceManager());
+        });
 
         Hud.add(ENTRY_HUD_ID, () -> Containers.horizontalFlow(Sizing.content(), Sizing.content()).gap(5).positioning(Positioning.across(50, 52)));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

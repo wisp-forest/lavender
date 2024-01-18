@@ -2,6 +2,7 @@ package io.wispforest.lavender.mixin;
 
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.pond.LavenderLifecycledResourceManagerExtension;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.SimpleResourceReload;
@@ -21,6 +22,8 @@ public class SimpleResourceReloadMixin {
     @Inject(method = "<init>", at = @At(value = "INVOKE_ASSIGN", target = "Lcom/google/common/collect/Sets;newHashSet(Ljava/lang/Iterable;)Ljava/util/HashSet;"))
     private void loadLavenderBooks(Executor prepareExecutor, Executor applyExecutor, ResourceManager manager, List reloaders, @Coerce Object factory, CompletableFuture initialStage, CallbackInfo ci) {
         if (!(manager instanceof LavenderLifecycledResourceManagerExtension extension) || extension.lavender$resourceType() != ResourceType.CLIENT_RESOURCES) return;
+        if (MinecraftClient.getInstance().world == null) return;
+
         BookLoader.reload(manager);
     }
 

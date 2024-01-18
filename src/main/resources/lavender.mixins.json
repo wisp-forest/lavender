@@ -4,19 +4,19 @@
   "package": "io.wispforest.lavender.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ClientAdvancementManagerAccessor",
     "LifecycledResourceManagerMixin",
-    "SimpleResourceReloadMixin",
     "access.SmithingTransformRecipeAccessor",
     "access.SmithingTrimRecipeAccessor"
   ],
   "client": [
-    "DrawContextMixin",
+    "ClientAdvancementManagerAccessor",
     "CreativeInventoryScreenMixin",
+    "DrawContextMixin",
     "HeldItemRendererMixin",
     "MinecraftClientMixin",
     "MouseMixin",
     "ScreenMixin",
+    "SimpleResourceReloadMixin",
     "TextureUtilMixin"
   ],
   "injectors": {
