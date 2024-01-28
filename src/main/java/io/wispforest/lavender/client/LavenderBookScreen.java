@@ -435,7 +435,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         super.removed();
 
         var trail = new ArrayList<NavFrame.Replicator>();
-        while (!this.navStack.isEmpty()) trail.add(this.navStack.pop().replicator());
+        for (var frame : this.navStack) {
+            trail.add(frame.replicator());
+        }
 
         NAV_TRAILS.put(this.book.id(), trail);
     }
