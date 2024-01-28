@@ -105,7 +105,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         this.window = this.client.getWindow();
         double gameScale = this.window.getScaleFactor();
 
-        this.scaleFactor = this.window.calculateScaleFactor(this.client.options.getGuiScale().getValue(), true);
+        this.scaleFactor = this.window.calculateScaleFactor(!this.isOverlay ? this.client.options.getGuiScale().getValue() : 0 , true);
         this.window.setScaleFactor(this.scaleFactor);
 
         this.width = this.window.getScaledWidth();
