@@ -86,7 +86,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         new PageBreakFeature(), new OwoUITemplateFeature(this.bookComponentSource),
                         new RecipeFeature(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
                         new StructureFeature(this.bookComponentSource), new KeybindFeature(),
-                        new ItemTagFeature(), new OwoUIModelFeature()
+                        new ItemTagFeature(), new OwoUIModelFeature(), new TranslationsFeature()
                 );
 
         if (FEATURE_PROVIDERS.get(book.id()) != null) {
