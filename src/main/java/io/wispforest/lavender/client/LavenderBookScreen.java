@@ -32,11 +32,13 @@ import net.minecraft.client.util.Window;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -572,8 +574,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             return component;
         }
 
-        protected List<FlowLayout> buildEntryIndex(Collection<Entry> entries, int... maxEntriesPerPage) {
+        protected List<FlowLayout> buildEntryIndex(Collection<Entry> entries, int... pageSizes) {
             var indexSections = new ArrayList<FlowLayout>();
+            var currentSectionHeight = new MutableInt(0);
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
 
             var searchText = this.context.searchBox.getText().strip();
@@ -626,14 +629,22 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         }
 
                         int sectionIndex = indexSections.size() - 1;
-                        if (indexSections.get(sectionIndex).children().size() >= (sectionIndex < maxEntriesPerPage.length ? maxEntriesPerPage[sectionIndex] : 12)) {
+                        int entryHeight = Math.max(10, this.lineCount(entry.title()) * 8);
+
+                        if (currentSectionHeight.intValue() + entryHeight >= (sectionIndex < pageSizes.length ? pageSizes[sectionIndex] : 150)) {
                             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
+                            currentSectionHeight.setValue(0);
                         }
 
                         Iterables.getLast(indexSections).child(indexItem);
+                        currentSectionHeight.add(entryHeight);
                     });
 
             return indexSections;
+        }
+
+        protected int lineCount(String entryTitle) {
+            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, 95, Style.EMPTY).size();
         }
 
         public interface Bookmarkable {
@@ -729,9 +740,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                     : this.context.bookComponentSource.builtinTemplate(Component.class, "horizontal-rule").margins(Insets.vertical(6))
             );
 
-            int entriesOnCategoryPage = book.categories().size() > 0
-                    ? 12 - 3 - MathHelper.ceilDiv(book.categories().size() - 1, 4) * 2
-                    : 12;
+            int entriesOnCategoryPage = !book.categories().isEmpty()
+                    ? 150 - 35 - MathHelper.ceilDiv(book.categories().size() - 1, 4) * 24
+                    : 150;
 
             var orphanedEntries = this.buildEntryIndex(book.orphanedEntries(), entriesOnCategoryPage);
             indexPage.child(orphanedEntries.remove(0));
@@ -759,7 +770,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         public IndexPageSupplier(LavenderBookScreen context) {
             super(context);
 
-            var entries = this.buildEntryIndex(this.context.book.entries(), 10);
+            var entries = this.buildEntryIndex(this.context.book.entries(), 125);
             this.pages.add(this.pageWithHeader(Text.translatable("text.lavender.index_category.title")).child(entries.remove(0)));
             this.pages.addAll(entries);
         }
