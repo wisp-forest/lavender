@@ -629,7 +629,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         }
 
                         int sectionIndex = indexSections.size() - 1;
-                        int entryHeight = Math.max(10, this.lineCount(entry.title()) * 8);
+                        int entryHeight = entry.canPlayerView(this.context.client.player)
+                                ? Math.max(10, this.lineCount(entry.title()) * 8)
+                                : 10;
 
                         if (currentSectionHeight.intValue() + entryHeight >= (sectionIndex < pageSizes.length ? pageSizes[sectionIndex] : 150)) {
                             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
@@ -644,7 +646,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         }
 
         protected int lineCount(String entryTitle) {
-            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, 95, Style.EMPTY).size();
+            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, 95, Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID)).size();
         }
 
         public interface Bookmarkable {
@@ -873,7 +875,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
             var entries = this.context.book.entriesByCategory(this.category);
             if (entries != null) {
-                var indexPages = this.buildEntryIndex(entries);
+                var indexPages = this.buildEntryIndex(entries, 125);
                 for (int i = 0; i < indexPages.size(); i++) {
                     this.pages.add(i == 0 ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0)) : indexPages.get(i));
                 }
