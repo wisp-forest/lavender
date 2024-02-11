@@ -2,17 +2,20 @@ package io.wispforest.lavender.book;
 
 import com.google.common.collect.ImmutableSet;
 import io.wispforest.lavender.mixin.ClientAdvancementManagerAccessor;
+import io.wispforest.owo.ui.core.Component;
+import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Function;
 
 public record Entry(
         Identifier id,
         @Nullable Identifier category,
         String title,
-        ItemStack icon,
+        Function<Sizing, Component> iconFactory,
         boolean secret,
         int ordinal,
         ImmutableSet<Identifier> requiredAdvancements,

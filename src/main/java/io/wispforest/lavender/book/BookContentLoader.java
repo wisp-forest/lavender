@@ -5,6 +5,10 @@ import com.google.gson.*;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.core.Component;
+import io.wispforest.owo.ui.core.Sizing;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
@@ -25,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class BookContentLoader implements SynchronousResourceReloader, IdentifiableResourceReloadListener {
 
@@ -58,7 +63,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 book.addCategory(new Category(
                         identifier,
                         JsonHelper.getString(markdown.meta, "title"),
-                        getIcon(markdown.meta, null),
+                        getIcon(markdown.meta),
                         JsonHelper.getBoolean(markdown.meta, "secret", false),
                         JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE),
                         markdown.content
@@ -77,7 +82,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                         : null;
 
                 var title = JsonHelper.getString(markdown.meta, "title");
-                var icon = getIcon(markdown.meta, ItemStack.EMPTY);
+                var icon = getIcon(markdown.meta);
                 var secret = JsonHelper.getBoolean(markdown.meta, "secret", false);
                 var ordinal = JsonHelper.getInt(markdown.meta, "ordinal", Integer.MAX_VALUE);
 
@@ -201,11 +206,18 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
 
     private record MarkdownResource(JsonObject meta, String content) {}
 
-    private static ItemStack getIcon(JsonObject meta, @Nullable ItemStack orElse) {
-        if (!meta.has("icon") && orElse != null) return orElse;
-        var stackString = JsonHelper.getString(meta, "icon");
+    private static Function<Sizing, Component> getIcon(JsonObject meta) {
+        if (meta.has("icon")) {
+            var stackString = JsonHelper.getString(meta, "icon");
+            return sizing -> Components.item(itemStackFromString(stackString)).sizing(sizing);
+        } else if (meta.has("icon_sprite")) {
+            var id = Identifier.tryParse(JsonHelper.getString(meta, "icon_sprite"));
+            if (id == null) return null;
 
-        return itemStackFromString(stackString);
+            return sizing -> Components.sprite(MinecraftClient.getInstance().getGuiAtlasManager().getSprite(id)).sizing(sizing);
+        } else {
+            return sizing -> Containers.stack(sizing, sizing);
+        }
     }
 
     private static Collection<ItemStack> itemsFromString(String itemsString) {

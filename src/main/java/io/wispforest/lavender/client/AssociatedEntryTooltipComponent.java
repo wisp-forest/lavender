@@ -8,14 +8,10 @@ import io.wispforest.owo.ui.core.*;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL30C;
 
 import java.lang.ref.WeakReference;
 
@@ -29,7 +25,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
         this.layout = Containers.horizontalFlow(Sizing.content(), Sizing.content()).gap(2);
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                .child(Components.item(entry.icon()).margins(Insets.of(2)))
+                .child(entry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(2)))
                 .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11)).zIndex(50)));
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())

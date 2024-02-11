@@ -4,6 +4,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.owo.ui.core.Component;
+import io.wispforest.owo.ui.core.Sizing;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -17,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -305,7 +308,7 @@ public final class Book {
 
     public interface BookmarkableElement {
         String title();
-        ItemStack icon();
+        Function<Sizing, Component> iconFactory();
     }
 
     public record Macro(List<String> parts, IntList argIndices) {

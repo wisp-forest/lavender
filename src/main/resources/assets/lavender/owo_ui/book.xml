@@ -1,5 +1,5 @@
 <owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.19.4/owo-ui.xsd">
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo-lib/1.20.3/owo-ui.xsd">
 
     <components>
 
@@ -256,9 +256,9 @@
         <template name="index-item">
             <flow-layout direction="horizontal">
                 <children>
-                    <item id="icon">
+                    <stack-layout id="icon-anchor">
+                        <children/>
                         <margins>
-                            <vertical>1</vertical>
                             <left>2</left>
                             <right>4</right>
                         </margins>
@@ -267,12 +267,13 @@
                             <horizontal method="fixed">8</horizontal>
                             <vertical method="fixed">8</vertical>
                         </sizing>
-                    </item>
+                    </stack-layout>
 
                     <label id="index-label">
                         <color>black</color>
                         <cursor-style>hand</cursor-style>
                         <line-height>7</line-height>
+                        <line-spacing>0</line-spacing>
 
                         <sizing>
                             <horizontal method="fill">85</horizontal>
@@ -281,6 +282,9 @@
                 </children>
 
                 <vertical-alignment>center</vertical-alignment>
+                <margins>
+                    <vertical>1</vertical>
+                </margins>
 
                 <sizing>
                     <horizontal method="fill">100</horizontal>
@@ -336,15 +340,6 @@
         <template name="bookmark-button">
             <flow-layout direction="vertical">
                 <children>
-                    <template-child id="icon">
-                        <z-index>10</z-index>
-
-                        <positioning type="absolute">3,4</positioning>
-                        <sizing>
-                            <horizontal method="fixed">8</horizontal>
-                            <vertical method="fixed">8</vertical>
-                        </sizing>
-                    </template-child>
                     <button id="bookmark-button">
                         <renderer>
                             <texture texture="{{book-texture}}" u="0" v="210" texture-width="512"
@@ -356,6 +351,14 @@
                             <vertical method="fixed">14</vertical>
                         </sizing>
                     </button>
+                    <template-child id="icon">
+                        <cursor-style>hand</cursor-style>
+                        <positioning type="absolute">3,4</positioning>
+                        <sizing>
+                            <horizontal method="fixed">8</horizontal>
+                            <vertical method="fixed">8</vertical>
+                        </sizing>
+                    </template-child>
                 </children>
 
                 <margins>
@@ -367,7 +370,9 @@
         <template name="bookmark">
             <template name="bookmark-button">
                 <child id="icon">
-                    <item id="bookmark-preview"/>
+                    <stack-layout id="bookmark-preview">
+                        <children/>
+                    </stack-layout>
                 </child>
             </template>
         </template>

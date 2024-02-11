@@ -89,7 +89,7 @@ public class LavenderClient implements ClientModInitializer {
                 if (associatedEntry == null || !associatedEntry.canPlayerView(client.player)) return;
 
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
-                        .child(Components.item(associatedEntry.icon()).margins(Insets.of(0, 1, 0, 1)))
+                        .child(associatedEntry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(0, 1, 0, 1)))
                         .child(Components.item(LavenderBookItem.itemOf(book)).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(9, 9)).zIndex(50)));
                 container.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.label(Text.literal(associatedEntry.title())).shadow(true))

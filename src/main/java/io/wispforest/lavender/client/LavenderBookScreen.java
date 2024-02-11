@@ -18,6 +18,7 @@ import io.wispforest.owo.ui.component.*;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
+import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIParsing;
@@ -244,9 +245,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 if (element == null) continue;
 
                 var bookmarkComponent = this.createBookmarkButton("bookmark");
-                bookmarkComponent.childById(ItemComponent.class, "bookmark-preview").stack(element.icon());
+                bookmarkComponent.tooltip(List.of(Text.literal(element.title()), Text.translatable("text.lavender.book.bookmark.remove_hint")));
+                bookmarkComponent.childById(StackLayout.class, "bookmark-preview").child(element.iconFactory().apply(Sizing.fill()).cursorStyle(CursorStyle.HAND));
                 bookmarkComponent.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
-                    bookmarkButton.tooltip(List.of(Text.literal(element.title()), Text.translatable("text.lavender.book.bookmark.remove_hint")));
                     bookmarkButton.onPress($ -> {
                         if (Screen.hasShiftDown()) {
                             LavenderClientStorage.removeBookmark(this.book, bookmark);
@@ -607,7 +608,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         ParentComponent indexItem;
                         if (entryVisible) {
                             indexItem = this.context.template(ParentComponent.class, "index-item");
-                            indexItem.childById(ItemComponent.class, "icon").stack(entry.icon());
+                            indexItem.childById(StackLayout.class, "icon-anchor").child(entry.iconFactory().apply(Sizing.fill()));
 
                             var label = indexItem.childById(LabelComponent.class, "index-label");
 
@@ -700,7 +701,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         .sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player)))
                         .forEach(category -> {
                             if (book.shouldDisplayCategory(category, this.context.client.player)) {
-                                categoryContainer.child(Components.item(category.icon()).<ItemComponent>configure(categoryButton -> {
+                                categoryContainer.child(category.iconFactory().apply(Sizing.fixed(16)).configure(categoryButton -> {
                                     categoryButton
                                             .tooltip(Text.literal(category.title()))
                                             .margins(Insets.of(4))

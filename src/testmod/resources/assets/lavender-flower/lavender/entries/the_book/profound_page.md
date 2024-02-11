@@ -122,3 +122,5 @@ smashes it into 4 pieces of {light_purple}Lesser Conjuration Essence{}
 ;;;;;
 
 <structure;lavender-flower:nether_portal>
+
+%{text.lavender.keybind_tooltip}%

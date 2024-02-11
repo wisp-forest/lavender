@@ -1,7 +1,7 @@
 ```json
 {
   "title": "Entry from Another World",
-  "icon": "minecraft:oak_log",
+  "icon_sprite": "minecraft:social_interactions/mute_button",
   "category": "lavender-flower:epic_category",
   "ordinal": -1,
   "associated_items": [
