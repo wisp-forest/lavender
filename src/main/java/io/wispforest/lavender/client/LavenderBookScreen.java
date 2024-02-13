@@ -129,10 +129,14 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
     protected <C extends Component> C template(UIModel model, Class<C> expectedComponentClass, String name, Map<String, String> parameters) {
         var params = new HashMap<String, String>();
-        params.put("book-texture", (this.book.texture() != null ? this.book.texture() : DEFAULT_BOOK_TEXTURE).toString());
+        params.put("book-texture", this.bookTexture().toString());
         params.putAll(parameters);
 
         return model.expandTemplate(expectedComponentClass, name, params);
+    }
+
+    protected Identifier bookTexture() {
+        return this.book.texture() != null ? this.book.texture() : DEFAULT_BOOK_TEXTURE;
     }
 
     @Override
@@ -207,7 +211,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     private void rebuildContent(@Nullable SoundEvent sound) {
         if (sound != null) this.client.player.playSound(sound, 1f, 1f);
 
-        var pageSupplier = this.currentNavFrame().pageSupplier;
+        var pageSupplier = this.currentNavFrame().replicator().pageSupplier.apply(this);
         int selectedPage = this.currentNavFrame().selectedPage;
 
         if (selectedPage >= pageSupplier.pageCount()) {
@@ -575,7 +579,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             return component;
         }
 
-        protected List<FlowLayout> buildEntryIndex(Collection<Entry> entries, int... pageSizes) {
+        protected List<FlowLayout> buildEntryIndex(Collection<Entry> entries, boolean respectOrdinals, int... pageSizes) {
             var indexSections = new ArrayList<FlowLayout>();
             var currentSectionHeight = new MutableInt(0);
             indexSections.add(Containers.verticalFlow(Sizing.fill(100), Sizing.content()));
@@ -588,7 +592,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
             entries.stream()
                     .sorted((o1, o2) -> AlphanumComparator.compare(o1.title(), o2.title()))
-                    .sorted(Comparator.comparingInt(Entry::ordinal))
+                    .sorted(respectOrdinals ? Comparator.comparingInt(Entry::ordinal) : (o1, o2) -> 0)
                     .sorted(Comparator.comparing(entry -> !entry.canPlayerView(this.context.client.player)))
                     .forEach(entry -> {
                         boolean entryVisible = entry.canPlayerView(this.context.client.player);
@@ -605,14 +609,17 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                             }
                         }
 
-                        ParentComponent indexItem;
+                        FlowLayout indexItem;
+                        boolean hasUnreadNotification;
                         if (entryVisible) {
-                            indexItem = this.context.template(ParentComponent.class, "index-item");
+                            hasUnreadNotification = this.context.book.shouldDisplayUnreadNotification(entry);
+
+                            indexItem = this.context.template(FlowLayout.class, "index-item");
                             indexItem.childById(StackLayout.class, "icon-anchor").child(entry.iconFactory().apply(Sizing.fill()));
 
                             var label = indexItem.childById(LabelComponent.class, "index-label");
 
-                            label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID)));
+                            label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withItalic(false && hasUnreadNotification)));
                             label.mouseDown().subscribe((mouseX, mouseY, button) -> {
                                 if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
@@ -624,14 +631,20 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                             var animation = label.color().animate(150, Easing.SINE, Color.ofFormatting(Formatting.GOLD));
                             label.mouseEnter().subscribe(animation::forwards);
                             label.mouseLeave().subscribe(animation::backwards);
+
+                            if (hasUnreadNotification) {
+                                indexItem.child(new UnreadNotificationComponent(this.context.bookTexture(), false));
+                            }
                         } else {
-                            indexItem = this.context.template(ParentComponent.class, "locked-index-item");
+                            hasUnreadNotification = false;
+
+                            indexItem = this.context.template(FlowLayout.class, "locked-index-item");
                             indexItem.childById(LabelComponent.class, "index-label").text(Text.translatable("text.lavender.entry.locked"));
                         }
 
                         int sectionIndex = indexSections.size() - 1;
                         int entryHeight = entry.canPlayerView(this.context.client.player)
-                                ? Math.max(10, this.lineCount(entry.title()) * 8)
+                                ? Math.max(10, this.lineCount(entry.title(), hasUnreadNotification) * 8)
                                 : 10;
 
                         if (currentSectionHeight.intValue() + entryHeight >= (sectionIndex < pageSizes.length ? pageSizes[sectionIndex] : 150)) {
@@ -646,8 +659,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             return indexSections;
         }
 
-        protected int lineCount(String entryTitle) {
-            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, 95, Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID)).size();
+        protected int lineCount(String entryTitle, boolean hasNotification) {
+            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, hasNotification ? 90 : 98, Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID)).size();
         }
 
         public interface Bookmarkable {
@@ -701,7 +714,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         .sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player)))
                         .forEach(category -> {
                             if (book.shouldDisplayCategory(category, this.context.client.player)) {
-                                categoryContainer.child(category.iconFactory().apply(Sizing.fixed(16)).configure(categoryButton -> {
+                                var icon = category.iconFactory().apply(Sizing.fixed(16)).configure(categoryButton -> {
                                     categoryButton
                                             .tooltip(Text.literal(category.title()))
                                             .margins(Insets.of(4))
@@ -714,7 +727,18 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                                         UISounds.playInteractionSound();
                                         return true;
                                     });
-                                }));
+                                });
+
+                                if (book.shouldDisplayUnreadNotification(category, this.context.client.player)) {
+                                    categoryContainer.child(Containers.stack(Sizing.content(), Sizing.content())
+                                            .child(icon)
+                                            .child(new UnreadNotificationComponent(this.context.bookTexture(), true)
+                                                    .positioning(Positioning.relative(100, 100))
+                                                    .margins(Insets.of(0, 1, 0, 1)))
+                                    );
+                                } else {
+                                    categoryContainer.child(icon);
+                                }
                             } else if (!category.secret()) {
                                 categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
                             }
@@ -747,7 +771,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                     ? 150 - 35 - MathHelper.ceilDiv(book.categories().size() - 1, 4) * 24
                     : 150;
 
-            var orphanedEntries = this.buildEntryIndex(book.orphanedEntries(), entriesOnCategoryPage);
+            var orphanedEntries = this.buildEntryIndex(book.orphanedEntries(), true, entriesOnCategoryPage);
             indexPage.child(orphanedEntries.remove(0));
             this.pages.addAll(orphanedEntries);
         }
@@ -773,7 +797,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         public IndexPageSupplier(LavenderBookScreen context) {
             super(context);
 
-            var entries = this.buildEntryIndex(this.context.book.entries(), 125);
+            var entries = this.buildEntryIndex(this.context.book.entries(), false, 125);
             this.pages.add(this.pageWithHeader(Text.translatable("text.lavender.index_category.title")).child(entries.remove(0)));
             this.pages.addAll(entries);
         }
@@ -876,7 +900,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
             var entries = this.context.book.entriesByCategory(this.category);
             if (entries != null) {
-                var indexPages = this.buildEntryIndex(entries, 125);
+                var indexPages = this.buildEntryIndex(entries, true, 125);
                 for (int i = 0; i < indexPages.size(); i++) {
                     this.pages.add(i == 0 ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0)) : indexPages.get(i));
                 }
@@ -953,6 +977,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                     this.pages.add(component);
                 }
             }
+
+            LavenderClientStorage.markEntryViewed(this.context.book, entry);
         }
 
         @Override
@@ -1011,6 +1037,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
     static {
         UIParsing.registerFactory(Lavender.id("structure"), StructureComponent::parse);
+        UIParsing.registerFactory(Lavender.id("unread-notification"), UnreadNotificationComponent::parse);
     }
 }
 

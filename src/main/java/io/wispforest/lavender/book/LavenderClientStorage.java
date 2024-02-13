@@ -23,6 +23,9 @@ public class LavenderClientStorage {
     private static final TypeToken<Map<UUID, Set<Identifier>>> OPENED_BOOKS_TYPE = new TypeToken<>() {};
     private static Map<UUID, Set<Identifier>> openedBooks;
 
+    private static final TypeToken<Map<UUID, Map<Identifier, Set<Identifier>>>> VIEWED_ENTRIES_TYPE = new TypeToken<>() {};
+    private static Map<UUID, Map<Identifier, Set<Identifier>>> viewedEntries;
+
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Identifier.class, new Identifier.Serializer()).setPrettyPrinting().create();
 
     static {
@@ -31,9 +34,15 @@ public class LavenderClientStorage {
 
             bookmarks = GSON.fromJson(data.get("bookmarks"), BOOKMARKS_TYPE);
             openedBooks = GSON.fromJson(data.get("opened_books"), OPENED_BOOKS_TYPE);
+            viewedEntries = GSON.fromJson(data.get("viewed_entries"), VIEWED_ENTRIES_TYPE);
+
+            if (bookmarks == null) bookmarks = new HashMap<>();
+            if (openedBooks == null) openedBooks = new HashMap<>();
+            if (viewedEntries == null) viewedEntries = new HashMap<>();
         } catch (Exception e) {
             bookmarks = new HashMap<>();
             openedBooks = new HashMap<>();
+            viewedEntries = new HashMap<>();
             save();
         }
     }
@@ -74,6 +83,17 @@ public class LavenderClientStorage {
         save();
     }
 
+    public static boolean wasEntryViewed(Book book, Entry entry) {
+        return viewedEntries.containsKey(LavenderClient.currentWorldId())
+                && viewedEntries.get(LavenderClient.currentWorldId()).containsKey(book.id())
+                && viewedEntries.get(LavenderClient.currentWorldId()).get(book.id()).contains(entry.id());
+    }
+
+    public static void markEntryViewed(Book book, Entry entry) {
+        viewedEntries.computeIfAbsent(LavenderClient.currentWorldId(), $ -> new HashMap<>()).computeIfAbsent(book.id(), $ -> new HashSet<>()).add(entry.id());
+        save();
+    }
+
     private static Set<Identifier> getOpenedBooksSet() {
         return openedBooks.computeIfAbsent(LavenderClient.currentWorldId(), $ -> new HashSet<>());
     }
@@ -83,10 +103,11 @@ public class LavenderClientStorage {
             var data = new JsonObject();
             data.add("bookmarks", GSON.toJsonTree(bookmarks, BOOKMARKS_TYPE.getType()));
             data.add("opened_books", GSON.toJsonTree(openedBooks, OPENED_BOOKS_TYPE.getType()));
+            data.add("viewed_entries", GSON.toJsonTree(viewedEntries, VIEWED_ENTRIES_TYPE.getType()));
 
             Files.writeString(storageFile(), GSON.toJson(data));
         } catch (IOException e) {
-            Lavender.LOGGER.warn("Failed to save bookmarks", e);
+            Lavender.LOGGER.warn("Failed to save Lavender client data", e);
         }
     }
 

@@ -36,6 +36,8 @@
   ],
 
   "text.lavender.entry.locked": {"text": "Locked", "font": "minecraft:uniform", "color": "gray"},
+  "text.lavender.entry.multiple_unread": "Unread entries",
+  "text.lavender.entry.unread": "Unread entry",
 
   "text.lavender.categories": "Categories",
   "text.lavender.index": "Index",

@@ -80,9 +80,10 @@ public class BookLoader {
             var introEntryId = tryGetId(bookObject, "intro_entry");
 
             var displayCompletion = JsonHelper.getBoolean(bookObject, "display_completion", false);
+            var displayUnreadEntryNotifications = JsonHelper.getBoolean(bookObject, "display_unread_entry_notifications", true);
             var macros = GSON.fromJson(JsonHelper.getObject(bookObject, "macros", new JsonObject()), MACROS_TOKEN);
 
-            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, openSoundEvent, flippingSoundEvent, introEntryId, displayCompletion, macros);
+            var book = new Book(resourceId, extendId, textureId, dynamicBookModelId, openSoundEvent, flippingSoundEvent, introEntryId, displayUnreadEntryNotifications, displayCompletion, macros);
             LOADED_BOOKS.put(resourceId, book);
             if (extendId == null) VISIBLE_BOOKS.put(resourceId, book);
         });

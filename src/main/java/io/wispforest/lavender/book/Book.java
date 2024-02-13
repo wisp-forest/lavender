@@ -34,6 +34,7 @@ public final class Book {
     private final @Nullable Identifier dynamicBookModel;
     private final SoundEvent openSound, flippingSound;
     private final @Nullable Identifier introEntry;
+    private final boolean displayUnreadEntryNotifications;
     private final boolean displayCompletion;
     private final Map<String, String> zeroArgMacros = new HashMap<>();
     private final Map<Pattern, Macro> macros = new HashMap<>();
@@ -63,6 +64,7 @@ public final class Book {
             @Nullable SoundEvent openSound,
             @Nullable SoundEvent flippingSound,
             @Nullable Identifier introEntry,
+            boolean displayUnreadEntryNotifications,
             boolean displayCompletion,
             Map<String, String> macros
     ) {
@@ -73,6 +75,7 @@ public final class Book {
         this.openSound = openSound != null ? openSound : Lavender.ITEM_BOOK_OPEN;
         this.flippingSound = flippingSound != null ? flippingSound : SoundEvents.ITEM_BOOK_PAGE_TURN;
         this.introEntry = introEntry;
+        this.displayUnreadEntryNotifications = displayUnreadEntryNotifications;
         this.displayCompletion = displayCompletion;
 
         macros.forEach((macro, replacement) -> {
@@ -113,6 +116,10 @@ public final class Book {
 
     public boolean displayCompletion() {
         return this.displayCompletion;
+    }
+
+    public boolean displayUnreadEntryNotifications() {
+        return this.displayUnreadEntryNotifications;
     }
 
     public Collection<Entry> entries() {
@@ -173,6 +180,24 @@ public final class Book {
         }
 
         return anyVisible;
+    }
+
+    public boolean shouldDisplayUnreadNotification(Entry entry) {
+        return this.displayUnreadEntryNotifications && !LavenderClientStorage.wasEntryViewed(this, entry);
+    }
+
+    public boolean shouldDisplayUnreadNotification(Category category, ClientPlayerEntity player) {
+        if (!this.displayUnreadEntryNotifications) return false;
+
+        var entries = this.entriesByCategory(category);
+        if (entries == null) return false;
+
+        for (var entry : entries) {
+            if (!entry.canPlayerView(player)) continue;
+            if (!LavenderClientStorage.wasEntryViewed(this, entry)) return true;
+        }
+
+        return false;
     }
 
     public @Nullable Entry landingPage() {
