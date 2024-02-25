@@ -47,6 +47,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements CommandOpenedScreen {
 
@@ -108,7 +109,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         this.window = this.client.getWindow();
         double gameScale = this.window.getScaleFactor();
 
-        this.scaleFactor = this.window.calculateScaleFactor(!this.isOverlay ? this.client.options.getGuiScale().getValue() : 0 , true);
+        this.scaleFactor = this.window.calculateScaleFactor(!this.isOverlay ? this.client.options.getGuiScale().getValue() : 0, true);
         this.window.setScaleFactor(this.scaleFactor);
 
         this.width = this.window.getScaledWidth();
@@ -659,6 +660,46 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             return indexSections;
         }
 
+        protected FlowLayout buildCategoryIndex(Stream<Category> categories) {
+            var categoryContainer = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content()).gap(4);
+            categories
+                    .sorted(Comparator.comparingInt(Category::ordinal))
+                    .sorted(Comparator.comparing($ -> !this.context.book.shouldDisplayCategory($, this.context.client.player)))
+                    .forEach(category_ -> {
+                        if (this.context.book.shouldDisplayCategory(category_, this.context.client.player)) {
+                            var icon = category_.iconFactory().apply(Sizing.fixed(16)).configure(categoryButton -> {
+                                categoryButton
+                                        .tooltip(Text.literal(category_.title()))
+                                        .margins(Insets.of(4))
+                                        .cursorStyle(CursorStyle.HAND);
+
+                                categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                                    if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+
+                                    this.context.navPush(new CategoryPageSupplier(this.context, category_));
+                                    UISounds.playInteractionSound();
+                                    return true;
+                                });
+                            });
+
+                            if (this.context.book.shouldDisplayUnreadNotification(category_, this.context.client.player)) {
+                                categoryContainer.child(Containers.stack(Sizing.content(), Sizing.content())
+                                        .child(icon)
+                                        .child(new UnreadNotificationComponent(this.context.bookTexture(), true)
+                                                .positioning(Positioning.relative(100, 100))
+                                                .margins(Insets.of(0, 1, 0, 1)))
+                                );
+                            } else {
+                                categoryContainer.child(icon);
+                            }
+                        } else if (!category_.secret()) {
+                            categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
+                        }
+                    });
+
+            return categoryContainer;
+        }
+
         protected int lineCount(String entryTitle, boolean hasNotification) {
             return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, hasNotification ? 90 : 98, Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID)).size();
         }
@@ -706,43 +747,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 var categories = this.pageWithHeader(Text.translatable("text.lavender.categories"));
                 categories.verticalSizing(Sizing.content());
 
-                var categoryContainer = Containers.ltrTextFlow(Sizing.fill(100), Sizing.content()).gap(4);
+                var categoryContainer = this.buildCategoryIndex(book.categories().stream().filter(category -> category.parent() == null));
                 categories.child(categoryContainer);
-
-                book.categories().stream()
-                        .sorted(Comparator.comparingInt(Category::ordinal))
-                        .sorted(Comparator.comparing($ -> !book.shouldDisplayCategory($, this.context.client.player)))
-                        .forEach(category -> {
-                            if (book.shouldDisplayCategory(category, this.context.client.player)) {
-                                var icon = category.iconFactory().apply(Sizing.fixed(16)).configure(categoryButton -> {
-                                    categoryButton
-                                            .tooltip(Text.literal(category.title()))
-                                            .margins(Insets.of(4))
-                                            .cursorStyle(CursorStyle.HAND);
-
-                                    categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
-
-                                        this.context.navPush(new CategoryPageSupplier(this.context, category));
-                                        UISounds.playInteractionSound();
-                                        return true;
-                                    });
-                                });
-
-                                if (book.shouldDisplayUnreadNotification(category, this.context.client.player)) {
-                                    categoryContainer.child(Containers.stack(Sizing.content(), Sizing.content())
-                                            .child(icon)
-                                            .child(new UnreadNotificationComponent(this.context.bookTexture(), true)
-                                                    .positioning(Positioning.relative(100, 100))
-                                                    .margins(Insets.of(0, 1, 0, 1)))
-                                    );
-                                } else {
-                                    categoryContainer.child(icon);
-                                }
-                            } else if (!category.secret()) {
-                                categoryContainer.child(this.context.template(Component.class, "locked-category-button"));
-                            }
-                        });
 
                 categoryContainer.child(Components.item(LavenderBookItem.itemOf(this.context.book)).<ItemComponent>configure(categoryButton -> {
                     categoryButton
@@ -896,13 +902,26 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
             var landingPage = this.pageWithHeader(Text.literal(category.title())).child(landingPageContent);
             this.pages.add(landingPage);
 
-            // --- entry index ---
+            // --- category & entry index ---
+
+            var categoryContainer = this.buildCategoryIndex(this.context.book.categories().stream().filter(category_ -> Objects.equals(category_.parent(), category.id())));
+            int entriesOnCategoryPage = !categoryContainer.children().isEmpty()
+                    ? 125 - 15 - MathHelper.ceilDiv(categoryContainer.children().size(), 4) * 24
+                    : 125;
 
             var entries = this.context.book.entriesByCategory(this.category);
             if (entries != null) {
-                var indexPages = this.buildEntryIndex(entries, true, 125);
+                var indexPages = this.buildEntryIndex(entries, true, entriesOnCategoryPage);
                 for (int i = 0; i < indexPages.size(); i++) {
-                    this.pages.add(i == 0 ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0)) : indexPages.get(i));
+                    var page = i == 0
+                            ? this.pageWithHeader(Text.translatable("text.lavender.index")).child(indexPages.get(0))
+                            : indexPages.get(i);
+
+                    if (i == 0 && !categoryContainer.children().isEmpty()) {
+                        page.child(1, categoryContainer).child(2, this.context.bookComponentSource.builtinTemplate(Component.class, "horizontal-rule").margins(Insets.vertical(6)));
+                    }
+
+                    this.pages.add(page);
                 }
 
                 if (this.context.book.displayCompletion()) {

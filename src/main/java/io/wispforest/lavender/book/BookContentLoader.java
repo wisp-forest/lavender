@@ -60,8 +60,14 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
                 var markdown = parseMarkdown(book, identifier, resource);
                 if (markdown == null) return;
 
+                var parentCategory = JsonHelper.getString(markdown.meta, "parent", null);
+                var parentCategoryId = parentCategory != null
+                        ? parentCategory.indexOf(':') > 0 ? Identifier.tryParse(parentCategory) : new Identifier(identifier.getNamespace(), parentCategory)
+                        : null;
+
                 book.addCategory(new Category(
                         identifier,
+                        parentCategoryId,
                         JsonHelper.getString(markdown.meta, "title"),
                         getIcon(markdown.meta),
                         JsonHelper.getBoolean(markdown.meta, "secret", false),

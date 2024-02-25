@@ -5,6 +5,6 @@
   "open_sound": "minecraft:block.anvil.destroy",
   "macros": {
     "nested_macro": "ah yes: $1",
-    "macro_moment": "that's pretty nested_macro($1)"
+    "macro_moment": "that's pretty nested_macro($1) - $2"
   }
 }

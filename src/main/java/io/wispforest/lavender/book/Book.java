@@ -162,6 +162,19 @@ public final class Book {
         return Collections.unmodifiableCollection(entries);
     }
 
+    public @Nullable Collection<Entry> descendantEntriesByCategory(Category category) {
+        var entries = new ArrayList<Entry>();
+        for (var candidate : this.categories.values()) {
+            if (candidate == category || Objects.equals(candidate.parent(), category.id())) {
+                var possibleEntries = this.entriesByCategory(candidate);
+                if (possibleEntries != null) entries.addAll(possibleEntries);
+            }
+        }
+
+        if (entries.isEmpty()) return null;
+        return entries;
+    }
+
     public Collection<Category> categories() {
         return this.categoriesView;
     }
@@ -171,7 +184,7 @@ public final class Book {
     }
 
     public boolean shouldDisplayCategory(Category category, ClientPlayerEntity player) {
-        var entries = this.entriesByCategory(category);
+        var entries = this.descendantEntriesByCategory(category);
         if (entries == null) return false;
 
         boolean anyVisible = false;
@@ -189,7 +202,7 @@ public final class Book {
     public boolean shouldDisplayUnreadNotification(Category category, ClientPlayerEntity player) {
         if (!this.displayUnreadEntryNotifications) return false;
 
-        var entries = this.entriesByCategory(category);
+        var entries = this.descendantEntriesByCategory(category);
         if (entries == null) return false;
 
         for (var entry : entries) {
