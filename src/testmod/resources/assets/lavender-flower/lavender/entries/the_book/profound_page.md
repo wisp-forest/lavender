@@ -65,6 +65,7 @@ page 4
 
 page 5
 
+<recipe;minecraft:clock>
 <recipe;minecraft:stick>
 
 ;;;;;

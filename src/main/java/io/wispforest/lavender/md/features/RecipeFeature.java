@@ -191,7 +191,10 @@ public class RecipeFeature implements MarkdownFeature {
             var ingredients = recipe.value().getIngredientPlacement().getIngredients();
             RecipeGridAligner.alignRecipeToGrid(gridWidth, gridHeight, recipe.value(), recipe.value().getIngredientPlacement().getPlacementSlots(), (input, index, x, y) -> {
                 if (!(componentContainer.children().get(index) instanceof ItemListComponent ingredient)) return;
-                ingredient.ingredient(ingredients.get(input));
+
+                if (input >= 0) {
+                    ingredient.ingredient(ingredients.get(input));
+                }
             });
         }
     }
