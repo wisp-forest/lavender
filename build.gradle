@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.8-SNAPSHOT'
+    id 'fabric-loom' version '1.11-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -41,6 +41,9 @@ repositories {
 
     // modmenu
     maven { url "https://maven.terraformersmc.com/releases/" }
+
+    // TEMP: lavender-md for 1.21.5 explodes 1.21.8 dev env by trying to load 1.21.5 FAPI modules for some reason????
+    mavenLocal()
 }
 
 dependencies {

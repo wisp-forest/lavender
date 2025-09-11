@@ -4,8 +4,6 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import com.mojang.serialization.JsonOps;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.client.BookBakedModel;
-import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.ResourceFinder;
 import net.minecraft.resource.ResourceManager;
@@ -23,7 +21,7 @@ import java.util.Map;
 
 public class BookLoader {
 
-    private static final Gson GSON = new GsonBuilder().setLenient().disableHtmlEscaping().create();
+    private static final Gson GSON = new GsonBuilder().setStrictness(Strictness.LENIENT).disableHtmlEscaping().create();
     private static final TypeToken<Map<String, String>> MACROS_TOKEN = new TypeToken<>() {};
     private static final ResourceFinder BOOK_FINDER = ResourceFinder.json("lavender/books");
 
@@ -31,12 +29,15 @@ public class BookLoader {
     private static final Map<Identifier, Book> VISIBLE_BOOKS = new HashMap<>();
 
     public static void initialize() {
+		// Seemingly unnecessary
+		/*
         ModelLoadingPlugin.register(context -> {
             for (var book : VISIBLE_BOOKS.values()) {
                 if (book.dynamicBookModel() == null) return;
                 context.addModels(book.dynamicBookModel());
             }
         });
+		 */
     }
 
     public static @Nullable Book get(Identifier bookId) {

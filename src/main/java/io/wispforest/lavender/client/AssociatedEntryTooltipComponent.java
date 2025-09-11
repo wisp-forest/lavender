@@ -47,13 +47,12 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
     @Override
     public void drawItems(TextRenderer textRenderer, int x, int y, int width, int height, DrawContext context) {
         context = OwoUIDrawContext.of(context);
-        context.getMatrices().push();
-        context.getMatrices().translate(0, 0, 1000);
+        context.getMatrices().pushMatrix();
 
         this.layout.moveTo(x, y);
         this.layout.draw((OwoUIDrawContext) context, 0, 0, 0, 0);
 
-        context.getMatrices().pop();
+        context.getMatrices().popMatrix();
     }
 
     @Override

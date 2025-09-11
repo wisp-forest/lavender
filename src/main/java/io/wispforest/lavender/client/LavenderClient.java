@@ -15,16 +15,14 @@ import io.wispforest.owo.ui.core.Size;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.hud.Hud;
 import io.wispforest.owo.ui.parsing.UIParsing;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
@@ -37,16 +35,11 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
 import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class LavenderClient implements ClientModInitializer {
 
-    public static final BlitCutoutProgram BLIT_CUTOUT_PROGRAM = new BlitCutoutProgram();
-    public static final BlitAlphaProgram BLIT_ALPHA_PROGRAM = new BlitAlphaProgram();
-
-    private static final Int2ObjectMap<Size> TEXTURE_SIZES = new Int2ObjectOpenHashMap<>();
     private static final Identifier ENTRY_HUD_ID = Lavender.id("entry_hud");
 
     private static UUID currentWorldId = null;
@@ -70,6 +63,8 @@ public class LavenderClient implements ClientModInitializer {
 //            //     return new BookBakedModel.Unbaked();
 //            // });
 //        });
+
+	    SpecialGuiElementRegistry.register(ctx -> new StructureComponentRenderState.Renderer(ctx.vertexConsumers()));
 
         StructureOverlayRenderer.initialize();
         OffhandBookRenderer.initialize();
@@ -156,11 +151,10 @@ public class LavenderClient implements ClientModInitializer {
         return currentWorldId;
     }
 
-    public static void registerTextureSize(int textureId, int width, int height) {
-        TEXTURE_SIZES.put(textureId, Size.of(width, height));
-    }
+    public static @Nullable Size getTextureSize(Identifier id) {
+		var texture = MinecraftClient.getInstance().getTextureManager().getTexture(id).getGlTexture();
 
-    public static @Nullable Size getTextureSize(Identifier texture) {
-        return TEXTURE_SIZES.get(MinecraftClient.getInstance().getTextureManager().getTexture(texture).getGlId());
+		if (texture != null) return Size.of(texture.getWidth(0), texture.getHeight(0));
+        return null;
     }
 }

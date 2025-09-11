@@ -15,6 +15,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.network.ClientCommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.IdentifierArgumentType;
@@ -89,7 +90,7 @@ public class LavenderCommands {
         }
 
         public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher, CommandRegistryAccess access) {
-            dispatcher.register(literal("get-lavender-book").requires(source -> source.hasPermissionLevel(2))
+            dispatcher.register(literal("get-lavender-book").requires(source -> ((ClientCommandSource)source).hasPermissionLevel(2))
                     .then(argument("book_id", IdentifierArgumentType.identifier()).suggests(LOADED_BOOKS)
                             .executes(context -> executeGetLavenderBook(context, false))
                             .then(argument("force_dynamic_book", BoolArgumentType.bool())

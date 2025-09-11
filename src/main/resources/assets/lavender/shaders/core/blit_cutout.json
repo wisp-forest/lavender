@@ -1,8 +1,0 @@
-{
-  "vertex": "core/blit_screen",
-  "fragment": "lavender:core/blit_cutout",
-  "samplers": [
-    { "name": "InSampler" }
-  ],
-  "uniforms": []
-}

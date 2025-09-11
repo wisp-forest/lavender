@@ -1,8 +1,6 @@
 package io.wispforest.lavender.client;
 
 import com.google.common.collect.Iterables;
-import com.mojang.blaze3d.systems.ProjectionType;
-import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.*;
 import io.wispforest.lavender.md.ItemListComponent;
@@ -44,7 +42,6 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
@@ -89,7 +86,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 .copyWith(() -> new BookCompiler(this.bookComponentSource))
                 .copyWith(
                         new ImageFeature(), new BlockStateFeature(), new ItemStackFeature(MinecraftClient.getInstance().world.getRegistryManager()), new EntityFeature(),
-                        new PageBreakFeature(), new OwoUITemplateFeature(this.bookComponentSource),
+		                new SpecialLinkFeature(), new PageBreakFeature(), new OwoUITemplateFeature(this.bookComponentSource),
                         new RecipeFeature(this.bookComponentSource, RECIPE_HANDLERS.get(this.book.id())),
                         new StructureFeature(this.bookComponentSource), new KeybindFeature(),
                         new ItemTagFeature(), new OwoUIModelFeature(), new TranslationsFeature()
@@ -108,8 +105,12 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
     @Override
     protected void init() {
-        this.window = this.client.getWindow();
-        double gameScale = this.window.getScaleFactor();
+	    this.window = this.client.getWindow();
+	    this.scaleFactor = this.window.getScaleFactor();
+
+	    // Why is this even a thing? It messes up the book screen scaling.
+		/*
+        int gameScale = this.window.getScaleFactor();
 
         this.scaleFactor = this.window.calculateScaleFactor(!this.isOverlay ? this.client.options.getGuiScale().getValue() : 0, true);
         this.window.setScaleFactor(this.scaleFactor);
@@ -120,6 +121,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         super.init();
 
         this.window.setScaleFactor(gameScale);
+		 */
+
+	    super.init();
     }
 
     protected <C extends Component> C template(Class<C> expectedComponentClass, String name) {
@@ -346,52 +350,18 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
-        mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
-
-        double gameScale = this.window.getScaleFactor();
-        this.window.setScaleFactor(this.scaleFactor);
-
-        RenderSystem.backupProjectionMatrix();
-        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(
-                0,
-                this.window.getFramebufferWidth() / (float) this.scaleFactor,
-                this.window.getFramebufferHeight() / (float) this.scaleFactor,
-                0,
-                1000,
-                21000
-        ), ProjectionType.ORTHOGRAPHIC);
+        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
 
         super.render(context, mouseX, mouseY, delta);
-        context.draw();
-
-        RenderSystem.restoreProjectionMatrix();
-        this.window.setScaleFactor(gameScale);
     }
 
     @Override
     protected void drawComponentTooltip(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
-        mouseX = (int) (mouseX * this.window.getScaleFactor() / this.scaleFactor);
-        mouseY = (int) (mouseY * this.window.getScaleFactor() / this.scaleFactor);
-
-        double gameScale = this.window.getScaleFactor();
-        this.window.setScaleFactor(this.scaleFactor);
-
-        RenderSystem.backupProjectionMatrix();
-        RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(
-            0,
-            this.window.getFramebufferWidth() / (float) this.scaleFactor,
-            this.window.getFramebufferHeight() / (float) this.scaleFactor,
-            0,
-            1000,
-            21000
-        ), ProjectionType.ORTHOGRAPHIC);
+	    mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
+	    mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
 
         super.drawComponentTooltip(drawContext, mouseX, mouseY, tickDelta);
-        drawContext.draw();
-
-        RenderSystem.restoreProjectionMatrix();
-        this.window.setScaleFactor(gameScale);
     }
     @Override
     public boolean charTyped(char chr, int modifiers) {

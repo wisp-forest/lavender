@@ -1,10 +1,11 @@
 package io.wispforest.lavender.client;
 
 import com.google.common.base.Suppliers;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import io.wispforest.lavender.Lavender;
-import io.wispforest.lavender.pond.LavenderFramebufferExtension;
 import io.wispforest.lavender.structure.BlockStatePredicate;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureTemplate;
@@ -18,12 +19,8 @@ import io.wispforest.owo.ui.util.Delta;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.OverlayVertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.render.*;
 import net.minecraft.client.render.model.ModelBaker;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundEvents;
@@ -37,7 +34,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL30C;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,17 +41,24 @@ import java.util.function.Supplier;
 
 public class StructureOverlayRenderer {
 
-    private static final Supplier<Framebuffer> FRAMEBUFFER = Suppliers.memoize(() -> {
+	private static final RenderPipeline PIPELINE = RenderPipelines.register(
+			RenderPipeline.builder()
+					.withLocation(Lavender.id("pipeline/structure_overlay"))
+					.withVertexShader("core/blit_screen")
+					.withFragmentShader(Lavender.id("core/blit_alpha"))
+					.withSampler("InSampler")
+					.withBlend(BlendFunction.TRANSLUCENT)
+					.withDepthWrite(false)
+					.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+					.withColorWrite(true, true)
+					.withVertexFormat(VertexFormats.POSITION, VertexFormat.DrawMode.QUADS)
+					.build()
+	);
+
+    private static final Supplier<LavenderFramebuffer> FRAMEBUFFER = Suppliers.memoize(() -> {
         var window = MinecraftClient.getInstance().getWindow();
 
-        var framebuffer = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true);
-        ((LavenderFramebufferExtension) framebuffer).lavender$enableDepthTest();
-        ((LavenderFramebufferExtension) framebuffer).lavender$setBlitProgram(() -> {
-            LavenderClient.BLIT_ALPHA_PROGRAM.setAlpha(.5f);
-            return LavenderClient.BLIT_ALPHA_PROGRAM.key();
-        });
-        framebuffer.setClearColor(0f, 0f, 0f, 0f);
-        return framebuffer;
+	    return new LavenderFramebuffer("Lavender Structure Overlay Framebuffer", window.getFramebufferWidth(), window.getFramebufferHeight(), true, PIPELINE);
     });
 
     private static final Map<BlockPos, OverlayEntry> ACTIVE_OVERLAYS = new HashMap<>();
@@ -139,16 +142,21 @@ public class StructureOverlayRenderer {
             matrices.translate(-context.camera().getPos().x, -context.camera().getPos().y, -context.camera().getPos().z);
 
             var client = MinecraftClient.getInstance();
+			// prefer targeting the translucent framebuffer
+	        // to make sure the translucent structure is properly handled as translucent down the line
+			var targetFramebuffer = client.worldRenderer.getTranslucentFramebuffer() != null
+					? client.worldRenderer.getTranslucentFramebuffer()
+					: client.getFramebuffer();
+
             var effectConsumers = client.getBufferBuilders().getEffectVertexConsumers();
             var testPos = new BlockPos.Mutable();
 
             var framebuffer = FRAMEBUFFER.get();
-            framebuffer.clear();
-            framebuffer.beginWrite(false);
+			framebuffer.clear();
+
             LavenderClient.mainTargetOverride = framebuffer;
 
-            GL30C.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, client.getFramebuffer().fbo);
-            GL30C.glBlitFramebuffer(0, 0, framebuffer.textureWidth, framebuffer.textureHeight, 0, 0, client.getFramebuffer().textureWidth, client.getFramebuffer().textureHeight, GL30C.GL_DEPTH_BUFFER_BIT, GL30C.GL_NEAREST);
+			framebuffer.copyDepthFrom(targetFramebuffer);
 
             hudComponent.<FlowLayout>configure(layout -> {
                 layout.clearChildren().padding(Insets.bottom((client.getWindow().getScaledWidth() - 182) / 2 < 200 ? 50 : 5));
@@ -208,7 +216,7 @@ public class StructureOverlayRenderer {
 
                     var renderTickCounter = client.getRenderTickCounter();
 
-                    entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, renderTickCounter.getLastFrameDuration());
+                    entry.visualCompleteness += Delta.compute(entry.visualCompleteness, valid / (float) total, renderTickCounter.getDynamicDeltaTicks());
                     layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
                         .child(Components.label(Text.translatable("text.lavender.structure_hud.completion", Text.translatable(Util.createTranslationKey("structure", entry.structureId)), valid, total)).shadow(true))
                         .child(Containers.verticalFlow(Sizing.content(), Sizing.content())
@@ -217,13 +225,13 @@ public class StructureOverlayRenderer {
                             .child(Components.texture(BARS_TEXTURE, 0, 30, 182, 5, 256, 48).blend(true).positioning(Positioning.absolute(0, 0))))
                         .gap(2)
                         .horizontalAlignment(HorizontalAlignment.CENTER)
-                        .margins(Insets.bottom((int) (Easing.CUBIC.apply((Math.max(0, entry.decayTime - 30) + renderTickCounter.getTickDelta(false)) / 20f) * -32))));
+                        .margins(Insets.bottom((int) (Easing.CUBIC.apply((Math.max(0, entry.decayTime - 30) + renderTickCounter.getTickProgress(false)) / 20f) * -32))));
 
                     if (entry.decayTime < 0 && complete) {
                         entry.decayTime = 0;
                         client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
                     } else if (entry.decayTime >= 0) {
-                        entry.decayTime += renderTickCounter.getLastFrameDuration();
+                        entry.decayTime += renderTickCounter.getDynamicDeltaTicks();
                     }
 
                     return entry.decayTime >= 50;
@@ -233,7 +241,7 @@ public class StructureOverlayRenderer {
             if (PENDING_OVERLAY != null) {
                 var structure = PENDING_OVERLAY.fetchStructure();
                 if (structure != null) {
-                    if (client.player.raycast(5, client.getRenderTickCounter().getTickDelta(false), false) instanceof BlockHitResult target) {
+                    if (client.player.raycast(5, client.getRenderTickCounter().getTickProgress(false), false) instanceof BlockHitResult target) {
                         var targetPos = target.getBlockPos().add(getPendingOffset(structure));
                         if (!client.player.isSneaking()) targetPos = targetPos.offset(target.getSide());
 
@@ -247,19 +255,13 @@ public class StructureOverlayRenderer {
 
             matrices.pop();
 
-            GlStateManager._depthMask(true);
             CONSUMERS.draw();
             effectConsumers.draw();
 
-            client.getFramebuffer().beginWrite(false);
             LavenderClient.mainTargetOverride = null;
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-
-            RenderSystem.backupProjectionMatrix();
-            framebuffer.drawInternal(framebuffer.textureWidth, framebuffer.textureHeight);
-            RenderSystem.restoreProjectionMatrix();
+	        targetFramebuffer.copyDepthFrom(framebuffer);
+            framebuffer.drawBlit(targetFramebuffer.getColorAttachmentView());
         });
 
         WindowResizeCallback.EVENT.register((client, window) -> {
@@ -300,7 +302,7 @@ public class StructureOverlayRenderer {
         matrices.translate(offsetInStructure.getX(), offsetInStructure.getY(), offsetInStructure.getZ());
 
         matrices.translate(.5, .5, .5);
-        matrices.scale(1.0001f, 1.0001f, 1.0001f);
+        matrices.scale(1.004f, 1.004f, 1.004f);
         matrices.translate(-.5, -.5, -.5);
 
         MinecraftClient.getInstance().getBlockRenderManager().renderBlockAsEntity(

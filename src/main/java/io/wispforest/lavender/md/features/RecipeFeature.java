@@ -68,7 +68,7 @@ public class RecipeFeature implements MarkdownFeature {
         var recipeComponent = componentSource.builtinTemplate(ParentComponent.class, "smithing-recipe");
 
         recipe.template().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-1").ingredient(ingredient));
-        recipe.base().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-2").ingredient(ingredient));
+        recipeComponent.childById(ItemListComponent.class, "input-2").ingredient(recipe.base());
         recipe.addition().ifPresent(ingredient -> recipeComponent.childById(ItemListComponent.class, "input-3").ingredient(ingredient));
 
         recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getDisplays().getFirst().result().getFirst(slotContext));
@@ -156,7 +156,7 @@ public class RecipeFeature implements MarkdownFeature {
         }
 
         @Override
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings("rawtypes")
         protected void visitStart(MarkdownCompiler<?> compiler) {
             var previewBuilder = (RecipePreviewBuilder) RecipeFeature.this.previewBuilders.get(this.recipe.value().getType());
             if (previewBuilder != null) {

@@ -28,7 +28,7 @@ import static io.wispforest.lavender.client.AssociatedEntryTooltipComponent.entr
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
 
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
+    @Inject(method = "drawTooltipImmediately(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;IILnet/minecraft/client/gui/tooltip/TooltipPositioner;Lnet/minecraft/util/Identifier;)V", at = @At("HEAD"))
     private void injectTooltipComponents(TextRenderer textRenderer, List<TooltipComponent> components, int x, int y, TooltipPositioner positioner, @Nullable Identifier texture, CallbackInfo ci, @Local(argsOnly = true) LocalRef<List<TooltipComponent>> componentsRef) {
         var client = MinecraftClient.getInstance();
 
@@ -58,14 +58,14 @@ public class DrawContextMixin {
                 components.add(new AssociatedEntryTooltipComponent(LavenderBookItem.itemOf(book), associatedEntry, entryTriggerProgress));
                 componentsRef.set(components);
 
-                entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, client.getRenderTickCounter().getLastFrameDuration() * .125f);
+                entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, client.getRenderTickCounter().getDynamicDeltaTicks() * .125f);
 
                 if (entryTriggerProgress >= .95) {
                     LavenderBookScreen.pushEntry(book, associatedEntry);
                     client.setScreen(new LavenderBookScreen(book));
 
                     if (bookIndex >= 0) {
-                        client.player.getInventory().selectedSlot = bookIndex;
+                        client.player.getInventory().setSelectedSlot(bookIndex);
                     }
 
                     entryTriggerProgress = 0f;

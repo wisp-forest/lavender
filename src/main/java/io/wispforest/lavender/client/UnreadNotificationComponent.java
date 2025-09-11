@@ -4,7 +4,7 @@ import io.wispforest.owo.ui.base.BaseComponent;
 import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.parsing.UIParsing;
-import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.w3c.dom.Element;
@@ -30,9 +30,9 @@ public class UnreadNotificationComponent extends BaseComponent {
 
     @Override
     public void draw(OwoUIDrawContext context, int mouseX, int mouseY, float partialTicks, float delta) {
-        context.push().translate(0, 0, 200);
+        context.push();
         context.drawTexture(
-            RenderLayer::getGuiTextured,
+			RenderPipelines.GUI_TEXTURED,
             this.bookTexture,
             this.x,
             this.y,

@@ -8,6 +8,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.component.ComponentType;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -26,8 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class LavenderBookItem extends Item {
 
@@ -162,16 +163,17 @@ public class LavenderBookItem extends Item {
         MinecraftClient.getInstance().setScreen(new LavenderBookScreen(book));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+    public void appendTooltip(ItemStack stack, Item.TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
         var bookId = bookIdOf(stack);
         if (bookId == null) {
-            tooltip.add(TextOps.withFormatting("⚠ §No associated book", Formatting.RED, Formatting.DARK_GRAY));
+	        textConsumer.accept(TextOps.withFormatting("⚠ §No associated book", Formatting.RED, Formatting.DARK_GRAY));
         } else {
             var book = BookLoader.get(bookId);
             if (book != null) return;
 
-            tooltip.add(TextOps.withFormatting("⚠ §Unknown book \"" + bookId + "\"", Formatting.RED, Formatting.DARK_GRAY));
+	        textConsumer.accept(TextOps.withFormatting("⚠ §Unknown book \"" + bookId + "\"", Formatting.RED, Formatting.DARK_GRAY));
         }
     }
 }

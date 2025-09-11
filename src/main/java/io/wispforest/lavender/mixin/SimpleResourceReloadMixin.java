@@ -4,6 +4,7 @@ import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.pond.LavenderLifecycledResourceManagerExtension;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceReloader;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.SimpleResourceReload;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,8 +20,8 @@ import java.util.concurrent.Executor;
 @Mixin(SimpleResourceReload.class)
 public class SimpleResourceReloadMixin {
 
-    @Inject(method = "<init>", at = @At(value = "INVOKE_ASSIGN", target = "Lcom/google/common/collect/Sets;newHashSet(Ljava/lang/Iterable;)Ljava/util/HashSet;"))
-    private void loadLavenderBooks(Executor prepareExecutor, Executor applyExecutor, ResourceManager manager, List reloaders, @Coerce Object factory, CompletableFuture initialStage, CallbackInfo ci) {
+    @Inject(method = "start(Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Lnet/minecraft/resource/ResourceManager;Ljava/util/List;Lnet/minecraft/resource/SimpleResourceReload$Factory;Ljava/util/concurrent/CompletableFuture;)V", at = @At("HEAD"))
+    private void loadLavenderBooks(Executor prepareExecutor, Executor applyExecutor, ResourceManager manager, List<ResourceReloader> reloaders, @Coerce Object factory, CompletableFuture<?> initialStage, CallbackInfo ci) {
         if (!(manager instanceof LavenderLifecycledResourceManagerExtension extension) || extension.lavender$resourceType() != ResourceType.CLIENT_RESOURCES) return;
         if (MinecraftClient.getInstance().world == null) return;
 

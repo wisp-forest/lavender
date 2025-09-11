@@ -10,15 +10,12 @@ import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.ScreenRect;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.DiffuseLighting;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.RotationAxis;
 import org.lwjgl.glfw.GLFW;
 import org.w3c.dom.Element;
 
@@ -54,42 +51,15 @@ public class StructureComponent extends BaseComponent {
     @Override
     public void draw(OwoUIDrawContext context, int mouseX, int mouseY, float partialTicks, float delta) {
         var client = MinecraftClient.getInstance();
-        var entityBuffers = client.getBufferBuilders().getEntityVertexConsumers();
 
-        float scale = Math.min(this.width, this.height);
-        scale /= Math.max(structure.xSize, Math.max(structure.ySize, structure.zSize));
-        scale /= 1.625f;
-
-        var matrices = context.getMatrices();
-
-        matrices.push();
-        matrices.translate(this.x + this.width / 2f, this.y + this.height / 2f, 100);
-        matrices.scale(scale, -scale, scale);
-
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(this.displayAngle));
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(this.rotation));
-        matrices.translate(this.structure.xSize / -2f, this.structure.ySize / -2f, this.structure.zSize / -2f);
-
-        structure.forEachPredicate((blockPos, predicate) -> {
-            if (this.visibleLayer != -1 && this.visibleLayer != blockPos.getY()) return;
-
-            matrices.push();
-            matrices.translate(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-
-            client.getBlockRenderManager().renderBlockAsEntity(
-                predicate.preview(), matrices, entityBuffers,
-                LightmapTextureManager.MAX_BLOCK_LIGHT_COORDINATE,
-                OverlayTexture.DEFAULT_UV
-            );
-
-            matrices.pop();
-        });
-
-        matrices.pop();
-
-        DiffuseLighting.disableGuiDepthLighting();
-        entityBuffers.draw();
-        DiffuseLighting.enableGuiDepthLighting();
+		context.state.addSpecialElement(new StructureComponentRenderState(
+				structure,
+				displayAngle,
+				rotation,
+				visibleLayer,
+				new ScreenRect(this.x, this.y, this.width, this.height),
+				context.scissorStack.peekLast()
+		));
 
         if (this.placeable) {
             if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {

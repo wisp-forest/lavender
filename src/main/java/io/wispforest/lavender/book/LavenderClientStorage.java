@@ -1,16 +1,16 @@
 package io.wispforest.lavender.book;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.client.LavenderClient;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.JsonHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -26,7 +26,17 @@ public class LavenderClientStorage {
     private static final TypeToken<Map<UUID, Map<Identifier, Set<Identifier>>>> VIEWED_ENTRIES_TYPE = new TypeToken<>() {};
     private static Map<UUID, Map<Identifier, Set<Identifier>>> viewedEntries;
 
-    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Identifier.class, new Identifier.Serializer()).setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Identifier.class, new IdentifierSerializer()).setPrettyPrinting().create();
+
+	private static class IdentifierSerializer implements JsonDeserializer<Identifier>, JsonSerializer<Identifier> {
+		public Identifier deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+			return Identifier.of(JsonHelper.asString(jsonElement, "location"));
+		}
+
+		public JsonElement serialize(Identifier identifier, Type type, JsonSerializationContext jsonSerializationContext) {
+			return new JsonPrimitive(identifier.toString());
+		}
+	}
 
     static {
         try {

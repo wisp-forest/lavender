@@ -14,12 +14,15 @@ import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.parsing.UIModel;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.text.*;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class BookCompiler extends OwoUICompiler {
@@ -86,6 +89,8 @@ public class BookCompiler extends OwoUICompiler {
 
         private @Nullable LavenderBookScreen owner;
 
+		public static Identifier LINK = Lavender.id("link");
+
         protected BookLabelComponent(Text text) {
             super(text);
             this.margins(Insets.horizontal(1));
@@ -93,8 +98,9 @@ public class BookCompiler extends OwoUICompiler {
                 if (style == null || this.owner == null) return false;
 
                 var clickEvent = style.getClickEvent();
-                if (clickEvent != null && clickEvent.getAction() == ClickEvent.Action.OPEN_URL && clickEvent.getValue().startsWith("^")) {
-                    var linkTarget = this.resolveLinkTarget(clickEvent.getValue());
+                if (clickEvent instanceof ClickEvent.Custom(Identifier ce, Optional<NbtElement> payload)
+		                && ce.equals(LINK) && payload.orElse(null) instanceof NbtString(String value)) {
+                    var linkTarget = this.resolveLinkTarget(value);
                     if (linkTarget != null && linkTarget.supplier != null) {
                         this.owner.navPush(linkTarget.supplier.get());
                         return true;
@@ -160,11 +166,11 @@ public class BookCompiler extends OwoUICompiler {
             if (style == null) return null;
 
             var event = style.getHoverEvent();
-            if (this.owner != null && event != null && event.getAction() == HoverEvent.Action.SHOW_TEXT && event.getValue(HoverEvent.Action.SHOW_TEXT).getString().startsWith("^")) {
-                var rawLink = event.getValue(HoverEvent.Action.SHOW_TEXT).getString();
+            if (this.owner != null && event != null && event instanceof HoverEvent.ShowText(Text value) && value.getString().startsWith("^")) {
+                var rawLink = value.getString();
                 var linkTarget = this.resolveLinkTarget(rawLink);
 
-                style = style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, linkTarget != null
+                style = style.withHoverEvent(new HoverEvent.ShowText(linkTarget != null
                         ? linkTarget.supplier != null ? linkTarget.title : Text.translatable("text.lavender.locked_internal_link")
                         : Text.translatable("text.lavender.invalid_internal_link", rawLink)
                 ));

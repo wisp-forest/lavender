@@ -11,14 +11,13 @@
     "ClientAdvancementManagerMixin",
     "CreativeInventoryScreenMixin",
     "DrawContextMixin",
-    "FramebufferMixin",
+    "GameRendererMixin",
+    "GuiRendererMixin",
     "HeldItemRendererMixin",
-    "MinecraftClientMixin",
     "MouseMixin",
     "RenderPhaseMixin",
     "ScreenMixin",
     "SimpleResourceReloadMixin",
-    "TextureUtilMixin",
     "access.ClientAdvancementManagerAccessor"
   ],
   "injectors": {

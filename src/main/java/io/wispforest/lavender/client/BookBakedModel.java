@@ -7,8 +7,8 @@ import net.minecraft.client.render.item.ItemRenderState;
 import net.minecraft.client.render.item.model.ItemModel;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ModelTransformationMode;
 import org.jetbrains.annotations.Nullable;
 
 public class BookBakedModel implements ItemModel {
@@ -19,15 +19,15 @@ public class BookBakedModel implements ItemModel {
         this.defaultModel = defaultModel;
     }
 
-    @Override
-    public void update(ItemRenderState state, ItemStack stack, ItemModelManager resolver, ModelTransformationMode transformationMode, @Nullable ClientWorld world, @Nullable LivingEntity user, int seed) {
-        var book = LavenderBookItem.bookOf(stack);
-        if (book != null && book.dynamicBookModel() != null) {
-            MinecraftClient.getInstance().getBakedModelManager().getItemModel(book.dynamicBookModel()).update(state, stack, resolver, transformationMode, world, user, seed);
-        } else {
-            this.defaultModel.update(state, stack, resolver, transformationMode, world, user, seed);
-        }
-    }
+	@Override
+	public void update(ItemRenderState state, ItemStack stack, ItemModelManager resolver, ItemDisplayContext displayContext, @Nullable ClientWorld world, @Nullable LivingEntity user, int seed) {
+		var book = LavenderBookItem.bookOf(stack);
+		if (book != null && book.dynamicBookModel() != null) {
+			MinecraftClient.getInstance().getBakedModelManager().getItemModel(book.dynamicBookModel()).update(state, stack, resolver, displayContext, world, user, seed);
+		} else {
+			this.defaultModel.update(state, stack, resolver, displayContext, world, user, seed);
+		}
+	}
 
 //    private final ModelOverrideList overrides = new ModelOverrideList() {
 //        @Override
