@@ -1,0 +1,80 @@
+{
+  "item.lavender.dynamic_book": "书",
+
+  "text.lavender.unknown_book": [{"text": "未知的书：", "color": "red"}, {"index": 0, "color": "gray"}],
+
+  "text.lavender.structure_hud.completion": "%s: %s / %s",
+  "text.lavender.entry_hud.sneak_to_view": {"text": "潜行查看", "color": "gray"},
+  "text.lavender.entry_hud.click_to_view": {"text": "点击查看", "color": "gray"},
+
+  "text.lavender.entry_tooltip": [
+    {"text": "按住", "color": "dark_gray"},
+    {"text": "Alt", "color": "gold"}
+  ],
+  "text.lavender.entry_tooltip.progress": [
+    {"text": "[", "color": "green"},
+    {"index": 0, "color": "gray"},
+    {"index": 1, "color": "dark_gray"},
+    {"text": "]", "color": "green"}
+  ],
+
+  "text.lavender.structure_component.hide_hint": "❌Shift点击隐藏",
+  "text.lavender.structure_component.place_hint": "⚓Shift点击放置",
+  "text.lavender.structure_component.active_overlay_hint": {"text": "⚓", "color": "gray"},
+  "text.lavender.structure_component.layer_tooltip": "渲染层：%d",
+  "text.lavender.structure_component.all_layers_tooltip": "所有层",
+
+  "text.lavender.toast.new_entries": [
+    "",
+    {"text": "新条目解锁：\n", "color": "yellow"},
+    {"index": 0}
+  ],
+
+  "text.lavender.keybind_tooltip": [
+    {"text": "按键绑定：\n "},
+    {"index": 0, "color": "gray"},
+    {"text": " > ", "color": "dark_gray"},
+    {"index": 1, "color": "gray"}
+  ],
+
+  "text.lavender.locked_internal_link": {"text": "已锁定", "color": "gray"},
+  "text.lavender.invalid_internal_link": [
+    {"text": "无效的内部链接：", "color": "red"},
+    {"index": 0, "color": "gray"}
+  ],
+
+  "text.lavender.entry.locked": {"text": "已锁定", "font": "minecraft:uniform", "color": "gray"},
+  "text.lavender.entry.multiple_unread": "未读的条目",
+  "text.lavender.entry.unread": "未读的条目",
+
+  "text.lavender.categories": "分类",
+  "text.lavender.index": "目录",
+  "text.lavender.index_category": "所有条目",
+  "text.lavender.index_category.title": "条目",
+
+  "text.lavender.book.click_to_open": {"text": "点击打开：", "color": "dark_gray"},
+
+  "text.lavender.book.next": [
+    "下一页\n",
+    {"text": "↑滚轮向上", "color": "gray"}
+  ],
+  "text.lavender.book.back": [
+    "返回\n",
+    {"text": "Shift点击回到主界面", "color": "gray"}
+  ],
+  "text.lavender.book.previous": [
+    "下一页\n",
+    {"text": "↓滚轮向下", "color": "gray"}
+  ],
+  "text.lavender.book.reload": "重载",
+
+  "text.lavender.book.unlock_progress": [
+    {"text": "已解锁：", "font": "minecraft:uniform", "color": "dark_gray"},
+    {"index": 0},
+    {"text": "/"},
+    {"index": 1}
+  ],
+
+  "text.lavender.book.bookmark.add": "添加书签",
+  "text.lavender.book.bookmark.remove_hint": {"text": "Shift点击移除", "color": "dark_gray"}
+}
