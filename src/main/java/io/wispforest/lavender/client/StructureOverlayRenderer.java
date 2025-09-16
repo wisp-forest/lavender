@@ -4,6 +4,7 @@ import com.google.common.base.Suppliers;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.structure.BlockStatePredicate;
@@ -154,7 +155,8 @@ public class StructureOverlayRenderer {
             var framebuffer = FRAMEBUFFER.get();
 			framebuffer.clear();
 
-            LavenderClient.mainTargetOverride = framebuffer;
+	        RenderSystem.outputColorTextureOverride = framebuffer.getColorAttachmentView();
+			RenderSystem.outputDepthTextureOverride = framebuffer.getDepthAttachmentView();
 
 			framebuffer.copyDepthFrom(targetFramebuffer);
 
@@ -258,7 +260,8 @@ public class StructureOverlayRenderer {
             CONSUMERS.draw();
             effectConsumers.draw();
 
-            LavenderClient.mainTargetOverride = null;
+	        RenderSystem.outputColorTextureOverride = null;
+	        RenderSystem.outputDepthTextureOverride = null;
 
 	        targetFramebuffer.copyDepthFrom(framebuffer);
             framebuffer.drawBlit(targetFramebuffer.getColorAttachmentView());

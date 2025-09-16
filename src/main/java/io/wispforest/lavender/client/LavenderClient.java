@@ -25,7 +25,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.item.model.ItemModelTypes;
 import net.minecraft.item.Items;
@@ -43,8 +42,6 @@ public class LavenderClient implements ClientModInitializer {
     private static final Identifier ENTRY_HUD_ID = Lavender.id("entry_hud");
 
     private static UUID currentWorldId = null;
-
-    public static @Nullable Framebuffer mainTargetOverride = null;
 
     @Override
     public void onInitializeClient() {

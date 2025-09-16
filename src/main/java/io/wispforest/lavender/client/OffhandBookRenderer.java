@@ -1,6 +1,7 @@
 package io.wispforest.lavender.client;
 
 import com.google.common.base.Suppliers;
+import com.mojang.blaze3d.systems.RenderSystem;
 import io.wispforest.lavender.Lavender;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
@@ -76,7 +77,8 @@ public class OffhandBookRenderer {
 
 	    var override = (GuiRendererFramebufferOverride) guiRenderer;
 
-	    LavenderClient.mainTargetOverride = screenBuffer;
+	    RenderSystem.outputColorTextureOverride = screenBuffer.getColorAttachmentView();
+	    RenderSystem.outputDepthTextureOverride = screenBuffer.getDepthAttachmentView();
 	    override.lavender$setOverride(screenBuffer);
 	    screenBuffer.clear();
 
@@ -85,7 +87,8 @@ public class OffhandBookRenderer {
 
 	    guiState.clear();
 	    override.lavender$setOverride(null);
-	    LavenderClient.mainTargetOverride = null;
+	    RenderSystem.outputColorTextureOverride = null;
+	    RenderSystem.outputDepthTextureOverride = null;
     }
 
     public static void render(MatrixStack matrices, int light) {

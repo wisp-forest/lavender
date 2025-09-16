@@ -15,7 +15,6 @@
     "GuiRendererMixin",
     "HeldItemRendererMixin",
     "MouseMixin",
-    "RenderPhaseMixin",
     "ScreenMixin",
     "SimpleResourceReloadMixin",
     "access.ClientAdvancementManagerAccessor"
