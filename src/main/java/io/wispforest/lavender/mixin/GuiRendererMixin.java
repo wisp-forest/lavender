@@ -28,6 +28,6 @@ public class GuiRendererMixin implements GuiRendererFramebufferOverride {
 	@WrapOperation(method = "renderPreparedDraws", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;getFramebuffer()Lnet/minecraft/client/gl/Framebuffer;"))
 	private Framebuffer overrideRenderFramebuffer(MinecraftClient instance, Operation<Framebuffer> original) {
 		if (override != null) return override;
-		return instance.getFramebuffer();
+		return original.call(instance);
 	}
 }
