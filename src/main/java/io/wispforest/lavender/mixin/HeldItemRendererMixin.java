@@ -6,7 +6,7 @@ import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavender.client.OffhandBookRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.item.HeldItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
@@ -29,11 +29,11 @@ public abstract class HeldItemRendererMixin {
     }
 
     @Inject(method = "renderFirstPersonMap", at = @At("HEAD"), cancellable = true)
-    private void injectBook(MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, ItemStack stack, CallbackInfo ci) {
+    private void injectBook(MatrixStack matrices, OrderedRenderCommandQueue queue, int light, ItemStack stack, CallbackInfo ci) {
         if (!(stack.getItem() instanceof LavenderBookItem)) return;
         ci.cancel();
 
-        OffhandBookRenderer.render(matrices, light);
+        OffhandBookRenderer.render(matrices, queue, light);
     }
 
 }

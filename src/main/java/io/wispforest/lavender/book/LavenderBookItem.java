@@ -146,7 +146,7 @@ public class LavenderBookItem extends Item {
 
         var bookId = bookIdOf(playerStack);
         if (bookId == null) return ActionResult.SUCCESS;
-        if (!world.isClient) return ActionResult.SUCCESS;
+        if (!world.isClient()) return ActionResult.SUCCESS;
 
         var book = BookLoader.get(bookId);
         if (book == null) {

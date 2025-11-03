@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 
 public class BookCompiler extends OwoUICompiler {
 
-    private static final Style UNICODE_FONT_STYLE = Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID);
+    private static final Style UNICODE_FONT_STYLE = Style.EMPTY.withFont(new StyleSpriteSource.Font(MinecraftClient.UNICODE_FONT_ID));
 
     private final FlowLayout resultContainer = Containers.verticalFlow(Sizing.content(), Sizing.content());
     private final ComponentSource bookComponentSource;

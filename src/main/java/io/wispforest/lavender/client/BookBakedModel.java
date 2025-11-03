@@ -6,9 +6,9 @@ import net.minecraft.client.item.ItemModelManager;
 import net.minecraft.client.render.item.ItemRenderState;
 import net.minecraft.client.render.item.model.ItemModel;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.HeldItemContext;
 import org.jetbrains.annotations.Nullable;
 
 public class BookBakedModel implements ItemModel {
@@ -20,7 +20,7 @@ public class BookBakedModel implements ItemModel {
     }
 
 	@Override
-	public void update(ItemRenderState state, ItemStack stack, ItemModelManager resolver, ItemDisplayContext displayContext, @Nullable ClientWorld world, @Nullable LivingEntity user, int seed) {
+	public void update(ItemRenderState state, ItemStack stack, ItemModelManager resolver, ItemDisplayContext displayContext, @Nullable ClientWorld world, @Nullable HeldItemContext user, int seed) {
 		var book = LavenderBookItem.bookOf(stack);
 		if (book != null && book.dynamicBookModel() != null) {
 			MinecraftClient.getInstance().getBakedModelManager().getItemModel(book.dynamicBookModel()).update(state, stack, resolver, displayContext, world, user, seed);

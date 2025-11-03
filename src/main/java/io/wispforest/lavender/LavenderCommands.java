@@ -83,7 +83,7 @@ public class LavenderCommands {
 
             var jAvAsE = command;
             context.getSource().getClient().send(() -> {
-                context.getSource().getClient().setScreen(new ChatScreen(jAvAsE));
+                context.getSource().getClient().setScreen(new ChatScreen(jAvAsE, true));
             });
 
             return 0;

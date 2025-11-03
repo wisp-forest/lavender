@@ -58,7 +58,7 @@ public class DrawContextMixin {
                 components.add(new AssociatedEntryTooltipComponent(LavenderBookItem.itemOf(book), associatedEntry, entryTriggerProgress));
                 componentsRef.set(components);
 
-                entryTriggerProgress += Delta.compute(entryTriggerProgress, Screen.hasAltDown() ? 1.35f : 0f, client.getRenderTickCounter().getDynamicDeltaTicks() * .125f);
+                entryTriggerProgress += Delta.compute(entryTriggerProgress, client.isAltPressed() ? 1.35f : 0f, client.getRenderTickCounter().getDynamicDeltaTicks() * .125f);
 
                 if (entryTriggerProgress >= .95) {
                     LavenderBookScreen.pushEntry(book, associatedEntry);

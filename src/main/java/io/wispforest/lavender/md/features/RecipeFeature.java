@@ -123,8 +123,7 @@ public class RecipeFeature implements MarkdownFeature {
             var recipe = LavenderClientRecipeCache.getOrFetchRecipe(recipeId);
             if (recipe.isEmpty()) return false;
 
-            //noinspection unchecked
-            tokens.add(new RecipeToken(recipeIdString, (RecipeEntry<Recipe<?>>) recipe.get()));
+	        tokens.add(new RecipeToken(recipeIdString, (RecipeEntry<Recipe<?>>) recipe.get()));
             return true;
         }, '<');
     }

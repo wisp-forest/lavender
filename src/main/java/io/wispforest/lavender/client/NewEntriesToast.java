@@ -9,7 +9,8 @@ import io.wispforest.owo.ui.container.StackLayout;
 import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.VerticalAlignment;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.TexturedRenderLayers;
+import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -21,7 +22,7 @@ public class NewEntriesToast extends BaseOwoToast<StackLayout> {
     public NewEntriesToast(Book.ToastSettings settings) {
         super(
             () -> Containers.stack(Sizing.content(), Sizing.content()).configure(component -> component
-                .child(Components.sprite(MinecraftClient.getInstance().getGuiAtlasManager().getSprite(settings.backgroundSprite() != null ? settings.backgroundSprite() : TEXTURE)))
+                .child(Components.sprite(new SpriteIdentifier(TexturedRenderLayers.GUI_ATLAS_TEXTURE, settings.backgroundSprite() != null ? settings.backgroundSprite() : TEXTURE)))
                 .child(Containers.horizontalFlow(Sizing.content(), Sizing.content())
                     .child(Components.item(settings.iconStack()).margins(Insets.of(0, 0, 8, 6)))
                     .child(Components.label(Text.translatable("text.lavender.toast.new_entries", settings.bookName())))

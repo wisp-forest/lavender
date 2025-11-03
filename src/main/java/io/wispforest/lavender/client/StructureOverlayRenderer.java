@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import io.wispforest.lavender.Lavender;
+import io.wispforest.lavender.mixin.access.WorldRendererAccessor;
 import io.wispforest.lavender.structure.BlockStatePredicate;
 import io.wispforest.lavender.structure.LavenderStructures;
 import io.wispforest.lavender.structure.StructureTemplate;
@@ -17,7 +18,7 @@ import io.wispforest.owo.ui.core.*;
 import io.wispforest.owo.ui.event.WindowResizeCallback;
 import io.wispforest.owo.ui.hud.Hud;
 import io.wispforest.owo.ui.util.Delta;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
@@ -45,14 +46,14 @@ public class StructureOverlayRenderer {
 	private static final RenderPipeline PIPELINE = RenderPipelines.register(
 			RenderPipeline.builder()
 					.withLocation(Lavender.id("pipeline/structure_overlay"))
-					.withVertexShader("core/blit_screen")
+					.withVertexShader("core/screenquad")
 					.withFragmentShader(Lavender.id("core/blit_alpha"))
 					.withSampler("InSampler")
 					.withBlend(BlendFunction.TRANSLUCENT)
 					.withDepthWrite(false)
 					.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
 					.withColorWrite(true, true)
-					.withVertexFormat(VertexFormats.POSITION, VertexFormat.DrawMode.QUADS)
+					.withVertexFormat(VertexFormats.EMPTY, VertexFormat.DrawMode.TRIANGLES)
 					.build()
 	);
 
@@ -132,15 +133,14 @@ public class StructureOverlayRenderer {
     public static void initialize() {
         Hud.add(HUD_COMPONENT_ID, () -> Containers.verticalFlow(Sizing.content(), Sizing.content()).gap(15).positioning(Positioning.relative(5, 100)));
 
-        WorldRenderEvents.LAST.register(context -> {
+        WorldRenderEvents.END_MAIN.register(context -> {
             if (!(Hud.getComponent(HUD_COMPONENT_ID) instanceof FlowLayout hudComponent)) {
                 return;
             }
 
-            var matrices = context.matrixStack();
+            var matrices = context.matrices();
             matrices.push();
-
-            matrices.translate(-context.camera().getPos().x, -context.camera().getPos().y, -context.camera().getPos().z);
+			matrices.translate(context.worldState().cameraRenderState.pos.negate());
 
             var client = MinecraftClient.getInstance();
 			// prefer targeting the translucent framebuffer
@@ -181,8 +181,10 @@ public class StructureOverlayRenderer {
                         matrices.push();
                         matrices.translate(anchor.getX(), anchor.getY(), anchor.getZ());
 
+						var world = ((WorldRendererAccessor)context.worldRenderer()).getWorld();
+
                         structure.forEachPredicate((pos, predicate) -> {
-                            var state = context.world().getBlockState(testPos.set(anchor).move(pos)).rotate(StructureTemplate.inverse(entry.rotation));
+                            var state = world.getBlockState(testPos.set(anchor).move(pos)).rotate(StructureTemplate.inverse(entry.rotation));
                             var result = predicate.test(state);
 
                             if (result == BlockStatePredicate.Result.STATE_MATCH) {
@@ -192,7 +194,7 @@ public class StructureOverlayRenderer {
 
                                 matrices.push();
                                 matrices.translate(pos.getX(), pos.getY(), pos.getZ());
-                                client.getBlockRenderManager().renderDamage(state, testPos, context.world(), matrices, overlayConsumer);
+                                client.getBlockRenderManager().renderDamage(state, testPos, world, matrices, overlayConsumer);
                                 matrices.pop();
                             }
 

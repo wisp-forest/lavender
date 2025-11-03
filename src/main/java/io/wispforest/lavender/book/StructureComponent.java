@@ -10,8 +10,8 @@ import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.parsing.UIModelParsingException;
 import io.wispforest.owo.ui.parsing.UIParsing;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.ScreenRect;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -71,27 +71,26 @@ public class StructureComponent extends BaseComponent {
         }
     }
 
+	@Override
+	public boolean onMouseDown(Click click, boolean doubled) {
+		var result = super.onMouseDown(click, doubled);
+		if (!this.placeable || click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT || !click.hasShift()) return result;
+
+		if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
+			StructureOverlayRenderer.removeAllOverlays(this.structure.id);
+		} else {
+			StructureOverlayRenderer.addPendingOverlay(this.structure.id);
+			StructureOverlayRenderer.restrictVisibleLayer(this.structure.id, this.visibleLayer);
+
+			MinecraftClient.getInstance().setScreen(null);
+		}
+		return true;
+	}
+
     @Override
-    public boolean onMouseDown(double mouseX, double mouseY, int button) {
-        var result = super.onMouseDown(mouseX, mouseY, button);
-        if (!this.placeable || button != GLFW.GLFW_MOUSE_BUTTON_LEFT || !Screen.hasShiftDown()) return result;
-
-        if (StructureOverlayRenderer.isShowingOverlay(this.structure.id)) {
-            StructureOverlayRenderer.removeAllOverlays(this.structure.id);
-        } else {
-            StructureOverlayRenderer.addPendingOverlay(this.structure.id);
-            StructureOverlayRenderer.restrictVisibleLayer(this.structure.id, this.visibleLayer);
-
-            MinecraftClient.getInstance().setScreen(null);
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) {
-        var result = super.onMouseDrag(mouseX, mouseY, deltaX, deltaY, button);
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return result;
+    public boolean onMouseDrag(Click click, double deltaX, double deltaY) {
+        var result = super.onMouseDrag(click, deltaX, deltaY);
+        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return result;
 
         this.rotation += (float) deltaX;
         this.lastInteractionTime = Util.getMeasuringTimeMs();

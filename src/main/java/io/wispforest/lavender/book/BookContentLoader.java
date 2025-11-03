@@ -16,6 +16,8 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceCondition;
 import net.fabricmc.fabric.api.resource.conditions.v1.ResourceConditions;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.TexturedRenderLayers;
+import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.command.argument.ItemStringReader;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -258,7 +260,7 @@ public class BookContentLoader implements SynchronousResourceReloader, Identifia
             var id = Identifier.tryParse(JsonHelper.getString(meta, "icon_sprite"));
             if (id == null) return null;
 
-            return sizing -> Components.sprite(MinecraftClient.getInstance().getGuiAtlasManager().getSprite(id)).sizing(sizing);
+            return sizing -> Components.sprite(new SpriteIdentifier(TexturedRenderLayers.GUI_ATLAS_TEXTURE, id)).sizing(sizing);
         } else {
             return sizing -> Containers.stack(sizing, sizing);
         }

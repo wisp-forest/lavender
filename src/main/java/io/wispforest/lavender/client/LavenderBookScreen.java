@@ -23,16 +23,19 @@ import io.wispforest.owo.ui.parsing.UIParsing;
 import io.wispforest.owo.ui.util.CommandOpenedScreen;
 import io.wispforest.owo.ui.util.UISounds;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.util.Window;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Style;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -148,7 +151,6 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
     @Override
     protected <C extends Component> @NotNull C component(Class<C> expectedClass, String id) {
-        //noinspection DataFlowIssue
         return super.component(expectedClass, id);
     }
 
@@ -164,7 +166,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         (this.previousButton = this.component(ButtonComponent.class, "previous-button")).onPress(button -> this.turnPage(true));
         (this.nextButton = this.component(ButtonComponent.class, "next-button")).onPress(button -> this.turnPage(false));
         (this.returnButton = this.component(ButtonComponent.class, "back-button")).onPress(button -> {
-            if (Screen.hasShiftDown()) {
+            if (MinecraftClient.getInstance().isShiftPressed()) {
                 while (this.navStack.size() > 1) this.navStack.pop();
                 this.rebuildContent(this.book.flippingSound());
             } else {
@@ -266,7 +268,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                 bookmarkComponent.childById(StackLayout.class, "bookmark-preview").child(element.iconFactory().apply(Sizing.fill()).cursorStyle(CursorStyle.HAND));
                 bookmarkComponent.childById(ButtonComponent.class, "bookmark-button").<ButtonComponent>configure(bookmarkButton -> {
                     bookmarkButton.onPress($ -> {
-                        if (Screen.hasShiftDown()) {
+                        if (MinecraftClient.getInstance().isShiftPressed()) {
                             LavenderClientStorage.removeBookmark(this.book, bookmark);
                             this.rebuildContent(null);
                         } else if (element instanceof Entry entry) {
@@ -363,25 +365,26 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
         super.drawComponentTooltip(drawContext, mouseX, mouseY, tickDelta);
     }
-    @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (super.charTyped(chr, modifiers)) return true;
+	@Override
+    public boolean charTyped(CharInput input) {
+        if (super.charTyped(input)) return true;
 
-        if (chr == 'e' && (modifiers & GLFW.GLFW_MOD_ALT) != 0) {
+        if (input.codepoint() == 'e' && (input.modifiers() & GLFW.GLFW_MOD_ALT) != 0) {
             this.navPush(new EditorPageSupplier(this));
             return true;
         }
 
         this.searchBox.focusHandler().focus(this.searchBox, Component.FocusSource.MOUSE_CLICK);
-        this.searchBox.charTyped(chr, modifiers);
+        this.searchBox.charTyped(input);
 
         return true;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
+    public boolean keyPressed(KeyInput input) {
+        if (super.keyPressed(input)) return true;
 
+		final int keyCode = input.key();
         if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
             this.navPop();
         } else if (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_PAGE_DOWN) {
@@ -400,13 +403,15 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         return super.hoveredElement(mouseX, mouseY).flatMap(element -> element != this.uiAdapter ? Optional.of(element) : Optional.empty());
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
-        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
+	@Override
+    public boolean mouseClicked(Click click, boolean doubled) {
+        final var mouseX = click.x() * this.window.getScaleFactor() / this.scaleFactor;
+        final var mouseY = click.y() * this.window.getScaleFactor() / this.scaleFactor;
+		click = new Click(mouseX, mouseY, click.buttonInfo());
 
-        if (this.uiAdapter.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button)) return true;
+        if (this.uiAdapter.mouseClicked(click, doubled) || super.mouseClicked(click, doubled)) return true;
 
+		final int button = click.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             this.navPop();
         } else if (button == GLFW.GLFW_MOUSE_BUTTON_4) {
@@ -421,17 +426,19 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
-        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
-        return this.uiAdapter.mouseDragged(mouseX, mouseY, button, deltaX, deltaY) || super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(Click click, double deltaX, double deltaY) {
+	    final var mouseX = click.x() * this.window.getScaleFactor() / this.scaleFactor;
+	    final var mouseY = click.y() * this.window.getScaleFactor() / this.scaleFactor;
+	    click = new Click(mouseX, mouseY, click.buttonInfo());
+        return this.uiAdapter.mouseDragged(click, deltaX, deltaY) || super.mouseDragged(click, deltaX, deltaY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        mouseX = mouseX * this.window.getScaleFactor() / this.scaleFactor;
-        mouseY = mouseY * this.window.getScaleFactor() / this.scaleFactor;
-        return super.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(Click click) {
+	    final var mouseX = click.x() * this.window.getScaleFactor() / this.scaleFactor;
+	    final var mouseY = click.y() * this.window.getScaleFactor() / this.scaleFactor;
+	    click = new Click(mouseX, mouseY, click.buttonInfo());
+        return super.mouseReleased(click);
     }
 
     @Override
@@ -570,8 +577,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                         item.tooltip(newTooltip);
                     }
 
-                    item.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                    item.mouseDown().subscribe((click, doubled) -> {
+                        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
                         this.context.navPush(new EntryPageSupplier(this.context, entry));
 
                         UISounds.playInteractionSound();
@@ -624,9 +631,9 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
 
                             var label = indexItem.childById(LabelComponent.class, "index-label");
 
-                            label.text(Text.literal(entry.title()).styled($ -> $.withFont(MinecraftClient.UNICODE_FONT_ID).withItalic(false && hasUnreadNotification)));
-                            label.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                                if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                            label.text(Text.literal(entry.title()).styled($ -> $.withFont(new StyleSpriteSource.Font(MinecraftClient.UNICODE_FONT_ID)).withItalic(false && hasUnreadNotification)));
+                            label.mouseDown().subscribe((click, doubled) -> {
+                                if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
                                 this.context.navPush(new EntryPageSupplier(this.context, entry));
                                 UISounds.playInteractionSound();
@@ -677,8 +684,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                                         .margins(Insets.of(4))
                                         .cursorStyle(CursorStyle.HAND);
 
-                                categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                                    if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                                categoryButton.mouseDown().subscribe((click, doubled) -> {
+                                    if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
                                     this.context.navPush(new CategoryPageSupplier(this.context, category_));
                                     UISounds.playInteractionSound();
@@ -705,7 +712,7 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
         }
 
         protected int lineCount(String entryTitle, boolean hasNotification) {
-            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, hasNotification ? 90 : 98, Style.EMPTY.withFont(MinecraftClient.UNICODE_FONT_ID)).size();
+            return this.context.client.textRenderer.getTextHandler().wrapLines(entryTitle, hasNotification ? 90 : 98, Style.EMPTY.withFont(new StyleSpriteSource.Font(MinecraftClient.UNICODE_FONT_ID))).size();
         }
 
         public interface Bookmarkable {
@@ -761,8 +768,8 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
                             .margins(Insets.of(4))
                             .cursorStyle(CursorStyle.HAND);
 
-                    categoryButton.mouseDown().subscribe((mouseX, mouseY, button) -> {
-                        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+                    categoryButton.mouseDown().subscribe((click, doubled) -> {
+                        if (click.button() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
 
                         this.context.navPush(new IndexPageSupplier(this.context));
                         UISounds.playInteractionSound();

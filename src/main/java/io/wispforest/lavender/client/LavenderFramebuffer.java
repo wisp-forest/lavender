@@ -41,17 +41,12 @@ public class LavenderFramebuffer extends SimpleFramebuffer {
 	@Override
 	public void drawBlit(GpuTextureView texture) {
 		RenderSystem.assertOnRenderThread();
-		RenderSystem.ShapeIndexBuffer shapeIndexBuffer = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
-		GpuBuffer indexBuffer = shapeIndexBuffer.getIndexBuffer(6);
-		GpuBuffer vertexBuffer = RenderSystem.getQuadVertexBuffer();
 
 		try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "Blit render target", texture, OptionalInt.empty())) {
 			renderPass.setPipeline(pipeline);
 			RenderSystem.bindDefaultUniforms(renderPass);
-			renderPass.setVertexBuffer(0, vertexBuffer);
-			renderPass.setIndexBuffer(indexBuffer, shapeIndexBuffer.getIndexType());
 			renderPass.bindSampler("InSampler", this.colorAttachmentView);
-			renderPass.drawIndexed(0, 0, 6, 1);
+			renderPass.draw(0, 3);
 		}
 	}
 }

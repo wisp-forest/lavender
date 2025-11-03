@@ -9,7 +9,6 @@ import io.wispforest.owo.ui.util.Delta;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -30,7 +29,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
             .child(entry.iconFactory().apply(Sizing.fixed(16)).margins(Insets.of(2)))
-            .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11)).zIndex(50)));
+            .child(Components.item(book).sizing(Sizing.fixed(8)).positioning(Positioning.absolute(11, 11))));
 
         this.layout.child(Containers.verticalFlow(Sizing.content(), Sizing.content())
             .child(Components.label(Text.literal(entry.title()).formatted(Formatting.GRAY)))
@@ -67,7 +66,7 @@ public class AssociatedEntryTooltipComponent implements TooltipComponent {
 
     static {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (Screen.hasAltDown()) return;
+            if (client.isAltPressed()) return;
             entryTriggerProgress += Delta.compute(entryTriggerProgress, 0f, .125f);
         });
     }

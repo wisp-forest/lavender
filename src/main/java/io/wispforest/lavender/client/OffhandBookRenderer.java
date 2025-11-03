@@ -11,6 +11,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.render.*;
 import net.minecraft.client.gui.render.state.GuiRenderState;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.fog.FogRenderer;
 import net.minecraft.client.texture.AbstractTexture;
 import net.minecraft.client.util.math.MatrixStack;
@@ -91,7 +92,7 @@ public class OffhandBookRenderer {
 	    RenderSystem.outputDepthTextureOverride = null;
     }
 
-    public static void render(MatrixStack matrices, int light) {
+    public static void render(MatrixStack matrices, OrderedRenderCommandQueue queue, int light) {
         cacheExpired = true;
         var client = MinecraftClient.getInstance();
 
@@ -111,15 +112,12 @@ public class OffhandBookRenderer {
         matrices.scale(1 * (framebuffer.textureWidth / (float) framebuffer.textureHeight), 1f, 1f);
         matrices.translate(rightHanded ? -.4f : -.6f, -.35f, -.165f);
 
-        var buffer = client.getBufferBuilders().getEntityVertexConsumers().getBuffer(RenderLayer.getText(Lavender.id("offhand_book_framebuffer")));
-        var matrix = matrices.peek().getPositionMatrix();
-
-        buffer.vertex(matrix, 0, 1, 0).color(1f, 1f, 1f, 1f).texture(0, 1).light(light);
-        buffer.vertex(matrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0, 0).light(light);
-        buffer.vertex(matrix, 1, 0, 0).color(1f, 1f, 1f, 1f).texture(1, 0).light(light);
-        buffer.vertex(matrix, 1, 1, 0).color(1f, 1f, 1f, 1f).texture(1, 1).light(light);
-
-        client.getBufferBuilders().getEntityVertexConsumers().draw();
+	    queue.submitCustom(matrices, RenderLayer.getText(Lavender.id("offhand_book_framebuffer")), (matrix, buffer) -> {
+		    buffer.vertex(matrix, 0, 1, 0).color(1f, 1f, 1f, 1f).texture(0, 1).light(light);
+		    buffer.vertex(matrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0, 0).light(light);
+		    buffer.vertex(matrix, 1, 0, 0).color(1f, 1f, 1f, 1f).texture(1, 0).light(light);
+		    buffer.vertex(matrix, 1, 1, 0).color(1f, 1f, 1f, 1f).texture(1, 1).light(light);
+	    });
 
         matrices.pop();
     }
