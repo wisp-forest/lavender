@@ -26,6 +26,8 @@ public class LavenderClientStorage {
     private static final TypeToken<Map<UUID, Map<Identifier, Set<Identifier>>>> VIEWED_ENTRIES_TYPE = new TypeToken<>() {};
     private static Map<UUID, Map<Identifier, Set<Identifier>>> viewedEntries;
 
+    private static Boolean bookScrollReversed;
+
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Identifier.class, new Identifier.Serializer()).setPrettyPrinting().create();
 
     static {
@@ -35,14 +37,17 @@ public class LavenderClientStorage {
             bookmarks = GSON.fromJson(data.get("bookmarks"), BOOKMARKS_TYPE);
             openedBooks = GSON.fromJson(data.get("opened_books"), OPENED_BOOKS_TYPE);
             viewedEntries = GSON.fromJson(data.get("viewed_entries"), VIEWED_ENTRIES_TYPE);
+            bookScrollReversed = GSON.fromJson(data.get("book_scroll_reversed"), Boolean.class);
 
             if (bookmarks == null) bookmarks = new HashMap<>();
             if (openedBooks == null) openedBooks = new HashMap<>();
             if (viewedEntries == null) viewedEntries = new HashMap<>();
+            if (bookScrollReversed == null) bookScrollReversed = false;
         } catch (Exception e) {
             bookmarks = new HashMap<>();
             openedBooks = new HashMap<>();
             viewedEntries = new HashMap<>();
+            bookScrollReversed = false;
             save();
         }
     }
@@ -94,6 +99,15 @@ public class LavenderClientStorage {
         save();
     }
 
+    public static boolean isBookScrollReversed() {
+        return bookScrollReversed;
+    }
+
+    public static void setBookScrollReversed(boolean reversed) {
+        bookScrollReversed = reversed;
+        save();
+    }
+
     private static Set<Identifier> getOpenedBooksSet() {
         return openedBooks.computeIfAbsent(LavenderClient.currentWorldId(), $ -> new HashSet<>());
     }
@@ -104,6 +118,7 @@ public class LavenderClientStorage {
             data.add("bookmarks", GSON.toJsonTree(bookmarks, BOOKMARKS_TYPE.getType()));
             data.add("opened_books", GSON.toJsonTree(openedBooks, OPENED_BOOKS_TYPE.getType()));
             data.add("viewed_entries", GSON.toJsonTree(viewedEntries, VIEWED_ENTRIES_TYPE.getType()));
+            data.addProperty("book_scroll_reversed", bookScrollReversed);
 
             Files.writeString(storageFile(), GSON.toJson(data));
         } catch (IOException e) {
