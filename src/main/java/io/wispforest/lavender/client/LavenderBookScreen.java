@@ -304,6 +304,10 @@ public class LavenderBookScreen extends BaseUIModelScreen<FlowLayout> implements
     }
 
     private void turnPage(boolean left) {
+        if (LavenderClientStorage.isBookScrollReversed()) {
+            left = !left;
+        }
+
         var frame = this.currentNavFrame();
 
         int previousPage = frame.selectedPage;

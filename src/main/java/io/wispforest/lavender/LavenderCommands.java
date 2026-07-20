@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import io.wispforest.lavender.book.Book;
 import io.wispforest.lavender.book.BookLoader;
 import io.wispforest.lavender.book.LavenderBookItem;
+import io.wispforest.lavender.book.LavenderClientStorage;
 import io.wispforest.lavender.client.StructureOverlayRenderer;
 import io.wispforest.lavender.structure.LavenderStructures;
 import net.fabricmc.api.EnvType;
@@ -110,6 +111,19 @@ public class LavenderCommands {
                                 StructureOverlayRenderer.addPendingOverlay(structureId);
                                 return 0;
                             }))));
+
+            dispatcher.register(literal("book-scroll-reversed")
+                    .executes(context -> {
+                        var reversed = LavenderClientStorage.isBookScrollReversed();
+                        context.getSource().sendFeedback(Text.literal("Guidebook scroll direction is currently " + (reversed ? "reversed" : "normal")));
+                        return 0;
+                    })
+                    .then(argument("reversed", BoolArgumentType.bool()).executes(context -> {
+                        var reversed = BoolArgumentType.getBool(context, "reversed");
+                        LavenderClientStorage.setBookScrollReversed(reversed);
+                        context.getSource().sendFeedback(Text.literal("Guidebook scroll direction set to " + (reversed ? "reversed" : "normal")));
+                        return 0;
+                    })));
         }
     }
 
